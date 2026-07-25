@@ -1,0 +1,65 @@
+# Miscellaneous & System
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+Thumbs.db
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ & IDE related
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+.fleet/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Security, Environment Variables & API Keys
+*.env
+*.env.*
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+credentials.json
+secrets.json
+client_secret*.json
+
+# Mobile Credentials & Local Configurations
+key.properties
+local.properties
+**/*.keystore
+**/*.jks
+google-services.json
+GoogleService-Info.plist
+
+# Symbolication & Obfuscation related
+app.*.symbols
+app.*.map.json
+
+# Android Studio build artifacts
+/android/app/debug
+/android/app/profile
+/android/app/release
+
