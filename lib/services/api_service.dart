@@ -12,7 +12,10 @@ class ApiService {
 
   /// Search across Anime, Manga, and TV Series based on query and type filter.
   /// [category] can be 'All', 'Anime', 'Manga', or 'Series'.
-  Future<List<MediaItem>> searchMedia(String query, {String category = 'All'}) async {
+  Future<List<MediaItem>> searchMedia(
+    String query, {
+    String category = 'All',
+  }) async {
     final String cleanQuery = query.trim();
     final List<MediaItem> results = [];
 
@@ -46,7 +49,9 @@ class ApiService {
     try {
       final Uri uri = query.isEmpty
           ? Uri.parse('$jikanBaseUrl/top/anime?limit=10')
-          : Uri.parse('$jikanBaseUrl/anime?q=${Uri.encodeComponent(query)}&limit=12');
+          : Uri.parse(
+              '$jikanBaseUrl/anime?q=${Uri.encodeComponent(query)}&limit=12',
+            );
 
       final response = await _client.get(uri);
       if (response.statusCode == 200) {
@@ -65,7 +70,9 @@ class ApiService {
     try {
       final Uri uri = query.isEmpty
           ? Uri.parse('$jikanBaseUrl/top/manga?limit=10')
-          : Uri.parse('$jikanBaseUrl/manga?q=${Uri.encodeComponent(query)}&limit=12');
+          : Uri.parse(
+              '$jikanBaseUrl/manga?q=${Uri.encodeComponent(query)}&limit=12',
+            );
 
       final response = await _client.get(uri);
       if (response.statusCode == 200) {
@@ -83,7 +90,9 @@ class ApiService {
   Future<List<MediaItem>> _searchSeries(String query) async {
     try {
       final String searchQuery = query.isEmpty ? 'drama' : query;
-      final Uri uri = Uri.parse('$tvmazeBaseUrl/search/shows?q=${Uri.encodeComponent(searchQuery)}');
+      final Uri uri = Uri.parse(
+        '$tvmazeBaseUrl/search/shows?q=${Uri.encodeComponent(searchQuery)}',
+      );
 
       final response = await _client.get(uri);
       if (response.statusCode == 200) {
@@ -101,10 +110,12 @@ class ApiService {
 
   static MediaItem mapJikanAnimeToMediaItem(Map<String, dynamic> json) {
     final int malId = json['mal_id'] ?? 0;
-    final String title = json['title_english'] ?? json['title'] ?? 'Untitled Anime';
+    final String title =
+        json['title_english'] ?? json['title'] ?? 'Untitled Anime';
     final images = json['images']?['jpg'];
-    final String coverUrl = images?['large_image_url'] ?? images?['image_url'] ?? '';
-    final int episodes = json['episodes'] ?? 0;
+    final String coverUrl =
+        images?['large_image_url'] ?? images?['image_url'] ?? '';
+    final int? episodes = _validProviderTotal(json['episodes']);
     final String? synopsis = json['synopsis'];
 
     return MediaItem(
@@ -112,19 +123,22 @@ class ApiService {
       title: title,
       coverUrl: coverUrl,
       currentProgress: 0,
-      totalCount: episodes > 0 ? episodes : 12,
+      totalCount: episodes,
       mediaType: 'anime',
       status: 'Plan to Watch',
+      releaseStatus: releaseStatusFromStorage(json['status']),
       synopsis: synopsis,
     );
   }
 
   static MediaItem mapJikanMangaToMediaItem(Map<String, dynamic> json) {
     final int malId = json['mal_id'] ?? 0;
-    final String title = json['title_english'] ?? json['title'] ?? 'Untitled Manga';
+    final String title =
+        json['title_english'] ?? json['title'] ?? 'Untitled Manga';
     final images = json['images']?['jpg'];
-    final String coverUrl = images?['large_image_url'] ?? images?['image_url'] ?? '';
-    final int chapters = json['chapters'] ?? 0;
+    final String coverUrl =
+        images?['large_image_url'] ?? images?['image_url'] ?? '';
+    final int? chapters = _validProviderTotal(json['chapters']);
     final String? synopsis = json['synopsis'];
 
     return MediaItem(
@@ -132,9 +146,10 @@ class ApiService {
       title: title,
       coverUrl: coverUrl,
       currentProgress: 0,
-      totalCount: chapters > 0 ? chapters : 50,
+      totalCount: chapters,
       mediaType: 'manga',
       status: 'Plan to Watch',
+      releaseStatus: releaseStatusFromStorage(json['status']),
       synopsis: synopsis,
     );
   }
@@ -143,7 +158,8 @@ class ApiService {
     if (show == null) return null;
     final int id = show['id'] ?? 0;
     final String title = show['name'] ?? 'Untitled Series';
-    final String coverUrl = show['image']?['original'] ?? show['image']?['medium'] ?? '';
+    final String coverUrl =
+        show['image']?['original'] ?? show['image']?['medium'] ?? '';
     final String rawSummary = show['summary'] ?? '';
     final String synopsis = rawSummary.replaceAll(RegExp(r'<[^>]*>'), '');
 
@@ -152,10 +168,19 @@ class ApiService {
       title: title,
       coverUrl: coverUrl,
       currentProgress: 0,
-      totalCount: 10,
+      totalCount: null,
       mediaType: 'series',
       status: 'Plan to Watch',
+      releaseStatus: releaseStatusFromStorage(show['status']),
       synopsis: synopsis,
     );
+  }
+
+  static int? _validProviderTotal(Object? value) {
+    if (value is! num) {
+      return null;
+    }
+    final total = value.toInt();
+    return total > 0 ? total : null;
   }
 }

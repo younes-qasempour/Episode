@@ -5,78 +5,104 @@
 
 ## Purpose
 
-Inspect one Library item and change its tracking status, completed count,
-rating, and persisted data, or remove it.
+Inspect one Library item and edit tracking status, release status, flat or
+seasonal progress, totals, rating, synopsis/personal description, or delete
+the item.
 
 ## User flow
 
 1. Tap a Home `MediaCard`.
-2. Detail opens with a cover, type, title, and progress summary.
-3. Select status; adjust progress and 0–10 rating.
-4. Save and return, or confirm deletion and return.
+2. Detail opens with cover, media type, title, and active progress summary.
+3. Edit tracking status independently from media release status.
+4. For flat progress, change the current count and set a known total or leave
+   it unknown.
+5. For seasonal anime/series, add, edit, increment, decrement, or delete
+   seasons.
+6. Save and return, or confirm deletion and return.
 
 ## Entry point and route
 
-`MainNavigationScreen._openDetailScreen` pushes a `MaterialPageRoute` containing
-`MediaDetailScreen`. The selected item and save/delete callbacks are constructor
-arguments. No route name/deep link exists.
+`MainNavigationScreen._openDetailScreen` pushes a `MaterialPageRoute`
+containing `MediaDetailScreen`. The selected item and save/delete callbacks
+are constructor arguments. No route name/deep link exists.
 
-## Screen and widgets
+## Screens and widgets
 
-The feature is one stateful screen using Material dropdown, sliders, icon
-buttons, dialog, and save button. It has no extracted reusable widget.
+- `MediaDetailScreen` — editable item state and save/delete orchestration
+- `season_editor_dialog.dart` — shared validated season editor
+
+The screen continues to use Material dropdowns, segmented controls, form
+fields, switches, buttons, dialogs, and sliders within the existing design
+system.
 
 ## State and business logic
 
-Local fields copy the incoming `MediaItem`. Increasing/dragging progress to a
-positive total changes status to `Completed`; moving below total does not
-automatically restore a prior status. Save builds `item.copyWith(...)` and
-invokes the parent callback. Delete requires confirmation and invokes the
-parent by ID.
+Local fields copy the incoming `MediaItem`. Confirmed rules:
+
+- Incrementing is not capped by a known total.
+- Reducing/editing a total never reduces progress.
+- Exceeded totals display a warning and save unchanged.
+- Completion is explicit through tracking status; progress changes never
+  auto-complete an item.
+- Unknown totals are `null` and display as `?`.
+- Seasonal aggregate progress comes from `MediaSeason` values.
+- Flat-to-seasonal conversion creates Season 1 with the existing progress.
+- Seasonal-to-flat conversion copies aggregate progress and retains inactive
+  season data so conversion is reversible.
+- Duplicate season numbers are rejected.
+- Season deletion requires confirmation.
+- Movies hide episodic controls and use status/rating/metadata only.
 
 ## Models, repositories, APIs, persistence
 
-- Model: `MediaItem`
+- Models: `MediaItem` and `MediaSeason`
 - Direct repository/service/API use: none
 - Parent save/delete callbacks call `LocalStorageRepository`, then replace the
   shell's list
-- Stored data: status, progress, total, rating, and synopsis are part of the
-  normal `MediaItem` JSON record
+- All new fields use the normal backward-compatible `MediaItem` JSON record
+
+In flat mode, flat values are authoritative. In seasonal mode, seasons are
+authoritative. Legacy aggregate keys remain serialized for compatibility but
+must not be treated as a second seasonal source of truth.
 
 ## Loading, empty, and error states
 
-- Cover image has a media-type fallback.
-- No save/delete loading state or error message.
-- Missing synopsis hides the section.
-- There is no empty concept because a selected item is required.
+- Missing/failed cover images render a media-type fallback.
+- Invalid/negative numeric input renders form validation messages.
+- Missing synopsis renders an empty editable description field.
+- No save/delete loading state or storage error message exists.
 
 ## Tests
 
-`media_detail_screen_test.dart` covers rendering/save callback and confirmed
-delete callback. It does not test controls, completion status, cancellation,
-failure, or synopsis behavior. Execution is currently blocked by dependencies.
+`media_detail_screen_test.dart` covers legacy rendering/save, confirmed
+deletion, unknown totals, progress beyond total without auto-completion,
+season add/edit, and movie-specific presentation. Execution remains blocked
+by package resolution in the current environment.
 
 ## Known limitations
 
-- Synopsis controller is never attached to an input.
 - Save/delete callbacks return `void` at this boundary and are not awaited, so
   the screen closes before persistence success is known.
-- Status values are raw strings.
-- Total count cannot be edited despite being held as mutable screen state.
-- No unsaved-changes warning.
+- There is no unsaved-changes warning.
+- Seasonal card incrementing requires an ongoing season; otherwise detail is
+  the progress-editing surface.
 
 ## Extension instructions
 
 - Keep persistence in the parent repository flow.
 - Preserve callback contracts or coordinate a public-interface decision.
-- Confirm synopsis ownership before changing its UI.
-- Add widget tests for any control/business-rule changes.
-- Check Home/card/persistence behavior for every new editable `MediaItem` field.
+- Keep progress/status rules in `MediaItem` or the repository rather than
+  duplicating them in new widgets.
+- Reuse the shared season editor.
+- Check Home/card/persistence behavior for every new editable `MediaItem`
+  field.
 
 ## Important files
 
 - `lib/screens/media_detail_screen.dart`
+- `lib/widgets/season_editor_dialog.dart`
 - `lib/screens/main_navigation_screen.dart`
 - `lib/models/media_item.dart`
 - `lib/repositories/local_storage_repository.dart`
 - `test/media_detail_screen_test.dart`
+- `test/media_item_test.dart`

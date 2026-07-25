@@ -5,6 +5,7 @@ import 'home_tab.dart';
 import 'search_tab.dart';
 import 'profile_tab.dart';
 import 'media_detail_screen.dart';
+import 'manual_media_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final ThemeMode currentThemeMode;
@@ -101,14 +102,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
+  void _openManualMediaScreen() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ManualMediaScreen(onSave: _addToLibrary),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final pages = [
@@ -116,10 +121,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         mediaItems: _items,
         onIncrementProgress: _incrementProgress,
         onItemTap: _openDetailScreen,
+        onAddManually: _openManualMediaScreen,
       ),
       SearchTab(
         existingItems: _items,
         onAddToLibrary: _addToLibrary,
+        onAddManually: _openManualMediaScreen,
       ),
       ProfileTab(
         currentThemeMode: widget.currentThemeMode,
@@ -129,10 +136,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: IndexedStack(
-          index: _currentIndex,
-          children: pages,
-        ),
+        child: IndexedStack(index: _currentIndex, children: pages),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

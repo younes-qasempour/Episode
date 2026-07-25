@@ -17,7 +17,10 @@ class MockApiService extends ApiService {
   });
 
   @override
-  Future<List<MediaItem>> searchMedia(String query, {String category = 'All'}) async {
+  Future<List<MediaItem>> searchMedia(
+    String query, {
+    String category = 'All',
+  }) async {
     if (shouldThrow) {
       throw Exception('Network error');
     }
@@ -133,10 +136,7 @@ void main() {
       final mockService = MockApiService(shouldThrow: true);
       final repository = SearchRepository(apiService: mockService);
 
-      expect(
-        () => repository.searchMedia('test'),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => repository.searchMedia('test'), throwsA(isA<Exception>()));
     });
   });
 }

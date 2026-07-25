@@ -13,8 +13,12 @@ flowchart LR
     App["OtakuLogApp<br/>theme state"] --> Shell["MainNavigationScreen<br/>library state"]
     Shell --> Home["HomeTab"]
     Shell --> Explore["SearchTab"]
+    Explore --> Manual["ManualMediaScreen"]
+    Home --> Manual
     Shell --> Profile["ProfileTab"]
     Shell --> Detail["MediaDetailScreen<br/>Navigator push"]
+    Detail --> SeasonEditor["Season editor dialog"]
+    Manual --> SeasonEditor
     Home --> Card["MediaCard"]
     Shell --> LocalRepo["LocalStorageRepository"]
     Explore --> SearchRepo["SearchRepository"]
@@ -38,7 +42,10 @@ flowchart LR
 - `HomeTab` owns its local filter and search text.
 - `SearchTab` owns its query controller, selected category, debounce timer,
   results, loading, and error fields.
-- `MediaDetailScreen` owns an editable copy of selected item fields.
+- `MediaDetailScreen` owns an editable copy of selected item fields and its
+  active flat/seasonal progress mode.
+- `ManualMediaScreen` owns a focused creation form and returns one complete
+  `MediaItem` through the same root add callback used by Explore results.
 - Child-to-parent changes use callbacks.
 
 ### Extension pattern
@@ -60,9 +67,22 @@ single feature.
 ## Domain and models
 
 `MediaItem` is both the domain-facing UI model and persistence/API mapping
-target. It includes identity, title, cover URL, progress, total count, media
-type, status, optional synopsis, and rating. It provides progress calculation,
-unit labels, `copyWith`, and manual map/JSON conversion.
+target. It supports anime, manga, series, and movies; nullable totals;
+separate user tracking and release status; flat or seasonal progress; manual
+origin; optional synopsis; and rating. `MediaSeason` owns one stable season ID,
+positive number, optional name, progress, nullable total, and release status.
+
+For flat mode, the flat progress fields are authoritative. For seasonal mode,
+the season list is authoritative and aggregate getters derive current/total
+progress. JSON keeps aggregate values in the legacy `currentProgress` and
+`totalCount` keys for older readers and retains inactive flat snapshots only
+to make progress-mode conversion reversible. UI/business logic must use the
+active getters rather than treating both representations as authoritative.
+
+Tracking status remains string-compatible at the constructor/JSON boundary,
+while centralized enum parsing provides validated business/UI semantics.
+Release status and progress mode are stored as enums with tolerant string
+decoding.
 
 There is no separate entity/DTO distinction or validation layer. Extend
 `MediaItem` only after checking API mapping, stored JSON compatibility, sample
@@ -104,6 +124,12 @@ pagination, or response cache.
 `otaku_log_media_items`. Empty/missing/invalid data falls back to
 `sampleMediaItems` and is saved immediately.
 
+Incrementing is never clamped to a known total and never changes tracking
+status. Flat items increment directly. Seasonal card increments use the
+highest-numbered ongoing season; an explicit season ID may be supplied by
+other callers. Movies and seasonal items without a clear ongoing target are
+left unchanged.
+
 There is no local database schema, migration system, secure storage, or Hive
 usage. Do not add a second store beside SharedPreferences. A persistence
 replacement needs an explicit migration decision and backward-compatibility
@@ -113,7 +139,8 @@ plan.
 
 - Root: `MaterialApp.home`
 - Primary navigation: `BottomNavigationBar` + `IndexedStack`
-- Detail navigation: imperative `Navigator.push(MaterialPageRoute(...))`
+- Detail/manual navigation: imperative
+  `Navigator.push(MaterialPageRoute(...))`
 - Named routes/deep links: not implemented
 
 Add a screen by following the existing callback and `MaterialPageRoute`

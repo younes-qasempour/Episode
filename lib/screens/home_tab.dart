@@ -7,12 +7,14 @@ class HomeTab extends StatefulWidget {
   final List<MediaItem> mediaItems;
   final Function(String id) onIncrementProgress;
   final Function(MediaItem item)? onItemTap;
+  final VoidCallback? onAddManually;
 
   const HomeTab({
     super.key,
     required this.mediaItems,
     required this.onIncrementProgress,
     this.onItemTap,
+    this.onAddManually,
   });
 
   @override
@@ -29,18 +31,25 @@ class _HomeTabState extends State<HomeTab> {
     final isDark = theme.brightness == Brightness.dark;
 
     final filteredItems = widget.mediaItems.where((item) {
-      final matchesCategory = _selectedCategory == 'All' ||
+      final matchesCategory =
+          _selectedCategory == 'All' ||
           item.mediaType.toLowerCase() == _selectedCategory.toLowerCase();
-      final matchesSearch = _searchQuery.isEmpty ||
+      final matchesSearch =
+          _searchQuery.isEmpty ||
           item.title.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     }).toList();
 
     final currentlyWatchingCount = widget.mediaItems
-        .where((i) => i.status == 'Watching' || i.status == 'Reading')
+        .where(
+          (item) =>
+              item.trackingStatus == TrackingStatus.watching ||
+              item.trackingStatus == TrackingStatus.reading,
+        )
         .length;
-    final completedCount =
-        widget.mediaItems.where((i) => i.status == 'Completed').length;
+    final completedCount = widget.mediaItems
+        .where((item) => item.trackingStatus == TrackingStatus.completed)
+        .length;
 
     return CustomScrollView(
       slivers: [
@@ -122,11 +131,23 @@ class _HomeTabState extends State<HomeTab> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem('Tracked', '${widget.mediaItems.length}', Colors.white),
+                _buildStatItem(
+                  'Tracked',
+                  '${widget.mediaItems.length}',
+                  Colors.white,
+                ),
                 Container(height: 36, width: 1, color: Colors.white24),
-                _buildStatItem('Active', '$currentlyWatchingCount', AppTheme.peachAccentDark),
+                _buildStatItem(
+                  'Active',
+                  '$currentlyWatchingCount',
+                  AppTheme.peachAccentDark,
+                ),
                 Container(height: 36, width: 1, color: Colors.white24),
-                _buildStatItem('Completed', '$completedCount', const Color(0xFF34D399)),
+                _buildStatItem(
+                  'Completed',
+                  '$completedCount',
+                  const Color(0xFF34D399),
+                ),
               ],
             ),
           ),
@@ -156,7 +177,9 @@ class _HomeTabState extends State<HomeTab> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              children: ['All', 'Anime', 'Manga', 'Series'].map((category) {
+              children: ['All', 'Anime', 'Manga', 'Series', 'Movie'].map((
+                category,
+              ) {
                 final isSelected = _selectedCategory == category;
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -223,7 +246,10 @@ class _HomeTabState extends State<HomeTab> {
         filteredItems.isEmpty
             ? SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 48,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -257,7 +283,7 @@ class _HomeTabState extends State<HomeTab> {
                       const SizedBox(height: 6),
                       Text(
                         widget.mediaItems.isEmpty
-                            ? 'Explore and search above to add anime, manga, or TV series to your library!'
+                            ? 'Explore remote results or add anime, manga, series, and movies manually.'
                             : 'Try clearing your search term or switching category filters.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -266,6 +292,15 @@ class _HomeTabState extends State<HomeTab> {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
+                      if (widget.mediaItems.isEmpty &&
+                          widget.onAddManually != null) ...[
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: widget.onAddManually,
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Add manually'),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -273,21 +308,19 @@ class _HomeTabState extends State<HomeTab> {
             : SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final item = filteredItems[index];
-                      return MediaCard(
-                        item: item,
-                        onIncrementProgress: () => widget.onIncrementProgress(item.id),
-                        onTap: () {
-                          if (widget.onItemTap != null) {
-                            widget.onItemTap!(item);
-                          }
-                        },
-                      );
-                    },
-                    childCount: filteredItems.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final item = filteredItems[index];
+                    return MediaCard(
+                      item: item,
+                      onIncrementProgress: () =>
+                          widget.onIncrementProgress(item.id),
+                      onTap: () {
+                        if (widget.onItemTap != null) {
+                          widget.onItemTap!(item);
+                        }
+                      },
+                    );
+                  }, childCount: filteredItems.length),
                 ),
               ),
         const SliverToBoxAdapter(child: SizedBox(height: 24)),

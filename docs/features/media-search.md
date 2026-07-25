@@ -15,6 +15,8 @@ to the local Library.
 3. Selected provider requests run concurrently.
 4. Results display in a two-column grid.
 5. User adds a result; an existing ID/title shows `In Library`.
+6. A persistent `Can't find it? Add manually` action opens the shared manual
+   creation flow.
 
 ## Entry point and route
 
@@ -25,9 +27,9 @@ to the local Library.
 
 ## Screen and widgets
 
-`SearchTab` contains the app bar, query field, category chips, state messages,
-grid, result cards, and add button. Result-card UI is a private helper, not a
-shared widget.
+`SearchTab` contains the app bar, query field, category chips, manual-add
+entry, state messages, grid, result cards, and add button. Result-card UI is a
+private helper, not a shared widget.
 
 ## State management
 
@@ -59,6 +61,7 @@ Jikan top lists and TVMaze `drama`. Detailed endpoint/mapping behavior is in
 - Red exception error branch
 - Image fallback by media type
 - Added/disabled state derived from current library
+- Missing provider totals display as `Unknown`
 
 The real service catches failures and returns `[]`, so most remote failures
 appear as empty results rather than the error branch.
@@ -77,7 +80,7 @@ error-state widget test exists. Tests are currently blocked from execution.
 - No cancellation/ordering of active searches
 - No pagination, timeout, retry, rate-limit handling, headers, or cache
 - Errors collapse into empty lists
-- Unknown total counts receive fixed fallback values
+- Remote movie search is not implemented; movies can be added manually
 - Fixed two-column layout is not adaptive
 - Clear-button visibility does not rebuild directly on controller change; it
   generally updates when search state changes

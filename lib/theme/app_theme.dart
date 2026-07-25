@@ -44,6 +44,8 @@ class AppTheme {
         return isDark ? primaryIndigoDark : primaryIndigo;
       case 'On Hold':
         return const Color(0xFFF59E0B); // Amber
+      case 'Dropped':
+        return const Color(0xFFEF4444); // Red
       default:
         return isDark ? darkOnSurfaceVariant : lightOnSurfaceVariant;
     }
@@ -111,7 +113,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(buttonRadius),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         hintStyle: const TextStyle(
           fontFamily: 'Be Vietnam Pro',
           color: lightOnSurfaceVariant,
@@ -199,7 +204,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(buttonRadius),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         hintStyle: const TextStyle(
           fontFamily: 'Be Vietnam Pro',
           color: darkOnSurfaceVariant,

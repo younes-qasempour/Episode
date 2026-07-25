@@ -46,7 +46,9 @@ class LocalStorageRepository {
   Future<List<MediaItem>> saveMediaItem(MediaItem newItem) async {
     final currentItems = await loadMediaItems();
     final index = currentItems.indexWhere(
-      (item) => item.id == newItem.id || item.title.toLowerCase() == newItem.title.toLowerCase(),
+      (item) =>
+          item.id == newItem.id ||
+          item.title.toLowerCase() == newItem.title.toLowerCase(),
     );
 
     if (index >= 0) {
@@ -80,24 +82,34 @@ class LocalStorageRepository {
     return currentItems;
   }
 
-  /// Increment progress for an item by 1.
-  /// If currentProgress reaches totalCount, automatically updates status to 'Completed'.
-  Future<List<MediaItem>> incrementProgress(String id) async {
+  /// Increment progress for an item by 1 without clamping to a stored total.
+  ///
+  /// Flat items increment their single progress value. Seasonal items require
+  /// an explicit [seasonId], or use the highest-numbered ongoing season when
+  /// one is available. Movies and seasonal items without a clear target are
+  /// left unchanged. Tracking status is always controlled by the user.
+  Future<List<MediaItem>> incrementProgress(
+    String id, {
+    String? seasonId,
+  }) async {
     final currentItems = await loadMediaItems();
     final index = currentItems.indexWhere((item) => item.id == id);
 
     if (index >= 0) {
       final item = currentItems[index];
-      if (item.currentProgress < item.totalCount) {
-        final newProgress = item.currentProgress + 1;
-        final newStatus = (newProgress >= item.totalCount && item.totalCount > 0)
-            ? 'Completed'
-            : item.status;
+      MediaItem updatedItem = item;
 
-        currentItems[index] = item.copyWith(
-          currentProgress: newProgress,
-          status: newStatus,
-        );
+      if (item.progressMode == ProgressMode.flat) {
+        updatedItem = item.incrementFlatProgress();
+      } else {
+        final targetId = seasonId ?? item.defaultIncrementSeason?.id;
+        if (targetId != null) {
+          updatedItem = item.incrementSeason(targetId);
+        }
+      }
+
+      if (!identical(updatedItem, item)) {
+        currentItems[index] = updatedItem;
         await saveAllMediaItems(currentItems);
       }
     }

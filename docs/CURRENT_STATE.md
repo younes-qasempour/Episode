@@ -1,22 +1,23 @@
 # Current State
 
-Snapshot verified on **2026-07-25** at Git commit `9e7c995`.
+Snapshot verified on **2026-07-25** against base Git commit `9e7c995` and the
+current manual-media/progress-tracking working-tree change.
 
 ## Feature status
 
 | Area | Status | Evidence | Important files | Notes |
 | --- | --- | --- | --- | --- |
 | App shell and tabs | Complete | `MaterialApp`, `IndexedStack`, and three bottom-nav items are wired | `lib/main.dart`, `lib/screens/main_navigation_screen.dart` | “Complete” describes the current three-tab scope, not final product navigation. |
-| Local library load/save | Functional but incomplete | CRUD and progress changes serialize one JSON list to preferences | `lib/repositories/local_storage_repository.dart` | Decode failures silently reset to seeded sample data; there is no schema version or migration. |
-| Home library | Functional but incomplete | Search, type filters, stats, cards, detail navigation, and `+1` work in code | `lib/screens/home_tab.dart`, `lib/widgets/media_card.dart` | No explicit storage error state. Statistics are simple counts. |
+| Local library load/save | Functional but incomplete | CRUD, nullable totals, manual/movie fields, and seasonal data serialize in one backward-compatible JSON list | `lib/repositories/local_storage_repository.dart`, `lib/models/media_item.dart` | Decode failures still silently reset to seeded sample data; there is no explicit schema version. |
+| Home library | Functional but incomplete | Search, anime/manga/series/movie filters, stats, state-aware cards, detail navigation, manual add, and uncapped `+1` work in code | `lib/screens/home_tab.dart`, `lib/widgets/media_card.dart` | Seasonal card increments target only the latest ongoing season; other seasonal edits happen in details. |
 | Remote discovery | Functional but incomplete | Jikan anime/manga and TVMaze requests map to `MediaItem` | `lib/services/api_service.dart`, `lib/screens/search_tab.dart` | No pagination, timeout, retry, rate-limit handling, or visible transport error. |
-| Add to library | Complete | Result callback saves via repository and updates root-owned list | `lib/screens/main_navigation_screen.dart` | Duplicate matching uses ID or case-insensitive title. |
-| Media detail editing | Functional but incomplete | Status, progress, rating, save, and delete are implemented | `lib/screens/media_detail_screen.dart` | Synopsis controller has no input widget. Save/delete callbacks are not awaited. |
+| Add to library | Complete | Remote results and manually created anime, manga, series, or movies use the same repository and root callback | `lib/screens/main_navigation_screen.dart`, `lib/screens/manual_media_screen.dart` | Duplicate matching uses ID or case-insensitive title. |
+| Media detail editing | Functional but incomplete | Tracking/release status, unknown totals, flat/seasonal progress, season CRUD, rating, synopsis, save, and delete are implemented | `lib/screens/media_detail_screen.dart`, `lib/widgets/season_editor_dialog.dart` | Save/delete callbacks remain synchronous at the screen boundary and are not awaited. |
 | Profile | Placeholder | Identity, rank, member date, and activity totals are fixed strings | `lib/screens/profile_tab.dart` | Settings, notification, sync, about, and app-bar actions are no-ops. |
 | Theme switching | Functional but incomplete | Light/dark themes and an in-memory switch work | `lib/main.dart`, `lib/theme/app_theme.dart` | System mode is lost after choosing a mode; choice is not persisted. |
 | Localization | Not implemented | No ARB files, localization delegates, or localization dependency | `lib/` | User-visible strings are English literals. |
 | Authentication/cloud sync | Not implemented | No auth/client/account or sync implementation | Repository-wide search | Profile text suggesting backup/sync is placeholder UI only. |
-| Tests | Blocked | Six files contain 19 declared tests | `test/` | Dependencies cannot currently resolve; the template smoke test also references nonexistent `MyApp`. |
+| Tests | Blocked | Nine files contain 45 declared tests, including focused model/manual/season/card coverage | `test/` | Dependencies cannot currently resolve; the unrelated template smoke test still references nonexistent `MyApp`. |
 | Android release | Blocked | Template application ID/signing TODOs; INTERNET permission is debug/profile-only | `android/app/` | Release behavior was not built. |
 | Web build | Blocked | `web/index.html` exists | `web/index.html` | Build stops because `.dart_tool/package_config.json` is unavailable. |
 
@@ -29,8 +30,7 @@ Status vocabulary: **Complete**, **Functional but incomplete**, **In progress**,
 - Profile identity, rank, join date, episode total, chapter total, and version
   display are hard-coded.
 - Profile settings actions are empty callbacks.
-- Jikan unknown anime counts default to 12 and manga counts to 50.
-- TVMaze results always default to a total count of 10.
+- Unknown Jikan/TVMaze counts remain `null` and render as `?`.
 - API base URLs and all user-visible strings are source constants.
 - Avatar and sample cover images use public Unsplash URLs.
 
@@ -53,7 +53,8 @@ content rather than TODO comments.
 | `dart --version` | Exit 0. Dart 3.11.4 on Windows x64. |
 | `flutter pub get` | Exit 1. Pub reports authorization failure for `https://pub.dev` while resolving `flutter_lints`. |
 | `flutter pub get --offline` | Exit 1. Cached package metadata cannot satisfy `flutter_lints ^3.0.0`. |
-| `dart format --output=none --set-exit-if-changed .` | Exit 1. Nineteen Dart files checked; 17 would be reformatted. No files were written. |
+| `dart format lib test` | Exit 0. Twenty-four Dart files formatted; seven required changes, including the pre-existing formatting baseline requested by this task. Package-lint resolution warnings were emitted. |
+| `dart format --output=none --set-exit-if-changed lib test` | Exit 0. Twenty-four Dart files checked; zero changes required. Package-lint resolution warnings were emitted. |
 | `flutter analyze` | Exit 1 during dependency resolution with the same pub.dev authorization failure; source analysis did not start. |
 | `flutter analyze --no-pub` | Exit 1 with 1,293 issues because package configuration and Flutter/package URIs are unavailable; this result is not a reliable source-code lint count. It also exposes the stale `MyApp` reference. |
 | `flutter test` | Exit 1 during dependency resolution with the same pub.dev authorization failure; tests did not start. |
@@ -72,12 +73,12 @@ failed before a normal solve could confirm the full compatibility outcome.
   exception error branch is normally unreachable with the real service.
 - Debounced searches do not cancel or order in-flight requests; older results
   can replace newer ones.
-- Persistence has no corruption signal, schema version, or atomic domain
-  migration strategy.
-- API result counts use unverified fallbacks.
+- Persistence has no corruption signal, explicit schema version, or atomic
+  domain migration strategy. New fields use tolerant defaults instead.
 - Typography names are referenced but fonts are not bundled in `pubspec.yaml`.
 - Hive, Hive Flutter, and path provider are unused dependencies.
-- Source formatting is not currently clean.
+- Source formatting is clean for `lib/` and `test/`; lint packages still
+  cannot resolve.
 
 ## Recommended next implementation areas
 

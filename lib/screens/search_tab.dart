@@ -6,12 +6,14 @@ import '../theme/app_theme.dart';
 
 class SearchTab extends StatefulWidget {
   final Function(MediaItem item)? onAddToLibrary;
+  final VoidCallback? onAddManually;
   final List<MediaItem> existingItems;
   final SearchRepository? searchRepository;
 
   const SearchTab({
     super.key,
     this.onAddToLibrary,
+    this.onAddManually,
     this.existingItems = const [],
     this.searchRepository,
   });
@@ -71,7 +73,8 @@ class _SearchTabState extends State<SearchTab> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to fetch search results. Check your connection.';
+          _errorMessage =
+              'Failed to fetch search results. Check your connection.';
           _isLoading = false;
         });
       }
@@ -91,9 +94,7 @@ class _SearchTabState extends State<SearchTab> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Live Media Search'),
-      ),
+      appBar: AppBar(title: const Text('Live Media Search')),
       body: CustomScrollView(
         slivers: [
           // Search Input Bar
@@ -157,13 +158,27 @@ class _SearchTabState extends State<SearchTab> {
                               : theme.colorScheme.onSurfaceVariant,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.chipRadius),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.chipRadius,
+                          ),
                           side: BorderSide.none,
                         ),
                       ),
                     );
                   }).toList(),
                 ),
+              ),
+            ),
+          ),
+
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+              child: OutlinedButton.icon(
+                key: const Key('add-media-manually-button'),
+                onPressed: widget.onAddManually,
+                icon: const Icon(Icons.edit_note_rounded),
+                label: const Text("Can't find it? Add manually"),
               ),
             ),
           ),
@@ -228,7 +243,11 @@ class _SearchTabState extends State<SearchTab> {
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      size: 48,
+                      color: Colors.redAccent,
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       _errorMessage!,
@@ -278,17 +297,16 @@ class _SearchTabState extends State<SearchTab> {
                   crossAxisSpacing: 14,
                   mainAxisSpacing: 14,
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = _searchResults[index];
-                    final isAlreadyAdded = widget.existingItems.any(
-                      (e) => e.id == item.id || e.title.toLowerCase() == item.title.toLowerCase(),
-                    );
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final item = _searchResults[index];
+                  final isAlreadyAdded = widget.existingItems.any(
+                    (e) =>
+                        e.id == item.id ||
+                        e.title.toLowerCase() == item.title.toLowerCase(),
+                  );
 
-                    return _buildSearchResultCard(context, item, isAlreadyAdded);
-                  },
-                  childCount: _searchResults.length,
-                ),
+                  return _buildSearchResultCard(context, item, isAlreadyAdded);
+                }, childCount: _searchResults.length),
               ),
             ),
 
@@ -298,7 +316,11 @@ class _SearchTabState extends State<SearchTab> {
     );
   }
 
-  Widget _buildSearchResultCard(BuildContext context, MediaItem item, bool isAlreadyAdded) {
+  Widget _buildSearchResultCard(
+    BuildContext context,
+    MediaItem item,
+    bool isAlreadyAdded,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -352,8 +374,14 @@ class _SearchTabState extends State<SearchTab> {
                       item.coverUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        color: isDark ? const Color(0xFF1E2E44) : const Color(0xFFE0E7FF),
-                        child: Icon(typeIcon, size: 36, color: theme.colorScheme.primary),
+                        color: isDark
+                            ? const Color(0xFF1E2E44)
+                            : const Color(0xFFE0E7FF),
+                        child: Icon(
+                          typeIcon,
+                          size: 36,
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
                     ),
                   ),
@@ -362,7 +390,10 @@ class _SearchTabState extends State<SearchTab> {
                   top: 8,
                   left: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.75),
                       borderRadius: BorderRadius.circular(6),
@@ -407,7 +438,7 @@ class _SearchTabState extends State<SearchTab> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${item.unitLabel} count: ${item.totalCount > 0 ? item.totalCount : "Unknown"}',
+                  '${item.unitLabel} count: ${item.totalCount ?? "Unknown"}',
                   style: TextStyle(
                     fontFamily: 'Be Vietnam Pro',
                     fontSize: 11,
@@ -424,7 +455,9 @@ class _SearchTabState extends State<SearchTab> {
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.zero,
                       backgroundColor: isAlreadyAdded
-                          ? (isDark ? const Color(0xFF1E2E44) : const Color(0xFFE2E8F0))
+                          ? (isDark
+                                ? const Color(0xFF1E2E44)
+                                : const Color(0xFFE2E8F0))
                           : AppTheme.peachAccent,
                       foregroundColor: isAlreadyAdded
                           ? theme.colorScheme.onSurfaceVariant
@@ -444,7 +477,9 @@ class _SearchTabState extends State<SearchTab> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          isAlreadyAdded ? Icons.check_circle_rounded : Icons.bookmark_add_rounded,
+                          isAlreadyAdded
+                              ? Icons.check_circle_rounded
+                              : Icons.bookmark_add_rounded,
                           size: 14,
                         ),
                         const SizedBox(width: 4),

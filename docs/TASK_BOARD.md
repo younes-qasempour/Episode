@@ -35,6 +35,7 @@ None.
 | ID | Title | Objective | Related feature | Dependencies | Important files | Acceptance criteria | Updated |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | OTAKU-000 | Agent documentation bootstrap | Establish evidence-based shared memory and workflow | Repository-wide | None | `AGENTS.md`, `docs/` | Architecture/state/maps/workflow/templates exist, links validate, and production code is unchanged | 2026-07-25 |
+| OTAKU-012 | Flexible manual media and progress tracking | Add manual anime/manga/series/movie creation, nullable totals, explicit release status, uncapped flat progress, and multi-season tracking | Library, Explore, media details | None | `media_item.dart`, local repository, API mappings, manual/detail/card screens, tests/docs | Existing JSON remains readable; unknown totals stay unknown; progress is uncapped; manual/movie/season flows persist and render consistently | 2026-07-25 |
 
 ## Technical debt
 

@@ -18,7 +18,22 @@ class MediaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final statusColor = AppTheme.getStatusColor(item.status, isDark);
+    final trackingStatusLabel = item.trackingStatus.label;
+    final statusColor = AppTheme.getStatusColor(trackingStatusLabel, isDark);
+    final cardSeason = item.cardSeason;
+    final incrementSeason = item.defaultIncrementSeason;
+    final isSeasonBeyondTotal = cardSeason?.isBeyondKnownTotal ?? false;
+    final canIncrement =
+        onIncrementProgress != null &&
+        item.supportsProgress &&
+        (item.progressMode == ProgressMode.flat || incrementSeason != null);
+    final progressText = item.type == MediaType.movie
+        ? '${item.releaseStatus.label} release'
+        : item.progressMode == ProgressMode.seasonal
+        ? cardSeason == null
+              ? 'No seasons added'
+              : '${cardSeason.displayName} · ${cardSeason.progressSummary} Ep'
+        : '${item.progressSummary} ${item.unitLabel}';
 
     IconData typeIcon;
     switch (item.mediaType.toLowerCase()) {
@@ -27,6 +42,9 @@ class MediaCard extends StatelessWidget {
         break;
       case 'series':
         typeIcon = Icons.tv_rounded;
+        break;
+      case 'movie':
+        typeIcon = Icons.local_movies_rounded;
         break;
       case 'anime':
       default:
@@ -70,34 +88,51 @@ class MediaCard extends StatelessWidget {
                   child: SizedBox(
                     width: 84,
                     height: 116,
-                    child: Image.network(
-                      item.coverUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: isDark ? const Color(0xFF1E2E44) : const Color(0xFFE0E7FF),
-                          child: Icon(
-                            typeIcon,
-                            size: 32,
-                            color: theme.colorScheme.primary,
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: isDark ? const Color(0xFF1E2E44) : const Color(0xFFE0E7FF),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                theme.colorScheme.primary,
-                              ),
+                    child: item.coverUrl.trim().isEmpty
+                        ? Container(
+                            color: isDark
+                                ? const Color(0xFF1E2E44)
+                                : const Color(0xFFE0E7FF),
+                            child: Icon(
+                              typeIcon,
+                              size: 32,
+                              color: theme.colorScheme.primary,
                             ),
+                          )
+                        : Image.network(
+                            item.coverUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: isDark
+                                    ? const Color(0xFF1E2E44)
+                                    : const Color(0xFFE0E7FF),
+                                child: Icon(
+                                  typeIcon,
+                                  size: 32,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
+                              return Container(
+                                color: isDark
+                                    ? const Color(0xFF1E2E44)
+                                    : const Color(0xFFE0E7FF),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -123,7 +158,8 @@ class MediaCard extends StatelessWidget {
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary.withOpacity(0.12),
+                                    color: theme.colorScheme.primary
+                                        .withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Row(
@@ -156,10 +192,12 @@ class MediaCard extends StatelessWidget {
                                   ),
                                   decoration: BoxDecoration(
                                     color: statusColor.withOpacity(0.14),
-                                    borderRadius: BorderRadius.circular(AppTheme.chipRadius),
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.chipRadius,
+                                    ),
                                   ),
                                   child: Text(
-                                    item.status,
+                                    trackingStatusLabel,
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
@@ -171,7 +209,10 @@ class MediaCard extends StatelessWidget {
                                 if (item.rating > 0) ...[
                                   const SizedBox(width: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.amber.withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(6),
@@ -179,7 +220,11 @@ class MediaCard extends StatelessWidget {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.star_rounded, size: 12, color: Colors.amber),
+                                        const Icon(
+                                          Icons.star_rounded,
+                                          size: 12,
+                                          color: Colors.amber,
+                                        ),
                                         const SizedBox(width: 2),
                                         Text(
                                           item.rating.toStringAsFixed(1),
@@ -218,37 +263,52 @@ class MediaCard extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '${item.unitLabel} ${item.currentProgress} / ${item.totalCount}',
+                                  progressText,
                                   style: TextStyle(
                                     fontFamily: 'Be Vietnam Pro',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                    color:
+                                        item.isBeyondKnownTotal ||
+                                            isSeasonBeyondTotal
+                                        ? theme.colorScheme.error
+                                        : theme.colorScheme.onSurfaceVariant,
                                   ),
                                 ),
-                                if (onIncrementProgress != null &&
-                                    item.currentProgress < item.totalCount)
-                                  _PlusOneButton(onPressed: onIncrementProgress!),
+                                if (canIncrement)
+                                  _PlusOneButton(
+                                    onPressed: onIncrementProgress!,
+                                    tooltip:
+                                        item.progressMode ==
+                                            ProgressMode.seasonal
+                                        ? 'Add 1 episode to ${incrementSeason!.displayName}'
+                                        : 'Add 1 ${item.unitLabel == 'Ch' ? 'chapter' : 'episode'}',
+                                  ),
                               ],
                             ),
-                            const SizedBox(height: 6),
+                            if (item.type != MediaType.movie) ...[
+                              const SizedBox(height: 6),
 
-                            // Progress Bar
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: item.progressPercentage,
-                                minHeight: 6,
-                                backgroundColor: isDark
-                                    ? const Color(0xFF263852)
-                                    : const Color(0xFFE2E8F0),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  item.status == 'Completed'
-                                      ? const Color(0xFF10B981)
-                                      : theme.colorScheme.primary,
+                              // Progress Bar
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: item.hasKnownTotal
+                                      ? item.progressPercentage
+                                      : 0,
+                                  minHeight: 6,
+                                  backgroundColor: isDark
+                                      ? const Color(0xFF263852)
+                                      : const Color(0xFFE2E8F0),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    item.trackingStatus ==
+                                            TrackingStatus.completed
+                                        ? const Color(0xFF10B981)
+                                        : theme.colorScheme.primary,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ],
@@ -266,8 +326,9 @@ class MediaCard extends StatelessWidget {
 
 class _PlusOneButton extends StatefulWidget {
   final VoidCallback onPressed;
+  final String tooltip;
 
-  const _PlusOneButton({required this.onPressed});
+  const _PlusOneButton({required this.onPressed, required this.tooltip});
 
   @override
   State<_PlusOneButton> createState() => _PlusOneButtonState();
@@ -293,44 +354,48 @@ class _PlusOneButtonState extends State<_PlusOneButton> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.3),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
+    return Tooltip(
+      message: widget.tooltip,
+      child: Semantics(
+        button: true,
+        label: widget.tooltip,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: _onTapDown,
+          onTapUp: _onTapUp,
+          onTapCancel: _onTapCancel,
+          child: AnimatedScale(
+            scale: _scale,
+            duration: const Duration(milliseconds: 100),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.add,
-                size: 14,
-                color: Colors.white,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, size: 14, color: Colors.white),
+                  SizedBox(width: 2),
+                  Text(
+                    '+1',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: 2),
-              Text(
-                '+1',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

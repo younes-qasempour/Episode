@@ -104,3 +104,31 @@ is not documented.
 - **Alternatives:** Unknown.
 - **Affected files:** `lib/theme/app_theme.dart`, presentation files,
   `DESIGN.md`.
+
+## ADR-008 — Additive flexible-progress model on SharedPreferences
+
+- **Date:** 2026-07-25
+- **Status:** Accepted
+- **Context:** Provider counts can be absent or stale; manual media and
+  multi-season tracking must coexist with existing flat library JSON.
+- **Decision:** Keep `MediaItem` and SharedPreferences as the shared
+  model/store. Represent unknown totals as `null`, add typed release/progress
+  concepts and `MediaSeason`, keep legacy tracking-status strings compatible,
+  and use tolerant additive decoding. Flat values are authoritative in flat
+  mode; seasons are authoritative in seasonal mode. Legacy aggregate JSON keys
+  remain for compatibility, while inactive flat snapshots make conversion
+  reversible. Progress never auto-completes or clamps to a total.
+- **Rationale:** This satisfies the data-integrity and user-flow requirements
+  without a parallel model, database migration, state package, router, or API
+  client.
+- **Consequences:** Existing records load without migration and new values
+  survive restart. There is still no explicit schema version, and callers must
+  use active aggregate getters rather than treating flat snapshots and seasons
+  as simultaneous authorities.
+- **Alternatives considered:** Fabricated totals and hard caps were rejected
+  as incorrect. One library item per season was rejected because the requested
+  default is one item containing seasons. A second persistence engine was
+  rejected by the existing architecture and migration risk.
+- **Affected files:** `lib/models/media_item.dart`,
+  `lib/repositories/local_storage_repository.dart`,
+  `lib/services/api_service.dart`, presentation flows, tests, and data docs.

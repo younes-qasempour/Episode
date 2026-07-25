@@ -7,6 +7,7 @@ Read the document matching the requested behavior before editing.
 | Local library and Home | [local-library.md](local-library.md) | Functional but incomplete |
 | Remote discovery/Explore | [media-search.md](media-search.md) | Functional but incomplete |
 | Media details and editing | [media-details.md](media-details.md) | Functional but incomplete |
+| Manual media and flexible progress | [manual-media-and-progress.md](manual-media-and-progress.md) | Functional |
 | Profile and theme | [profile-and-theme.md](profile-and-theme.md) | Theme functional; profile placeholder |
 
 Feature status is summarized repository-wide in

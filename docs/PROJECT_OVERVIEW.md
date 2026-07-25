@@ -3,8 +3,9 @@
 ## Product
 
 OtakuLog is a Flutter media-tracking prototype for a person who follows anime,
-manga, and TV series. The current application lets a user maintain an on-device
-library, discover media from public APIs, and edit progress and metadata.
+manga, TV series, and movies. The current application lets a user maintain an
+on-device library, discover supported media from public APIs, manually create
+missing media, and edit flat or seasonal progress and metadata.
 
 The target user is **inferred from current implementation**: an individual
 media fan managing one local collection. Accounts, multi-user behavior, social
@@ -20,9 +21,12 @@ features, and cloud synchronization are not implemented.
    series, including initial popular/default results.
 4. **Add to the library:** a remote result is saved locally unless its ID or
    case-insensitive title already exists.
-5. **Edit an item:** the detail screen changes status, progress, rating, and
-   saves the current synopsis value; it can also delete the item.
-6. **Change appearance:** the Profile tab toggles between light and dark
+5. **Add manually:** a focused form creates anime, manga, series, or movies
+   without a provider ID.
+6. **Edit an item:** the detail screen changes separate tracking/release
+   status, nullable totals, flat or seasonal progress, rating, and synopsis; it
+   can also delete the item.
+7. **Change appearance:** the Profile tab toggles between light and dark
    themes for the current process.
 
 ## Current capabilities
@@ -32,7 +36,10 @@ features, and cloud synchronization are not implemented.
 - Local JSON persistence through `shared_preferences`
 - Jikan anime and manga search
 - TVMaze series search
-- Progress/status/rating editing and deletion
+- Manual anime/manga/series/movie creation
+- Unknown and exceeded totals
+- Flat and multi-season progress
+- Separate tracking/release status, rating, synopsis editing, and deletion
 - Loading, empty, image-fallback, and selected feedback states
 - Unit and widget test files around API mapping, repositories, search, and
   details

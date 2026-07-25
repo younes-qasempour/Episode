@@ -41,14 +41,20 @@ fields is environment-dependent and unconfirmed.
 - ID: `jikan_anime_{mal_id}`
 - Title: English title, then default title
 - Cover: large JPG, then regular JPG
-- Total: `episodes`, falling back to 12 when absent/zero
-- Type/status: `anime` / `Plan to Watch`
+- Total: positive `episodes`; missing, null, zero, or invalid values become
+  unknown (`null`)
+- Type/tracking status: `anime` / `Plan to Watch`
+- Release status: Jikan airing status maps to ongoing, finished, upcoming, or
+  unknown
 
 ### Jikan manga
 
 - ID: `jikan_manga_{mal_id}`
-- Total: `chapters`, falling back to 50
-- Type/status: `manga` / `Plan to Watch`
+- Total: positive `chapters`; missing, null, zero, or invalid values become
+  unknown (`null`)
+- Type/tracking status: `manga` / `Plan to Watch`
+- Release status: publishing/finished/hiatus/discontinued/upcoming values map
+  to the shared release-status enum
 - Other title/image/synopsis mapping mirrors anime
 
 ### TVMaze
@@ -56,10 +62,13 @@ fields is environment-dependent and unconfirmed.
 - ID: `tvmaze_series_{id}`
 - Cover: original, then medium
 - HTML tags are removed from summary with a regular expression
-- Total always defaults to 10
-- Type/status: `series` / `Plan to Watch`
+- Search records do not supply an authoritative episode total, so total remains
+  unknown (`null`)
+- Type/tracking status: `series` / `Plan to Watch`
+- Release status: running/ended/upcoming/cancelled values map defensively;
+  unexpected values become unknown
 
-Fallback totals are implementation conveniences, not verified provider facts.
+No provider mapper fabricates a fallback total.
 
 ## Error and concurrency behavior
 
@@ -81,19 +90,31 @@ On missing, empty, invalid, or decoded-empty storage, the repository copies
 eight `sampleMediaItems`, saves them, and returns them. CRUD methods load the
 whole list, mutate it, and save the whole list.
 
+Existing records without new fields decode as flat progress, unknown release
+status, no seasons, and non-manual origin. Existing positive totals and
+progress are preserved. A legacy zero total is treated as unknown because the
+old model used zero as an absence fallback.
+
+New records serialize nullable totals, release status, progress mode, seasons,
+and manual origin. Seasonal records keep their season list as the authoritative
+progress source. Aggregate current/total values remain in the legacy keys for
+older readers, while inactive flat snapshots support reversible mode changes.
+
 Duplicate add behavior matches either:
 
 - exact `id`, or
 - case-insensitive exact `title`.
 
-Progress increments by one only below `totalCount`; reaching a positive total
-changes status to `Completed`.
+Flat progress increments by one regardless of a known total and never changes
+tracking status. Seasonal increments change only an explicit season or the
+highest-numbered ongoing season. Movies do not increment.
 
 ## Caching, offline, and migrations
 
 - Remote response cache: not implemented
 - Offline remote behavior: empty results, indistinguishable from errors
-- Local schema version/migration: not implemented
+- Local schema version/migration: no explicit version; tolerant additive
+  decoding provides compatibility for this change
 - Database: not implemented
 - Hive usage: not implemented, despite declared packages
 - Secure storage: not implemented

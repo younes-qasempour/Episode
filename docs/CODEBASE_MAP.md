@@ -5,7 +5,7 @@
 | Path | Purpose | Notes |
 | --- | --- | --- |
 | `lib/` | Application source | Organized by technical responsibility. |
-| `test/` | Unit and widget tests | Six files, 19 declared tests. |
+| `test/` | Unit and widget tests | Nine files, 45 declared tests; execution is currently toolchain-blocked. |
 | `android/` | Android runner/build configuration | Template identity/signing TODOs remain. |
 | `web/` | Web bootstrap | Only `index.html` is tracked. |
 | `docs/` | Agent and developer shared memory | Keep synchronized with implementation. |
@@ -38,6 +38,10 @@ No `ios/`, `macos/`, `windows/`, `linux/`, `integration_test/`, `assets/`,
 - `lib/services/api_service.dart` — all confirmed endpoints and mapping
 - `lib/theme/app_theme.dart` — implemented theme source of truth
 - `lib/widgets/media_card.dart` — reusable library item presentation
+- `lib/screens/manual_media_screen.dart` — manual anime, manga, series, and
+  movie creation
+- `lib/widgets/season_editor_dialog.dart` — shared season add/edit validation
+  used by manual creation and media details
 
 ## Task-to-location guide
 
@@ -48,6 +52,7 @@ No `ios/`, `macos/`, `windows/`, `linux/`, `integration_test/`, `assets/`,
 | Add a pushed screen | existing `_openDetailScreen` flow | screen constructor, callbacks, widget tests |
 | Change library behavior | `local_storage_repository.dart` | `MediaItem`, shell callbacks, Home/detail tests |
 | Change Home filtering/cards | `home_tab.dart` | `media_card.dart`, `AppTheme` |
+| Add/change manual media creation | `manual_media_screen.dart` | `MediaItem`, shell add callback, `season_editor_dialog.dart` |
 | Add/change an API call | `api_service.dart` | `search_repository.dart`, `MediaItem`, mapping tests |
 | Change Explore behavior | `search_tab.dart` | search repository/service, search widget tests |
 | Change media fields | `media_item.dart` | sample data, API mappers, persistence, all display widgets/tests |
