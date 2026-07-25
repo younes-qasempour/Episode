@@ -1,0 +1,15 @@
+# Feature Documentation
+
+Read the document matching the requested behavior before editing.
+
+| Feature | Document | Current status |
+| --- | --- | --- |
+| Local library and Home | [local-library.md](local-library.md) | Functional but incomplete |
+| Remote discovery/Explore | [media-search.md](media-search.md) | Functional but incomplete |
+| Media details and editing | [media-details.md](media-details.md) | Functional but incomplete |
+| Profile and theme | [profile-and-theme.md](profile-and-theme.md) | Theme functional; profile placeholder |
+
+Feature status is summarized repository-wide in
+[CURRENT_STATE.md](../CURRENT_STATE.md). Add a new feature document only when
+there is meaningful implementation to describe; do not create empty
+future-feature files.

@@ -4,6 +4,14 @@ Extracted from Stitch Project: **OtakuLog Media Tracker**
 
 ---
 
+> **Status:** This is the original design intent, not a complete description of
+> the implemented Flutter UI. For verified current tokens, reusable widgets,
+> states, responsive behavior, and known gaps, read
+> [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md). The `#FFBFF` value below is
+> invalid as written and needs confirmation before use.
+
+---
+
 ## 1. Vision & Brand Style
 The visual style follows a **Modern / Soft-Minimalist** aesthetic with high-energy accents and rounded geometry.
 - **Personality**: Approachable, vibrant, modern, energetic.
