@@ -3,6 +3,14 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-07-29 — Added Kitsu API fallback for Anime & Manga searches
+
+- **Agent/tool:** Antigravity
+- **Task:** Diagnosed and resolved Jikan API 504 Gateway Timeout errors on manga search queries by integrating Kitsu API fallback for Anime and Manga.
+- **Summary:** Added `kitsuBaseUrl` (`https://kitsu.io/api/edge`) and mapping methods (`mapKitsuMangaToMediaItem`, `mapKitsuAnimeToMediaItem`) in `ApiService`. If Jikan API times out or returns 504/404/empty error states, `_searchManga` and `_searchAnime` automatically fall back to Kitsu, ensuring reliable search results for queries like "Jujutsu Kaisen", "JoJo", "One Piece", and "Naruto".
+- **Files changed:** `lib/services/api_service.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors. `flutter test` 46/46 passed cleanly. `flutter build web --release` compiled `build/web`.
+
 ## 2026-07-29 — Fixed Manga search 429 rate limits, search race conditions & custom cover editing
 
 - **Agent/tool:** Antigravity

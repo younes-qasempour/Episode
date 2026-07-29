@@ -5,6 +5,7 @@ import '../models/media_item.dart';
 class ApiService {
   static const String jikanBaseUrl = 'https://api.jikan.moe/v4';
   static const String tvmazeBaseUrl = 'https://api.tvmaze.com';
+  static const String kitsuBaseUrl = 'https://kitsu.io/api/edge';
 
   final http.Client _client;
 
@@ -52,8 +53,8 @@ class ApiService {
 
     if (searchManga) {
       if (searchAnime) {
-        // Pacing delay between Jikan API calls to avoid 429 rate limits
-        await Future.delayed(const Duration(milliseconds: 300));
+        // Pacing delay between API calls
+        await Future.delayed(const Duration(milliseconds: 200));
       }
       final mangaResults = await _searchManga(cleanQuery);
       results.addAll(mangaResults);
@@ -65,7 +66,7 @@ class ApiService {
     return results;
   }
 
-  /// Search Anime via Jikan API
+  /// Search Anime via Jikan API with Kitsu fallback
   Future<List<MediaItem>> _searchAnime(String query) async {
     try {
       final Uri uri = query.isEmpty
@@ -78,15 +79,17 @@ class ApiService {
       if (response != null && response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final List items = data['data'] ?? [];
-        return items.map((item) => mapJikanAnimeToMediaItem(item)).toList();
+        if (items.isNotEmpty) {
+          return items.map((item) => mapJikanAnimeToMediaItem(item)).toList();
+        }
       }
     } catch (_) {
-      // Gracefully return empty on endpoint error
+      // Gracefully fall back on endpoint error
     }
-    return [];
+    return _searchKitsuAnime(query);
   }
 
-  /// Search Manga via Jikan API
+  /// Search Manga via Jikan API with Kitsu fallback
   Future<List<MediaItem>> _searchManga(String query) async {
     try {
       final Uri uri = query.isEmpty
@@ -99,11 +102,51 @@ class ApiService {
       if (response != null && response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final List items = data['data'] ?? [];
-        return items.map((item) => mapJikanMangaToMediaItem(item)).toList();
+        if (items.isNotEmpty) {
+          return items.map((item) => mapJikanMangaToMediaItem(item)).toList();
+        }
       }
     } catch (_) {
-      // Gracefully return empty on endpoint error
+      // Gracefully fall back on endpoint error
     }
+    return _searchKitsuManga(query);
+  }
+
+  /// Search Manga via Kitsu API
+  Future<List<MediaItem>> _searchKitsuManga(String query) async {
+    try {
+      final Uri uri = query.isEmpty
+          ? Uri.parse('$kitsuBaseUrl/manga?page[limit]=12&sort=-userCount')
+          : Uri.parse(
+              '$kitsuBaseUrl/manga?filter[text]=${Uri.encodeComponent(query)}&page[limit]=12',
+            );
+
+      final response = await _getWithRetry(uri);
+      if (response != null && response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final List items = data['data'] ?? [];
+        return items.map((item) => mapKitsuMangaToMediaItem(item)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Search Anime via Kitsu API
+  Future<List<MediaItem>> _searchKitsuAnime(String query) async {
+    try {
+      final Uri uri = query.isEmpty
+          ? Uri.parse('$kitsuBaseUrl/anime?page[limit]=12&sort=-userCount')
+          : Uri.parse(
+              '$kitsuBaseUrl/anime?filter[text]=${Uri.encodeComponent(query)}&page[limit]=12',
+            );
+
+      final response = await _getWithRetry(uri);
+      if (response != null && response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final List items = data['data'] ?? [];
+        return items.map((item) => mapKitsuAnimeToMediaItem(item)).toList();
+      }
+    } catch (_) {}
     return [];
   }
 
@@ -203,5 +246,57 @@ class ApiService {
     }
     final total = value.toInt();
     return total > 0 ? total : null;
+  }
+
+  static MediaItem mapKitsuMangaToMediaItem(Map<String, dynamic> item) {
+    final String id = item['id']?.toString() ?? '0';
+    final attr = item['attributes'] as Map<String, dynamic>? ?? {};
+    final String title = attr['canonicalTitle'] ??
+        attr['titles']?['en'] ??
+        attr['titles']?['en_jp'] ??
+        'Untitled Manga';
+    final poster = attr['posterImage'];
+    final String coverUrl =
+        poster?['large'] ?? poster?['original'] ?? poster?['medium'] ?? '';
+    final int? chapters = _validProviderTotal(attr['chapterCount']);
+    final String? synopsis = attr['synopsis'];
+
+    return MediaItem(
+      id: 'kitsu_manga_$id',
+      title: title,
+      coverUrl: coverUrl,
+      currentProgress: 0,
+      totalCount: chapters,
+      mediaType: 'manga',
+      status: 'Plan to Watch',
+      releaseStatus: releaseStatusFromStorage(attr['status']),
+      synopsis: synopsis,
+    );
+  }
+
+  static MediaItem mapKitsuAnimeToMediaItem(Map<String, dynamic> item) {
+    final String id = item['id']?.toString() ?? '0';
+    final attr = item['attributes'] as Map<String, dynamic>? ?? {};
+    final String title = attr['canonicalTitle'] ??
+        attr['titles']?['en'] ??
+        attr['titles']?['en_jp'] ??
+        'Untitled Anime';
+    final poster = attr['posterImage'];
+    final String coverUrl =
+        poster?['large'] ?? poster?['original'] ?? poster?['medium'] ?? '';
+    final int? episodes = _validProviderTotal(attr['episodeCount']);
+    final String? synopsis = attr['synopsis'];
+
+    return MediaItem(
+      id: 'kitsu_anime_$id',
+      title: title,
+      coverUrl: coverUrl,
+      currentProgress: 0,
+      totalCount: episodes,
+      mediaType: 'anime',
+      status: 'Plan to Watch',
+      releaseStatus: releaseStatusFromStorage(attr['status']),
+      synopsis: synopsis,
+    );
   }
 }
