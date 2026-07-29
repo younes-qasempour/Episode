@@ -14,13 +14,12 @@ void main() {
 
   group('LocalStorageRepository Tests', () {
     test(
-      'loadMediaItems initializes with default sample items when empty',
+      'loadMediaItems returns empty list when no items exist in storage',
       () async {
         final repository = LocalStorageRepository();
         final items = await repository.loadMediaItems();
 
-        expect(items.length, greaterThan(0));
-        expect(items.any((i) => i.title == 'Jujutsu Kaisen Season 2'), isTrue);
+        expect(items, isEmpty);
       },
     );
 

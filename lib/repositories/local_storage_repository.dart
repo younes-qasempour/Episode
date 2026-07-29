@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
-import '../data/mock_data.dart';
 
 class LocalStorageRepository {
   static const String _storageKey = 'otaku_log_media_items';
@@ -11,28 +10,22 @@ class LocalStorageRepository {
   }
 
   /// Load all media items from local storage.
-  /// If storage is empty, initialize with [sampleMediaItems].
+  /// Returns an empty list by default when no items are saved in storage.
   Future<List<MediaItem>> loadMediaItems() async {
     try {
       final prefs = await _getPrefs();
       final String? jsonString = prefs.getString(_storageKey);
       if (jsonString != null && jsonString.isNotEmpty) {
         final List dynamicList = jsonDecode(jsonString);
-        final items = dynamicList
+        return dynamicList
             .map((e) => MediaItem.fromMap(Map<String, dynamic>.from(e)))
             .toList();
-        if (items.isNotEmpty) {
-          return items;
-        }
       }
     } catch (_) {
       // Fallback on decode error
     }
 
-    // Initialize with default sample items
-    final defaultItems = List<MediaItem>.from(sampleMediaItems);
-    await saveAllMediaItems(defaultItems);
-    return defaultItems;
+    return [];
   }
 
   /// Save all media items back to local storage.

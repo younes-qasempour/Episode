@@ -3,6 +3,14 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-07-29 — Removed sample items for clean fresh install library
+
+- **Agent/tool:** Antigravity
+- **Task:** Updated local storage repository so brand new app installations start with a completely empty library instead of loading default sample items.
+- **Summary:** Updated `loadMediaItems` in `LocalStorageRepository` to return an empty list (`[]`) when no saved library items exist. Removed unused `mock_data.dart` import and updated test assertions.
+- **Files changed:** `lib/repositories/local_storage_repository.dart`, `test/local_storage_repository_test.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors. `flutter test` 46/46 passed cleanly. `flutter build web --release` compiled `build/web`.
+
 ## 2026-07-29 — Enhanced TVMaze season enrichment & human-friendly card labels
 
 - **Agent/tool:** Antigravity
