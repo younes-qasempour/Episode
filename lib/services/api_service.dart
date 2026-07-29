@@ -10,6 +10,23 @@ class ApiService {
 
   ApiService({http.Client? client}) : _client = client ?? http.Client();
 
+  Future<http.Response?> _getWithRetry(Uri uri) async {
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final response = await _client.get(uri);
+        if (response.statusCode == 429 && attempt == 0) {
+          await Future.delayed(const Duration(milliseconds: 500));
+          continue;
+        }
+        return response;
+      } catch (_) {
+        if (attempt == 1) rethrow;
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+    }
+    return null;
+  }
+
   /// Search across Anime, Manga, and TV Series based on query and type filter.
   /// [category] can be 'All', 'Anime', 'Manga', or 'Series'.
   Future<List<MediaItem>> searchMedia(
@@ -24,22 +41,26 @@ class ApiService {
     final bool searchManga = catLower == 'all' || catLower == 'manga';
     final bool searchSeries = catLower == 'all' || catLower == 'series';
 
-    final List<Future<List<MediaItem>>> tasks = [];
+    // Start TVMaze concurrently as it uses a separate provider domain
+    final Future<List<MediaItem>> seriesTask =
+        searchSeries ? _searchSeries(cleanQuery) : Future.value([]);
 
     if (searchAnime) {
-      tasks.add(_searchAnime(cleanQuery));
-    }
-    if (searchManga) {
-      tasks.add(_searchManga(cleanQuery));
-    }
-    if (searchSeries) {
-      tasks.add(_searchSeries(cleanQuery));
+      final animeResults = await _searchAnime(cleanQuery);
+      results.addAll(animeResults);
     }
 
-    final responses = await Future.wait(tasks);
-    for (var list in responses) {
-      results.addAll(list);
+    if (searchManga) {
+      if (searchAnime) {
+        // Pacing delay between Jikan API calls to avoid 429 rate limits
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+      final mangaResults = await _searchManga(cleanQuery);
+      results.addAll(mangaResults);
     }
+
+    final seriesResults = await seriesTask;
+    results.addAll(seriesResults);
 
     return results;
   }
@@ -53,8 +74,8 @@ class ApiService {
               '$jikanBaseUrl/anime?q=${Uri.encodeComponent(query)}&limit=12',
             );
 
-      final response = await _client.get(uri);
-      if (response.statusCode == 200) {
+      final response = await _getWithRetry(uri);
+      if (response != null && response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final List items = data['data'] ?? [];
         return items.map((item) => mapJikanAnimeToMediaItem(item)).toList();
@@ -74,8 +95,8 @@ class ApiService {
               '$jikanBaseUrl/manga?q=${Uri.encodeComponent(query)}&limit=12',
             );
 
-      final response = await _client.get(uri);
-      if (response.statusCode == 200) {
+      final response = await _getWithRetry(uri);
+      if (response != null && response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final List items = data['data'] ?? [];
         return items.map((item) => mapJikanMangaToMediaItem(item)).toList();
@@ -94,8 +115,8 @@ class ApiService {
         '$tvmazeBaseUrl/search/shows?q=${Uri.encodeComponent(searchQuery)}',
       );
 
-      final response = await _client.get(uri);
-      if (response.statusCode == 200) {
+      final response = await _getWithRetry(uri);
+      if (response != null && response.statusCode == 200) {
         final List items = jsonDecode(response.body);
         return items
             .map((item) => mapTvMazeToShowItem(item['show']))

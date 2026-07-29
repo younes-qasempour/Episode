@@ -31,6 +31,7 @@ class _SearchTabState extends State<SearchTab> {
   bool _isLoading = false;
   String? _errorMessage;
   Timer? _debounceTimer;
+  int _searchRequestId = 0;
 
   @override
   void initState() {
@@ -54,6 +55,8 @@ class _SearchTabState extends State<SearchTab> {
   }
 
   Future<void> _performSearch(String query) async {
+    final requestId = ++_searchRequestId;
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -64,17 +67,17 @@ class _SearchTabState extends State<SearchTab> {
         query,
         category: _selectedCategory,
       );
-      if (mounted) {
+      if (mounted && requestId == _searchRequestId) {
         setState(() {
           _searchResults = results;
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && requestId == _searchRequestId) {
         setState(() {
           _errorMessage =
-              'Failed to fetch search results. Check your connection.';
+              'Failed to fetch search results. Check your connection or rate limit.';
           _isLoading = false;
         });
       }

@@ -3,6 +3,14 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-07-29 — Fixed Manga search 429 rate limits, search race conditions & custom cover editing
+
+- **Agent/tool:** Antigravity
+- **Task:** Resolved Manga search failure when searching "All", added custom cover URL editing for users in detail & manual views, prevented search race conditions, and handled API rate limits defensively.
+- **Summary:** Added `_getWithRetry` and pacing delay between consecutive Jikan API calls in `ApiService` to prevent Jikan HTTP 429 rate limiting. Implemented `_searchRequestId` in `SearchTab` to discard stale out-of-order responses. Added custom cover URL editing via dialog and interactive header thumbnail in `MediaDetailScreen`. Updated test coverage.
+- **Files changed:** `lib/services/api_service.dart`, `lib/screens/search_tab.dart`, `lib/screens/media_detail_screen.dart`, `test/media_detail_screen_test.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors. `flutter test` 46/46 passed cleanly. `flutter build web --release` compiled `build/web`.
+
 ## 2026-07-29 — Fixed test suite & Material card assertion, verified web build
 
 - **Agent/tool:** Antigravity

@@ -32,6 +32,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   late final TextEditingController _progressController;
   late final TextEditingController _totalController;
   late final TextEditingController _synopsisController;
+  late final TextEditingController _coverUrlController;
 
   @override
   void initState() {
@@ -53,6 +54,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     _synopsisController = TextEditingController(
       text: widget.item.synopsis ?? '',
     );
+    _coverUrlController = TextEditingController(text: widget.item.coverUrl);
   }
 
   @override
@@ -60,6 +62,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     _progressController.dispose();
     _totalController.dispose();
     _synopsisController.dispose();
+    _coverUrlController.dispose();
     super.dispose();
   }
 
@@ -76,7 +79,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   MediaItem _workingItem() {
     final synopsis = _synopsisController.text.trim();
+    final coverUrl = _coverUrlController.text.trim();
     return widget.item.copyWith(
+      coverUrl: coverUrl,
       currentProgress: _flatCurrentProgress,
       totalCount: _flatTotalCount,
       clearTotalCount: !_knownTotal || _flatTotalCount == null,
@@ -352,26 +357,87 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     );
   }
 
+  void _showEditCoverDialog() {
+    final controller = TextEditingController(text: _coverUrlController.text);
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit Cover Image URL'),
+        content: TextField(
+          key: const Key('detail-cover-url-field'),
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Cover image URL',
+            hintText: 'https://example.com/cover.jpg',
+          ),
+          keyboardType: TextInputType.url,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            key: const Key('detail-save-cover-url-button'),
+            onPressed: () {
+              setState(() {
+                _coverUrlController.text = controller.text.trim();
+              });
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Apply'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader(ThemeData theme, bool isDark, MediaItem workingItem) {
     final progressText = widget.item.type == MediaType.movie
         ? workingItem.releaseStatus.label
         : '${workingItem.progressSummary} ${workingItem.unitLabel}';
+    final currentCoverUrl = _coverUrlController.text.trim();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
+        InkWell(
+          key: const Key('detail-edit-cover-button'),
+          onTap: _showEditCoverDialog,
           borderRadius: BorderRadius.circular(12),
-          child: SizedBox(
-            width: 110,
-            height: 160,
-            child: widget.item.coverUrl.trim().isEmpty
-                ? _coverFallback(theme, isDark)
-                : Image.network(
-                    widget.item.coverUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        _coverFallback(theme, isDark),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 110,
+                  height: 160,
+                  child: currentCoverUrl.isEmpty
+                      ? _coverFallback(theme, isDark)
+                      : Image.network(
+                          currentCoverUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _coverFallback(theme, isDark),
+                        ),
+                ),
+              ),
+              Positioned(
+                right: 4,
+                bottom: 4,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
                   ),
+                  child: const Icon(
+                    Icons.edit,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(width: 16),
