@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/media_item.dart';
-import '../theme/app_theme.dart';
 import '../widgets/season_editor_dialog.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -695,16 +694,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   }
 
   Widget _sectionCard(bool isDark, {required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2E44) : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
+    return Material(
+      color: isDark ? const Color(0xFF1E2E44) : const Color(0xFFF1F5F9),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
+          ),
         ),
+        child: child,
       ),
-      child: child,
     );
   }
 

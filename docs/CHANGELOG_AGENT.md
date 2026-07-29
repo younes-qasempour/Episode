@@ -3,6 +3,16 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-07-29 — Fixed test suite & Material card assertion, verified web build
+
+- **Agent/tool:** Antigravity
+- **Task:** Pulled remote updates, fixed test suite assertion in `_sectionCard` and obsolete smoke test in `widget_test.dart`, ran analysis & 45/45 tests, built release web app.
+- **Summary:** Updated `widget_test.dart` to test `OtakuLogApp` smoke test instead of obsolete `MyApp` template counter. Wrapped `_sectionCard` in a `Material` widget in `lib/screens/media_detail_screen.dart` to resolve Flutter Framework assertion regarding `ListTile` ink splashes on `DecoratedBox`.
+- **Files changed:** `lib/screens/media_detail_screen.dart`, `test/widget_test.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` ran with 0 errors. `flutter test` passed all 45 tests cleanly. `flutter build web --release` compiled successfully (`build/web`).
+
+
+
 ## 2026-07-25 — Manual media and flexible progress tracking
 
 - **Agent/tool:** Codex
