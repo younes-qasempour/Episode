@@ -250,5 +250,29 @@ void main() {
       expect(updated.seasons.first.currentProgress, 12);
       expect(updated.seasons.last.currentProgress, 4);
     });
+
+    test('toggleFavorite toggles favorite status and sets updatedAt', () async {
+      final repository = LocalStorageRepository();
+      const initialItem = MediaItem(
+        id: 'test_fav',
+        title: 'Favorite Test',
+        coverUrl: '',
+        currentProgress: 0,
+        totalCount: 12,
+        mediaType: 'anime',
+        status: 'Watching',
+        isFavorite: false,
+      );
+      await repository.saveMediaItem(initialItem);
+
+      final result1 = await repository.toggleFavorite('test_fav');
+      final favItem = result1.firstWhere((i) => i.id == 'test_fav');
+      expect(favItem.isFavorite, isTrue);
+      expect(favItem.updatedAt, isNotNull);
+
+      final result2 = await repository.toggleFavorite('test_fav');
+      final unfavItem = result2.firstWhere((i) => i.id == 'test_fav');
+      expect(unfavItem.isFavorite, isFalse);
+    });
   });
 }

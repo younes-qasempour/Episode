@@ -67,9 +67,8 @@ class ProfileTab extends StatelessWidget {
               color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(AppTheme.cardRadius),
               border: Border.all(
-                color: isDark
-                    ? const Color(0xFF263852)
-                    : const Color(0xFFE2E8F0),
+                color:
+                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
                 width: 1,
               ),
             ),
@@ -138,9 +137,8 @@ class ProfileTab extends StatelessWidget {
               color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(AppTheme.cardRadius),
               border: Border.all(
-                color: isDark
-                    ? const Color(0xFF263852)
-                    : const Color(0xFFE2E8F0),
+                color:
+                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
                 width: 1,
               ),
             ),
@@ -228,9 +226,8 @@ class ProfileTab extends StatelessWidget {
               color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(AppTheme.cardRadius),
               border: Border.all(
-                color: isDark
-                    ? const Color(0xFF263852)
-                    : const Color(0xFFE2E8F0),
+                color:
+                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
                 width: 1,
               ),
             ),

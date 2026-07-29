@@ -90,6 +90,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
+  Future<void> _toggleFavorite(String id) async {
+    final updatedList = await _storageRepository.toggleFavorite(id);
+    if (mounted) {
+      setState(() {
+        _items = updatedList;
+      });
+    }
+  }
+
   Future<void> _clearLibrary() async {
     final updatedList = await _storageRepository.clearAllMediaItems();
     if (mounted) {
@@ -138,6 +147,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onIncrementProgress: _incrementProgress,
         onItemTap: _openDetailScreen,
         onAddManually: _openManualMediaScreen,
+        onToggleFavorite: _toggleFavorite,
       ),
       SearchTab(
         existingItems: _items,

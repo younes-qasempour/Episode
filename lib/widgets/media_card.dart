@@ -6,12 +6,14 @@ class MediaCard extends StatelessWidget {
   final MediaItem item;
   final VoidCallback? onIncrementProgress;
   final VoidCallback? onTap;
+  final VoidCallback? onToggleFavorite;
 
   const MediaCard({
     super.key,
     required this.item,
     this.onIncrementProgress,
     this.onTap,
+    this.onToggleFavorite,
   });
 
   @override
@@ -23,8 +25,7 @@ class MediaCard extends StatelessWidget {
     final cardSeason = item.cardSeason;
     final incrementSeason = item.defaultIncrementSeason;
     final isSeasonBeyondTotal = cardSeason?.isBeyondKnownTotal ?? false;
-    final canIncrement =
-        onIncrementProgress != null &&
+    final canIncrement = onIncrementProgress != null &&
         item.supportsProgress &&
         (item.progressMode == ProgressMode.flat || incrementSeason != null);
     final String progressText;
@@ -187,91 +188,134 @@ class MediaCard extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                // Media Type Chip
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary
-                                        .withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        typeIcon,
-                                        size: 12,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        item.mediaType.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          color: theme.colorScheme.primary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-
-                                // Status Badge Pill
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.14),
-                                    borderRadius: BorderRadius.circular(
-                                      AppTheme.chipRadius,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    trackingStatusLabel,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: statusColor,
-                                    ),
-                                  ),
-                                ),
-
-                                if (item.rating > 0) ...[
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.amber.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
                                     child: Row(
-                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(
-                                          Icons.star_rounded,
-                                          size: 12,
-                                          color: Colors.amber,
-                                        ),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          item.rating.toStringAsFixed(1),
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.amber,
+                                        // Media Type Chip
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.primary
+                                                .withValues(alpha: 0.12),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                typeIcon,
+                                                size: 12,
+                                                color:
+                                                    theme.colorScheme.primary,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                item.mediaType.toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color:
+                                                      theme.colorScheme.primary,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
+                                        const SizedBox(width: 6),
+
+                                        // Status Badge Pill
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: statusColor.withValues(
+                                              alpha: 0.14,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              AppTheme.chipRadius,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            trackingStatusLabel,
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: statusColor,
+                                            ),
+                                          ),
+                                        ),
+
+                                        if (item.rating > 0) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 3,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.amber.withValues(
+                                                alpha: 0.15,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.star_rounded,
+                                                  size: 12,
+                                                  color: Colors.amber,
+                                                ),
+                                                const SizedBox(width: 2),
+                                                Text(
+                                                  item.rating
+                                                      .toStringAsFixed(1),
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Colors.amber,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
+                                  ),
+                                ),
+                                if (onToggleFavorite != null ||
+                                    item.isFavorite) ...[
+                                  IconButton(
+                                    icon: Icon(
+                                      item.isFavorite
+                                          ? Icons.favorite_rounded
+                                          : Icons.favorite_border_rounded,
+                                      color: item.isFavorite
+                                          ? Colors.redAccent
+                                          : theme.colorScheme.onSurfaceVariant
+                                              .withValues(alpha: 0.5),
+                                      size: 18,
+                                    ),
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 28,
+                                      minHeight: 28,
+                                    ),
+                                    onPressed: onToggleFavorite,
+                                    tooltip: item.isFavorite
+                                        ? 'Remove from favorites'
+                                        : 'Add to favorites',
                                   ),
                                 ],
                               ],
@@ -304,8 +348,7 @@ class MediaCard extends StatelessWidget {
                                     fontFamily: 'Be Vietnam Pro',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color:
-                                        item.isBeyondKnownTotal ||
+                                    color: item.isBeyondKnownTotal ||
                                             isSeasonBeyondTotal
                                         ? theme.colorScheme.error
                                         : theme.colorScheme.onSurfaceVariant,
@@ -314,8 +357,7 @@ class MediaCard extends StatelessWidget {
                                 if (canIncrement)
                                   _PlusOneButton(
                                     onPressed: onIncrementProgress!,
-                                    tooltip:
-                                        item.progressMode ==
+                                    tooltip: item.progressMode ==
                                             ProgressMode.seasonal
                                         ? 'Add 1 episode to ${incrementSeason!.displayName}'
                                         : 'Add 1 ${item.unitLabel == 'Ch' ? 'chapter' : 'episode'}',

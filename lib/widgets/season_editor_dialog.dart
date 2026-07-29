@@ -46,8 +46,7 @@ class _SeasonEditorDialogState extends State<_SeasonEditorDialog> {
   void initState() {
     super.initState();
     final season = widget.season;
-    final suggestedNumber =
-        season?.seasonNumber ??
+    final suggestedNumber = season?.seasonNumber ??
         widget.existingSeasons.fold<int>(
               0,
               (highest, item) =>
@@ -106,15 +105,13 @@ class _SeasonEditorDialogState extends State<_SeasonEditorDialog> {
     final title = _titleController.text.trim();
     Navigator.of(context).pop(
       MediaSeason(
-        id:
-            widget.season?.id ??
+        id: widget.season?.id ??
             MediaItem.createSeasonId(widget.mediaId, number),
         seasonNumber: number,
         title: title.isEmpty ? null : title,
         currentProgress: int.parse(_progressController.text.trim()),
-        totalCount: _knownTotal
-            ? int.parse(_totalController.text.trim())
-            : null,
+        totalCount:
+            _knownTotal ? int.parse(_totalController.text.trim()) : null,
         releaseStatus: _releaseStatus,
       ),
     );

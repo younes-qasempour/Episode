@@ -29,6 +29,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   late bool _knownTotal;
   late List<MediaSeason> _seasons;
   late double _rating;
+  late bool _isFavorite;
   late final TextEditingController _progressController;
   late final TextEditingController _totalController;
   late final TextEditingController _synopsisController;
@@ -47,6 +48,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     _knownTotal = _flatTotalCount != null;
     _seasons = List<MediaSeason>.from(widget.item.seasons);
     _rating = widget.item.rating;
+    _isFavorite = widget.item.isFavorite;
     _progressController = TextEditingController(text: '$_flatCurrentProgress');
     _totalController = TextEditingController(
       text: _flatTotalCount?.toString() ?? '',
@@ -92,6 +94,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       rating: _rating,
       synopsis: synopsis,
       clearSynopsis: synopsis.isEmpty,
+      isFavorite: _isFavorite,
     );
   }
 
@@ -249,6 +252,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       appBar: AppBar(
         title: Text(widget.item.title, overflow: TextOverflow.ellipsis),
         actions: [
+          IconButton(
+            icon: Icon(
+              _isFavorite
+                  ? Icons.favorite_rounded
+                  : Icons.favorite_border_rounded,
+              color: _isFavorite ? Colors.redAccent : null,
+            ),
+            onPressed: () {
+              setState(() {
+                _isFavorite = !_isFavorite;
+              });
+            },
+            tooltip: _isFavorite ? 'Remove Favorite' : 'Mark Favorite',
+          ),
           IconButton(
             icon: const Icon(
               Icons.delete_outline_rounded,

@@ -185,7 +185,8 @@ class ApiService {
 
     if (id > 0) {
       try {
-        final Uri seasonUri = Uri.parse('$tvmazeBaseUrl/shows/$id?embed=seasons');
+        final Uri seasonUri =
+            Uri.parse('$tvmazeBaseUrl/shows/$id?embed=seasons');
         final response = await _getWithRetry(seasonUri);
         if (response != null && response.statusCode == 200) {
           final Map<String, dynamic> data = jsonDecode(response.body);
@@ -197,7 +198,8 @@ class ApiService {
           for (var s in embeddedSeasons) {
             if (s is! Map<String, dynamic>) continue;
             final int number = s['number'] ?? (seasons.length + 1);
-            final int? epCount = _validProviderTotal(s['episodeOrder'] ?? s['episodes']);
+            final int? epCount =
+                _validProviderTotal(s['episodeOrder'] ?? s['episodes']);
             if (epCount != null) {
               episodeSum += epCount;
               hasValidEpisodes = true;
@@ -226,7 +228,8 @@ class ApiService {
       }
     }
 
-    return mapTvMazeToShowItem(show, seasons: seasons, totalEpisodes: totalEpisodes);
+    return mapTvMazeToShowItem(show,
+        seasons: seasons, totalEpisodes: totalEpisodes);
   }
 
   static MediaItem mapJikanAnimeToMediaItem(Map<String, dynamic> json) {

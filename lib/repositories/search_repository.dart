@@ -5,7 +5,7 @@ class SearchRepository {
   final ApiService _apiService;
 
   SearchRepository({ApiService? apiService})
-    : _apiService = apiService ?? ApiService();
+      : _apiService = apiService ?? ApiService();
 
   /// Perform media search across Anime, Manga, and TV Series based on query and category filter.
   /// Category can be 'All', 'Anime', 'Manga', or 'Series'.

@@ -3,6 +3,14 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-07-29 — Added Smart Library Filtering, Sorting & Search (Home Tab)
+
+- **Agent/tool:** Antigravity
+- **Task:** Added Smart Library Filtering (Media Type & Status/Favorites chips), 4-way Sorting (Recently Updated, Title A-Z, Rating, Completion %), Fast In-Library Search with clear action, and 1-tap Favorites toggle.
+- **Summary:** Extended `MediaItem` with `isFavorite` and `updatedAt` fields. Added `toggleFavorite` method to `LocalStorageRepository`. Rewrote `HomeTab` to feature fast title search, dual filter chip rows (Media Type & Status/Favorites), sort options selector dropdown, 1-tap card heart toggles, and an empty state reset button. Added `test/home_tab_test.dart` and updated `media_item_test.dart` and `local_storage_repository_test.dart`.
+- **Files changed:** `lib/models/media_item.dart`, `lib/repositories/local_storage_repository.dart`, `lib/screens/home_tab.dart`, `lib/widgets/media_card.dart`, `lib/screens/main_navigation_screen.dart`, `lib/screens/media_detail_screen.dart`, `test/media_item_test.dart`, `test/local_storage_repository_test.dart`, `test/home_tab_test.dart`, `docs/features/local-library.md`, `docs/CURRENT_STATE.md`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors/warnings. `flutter test` passed 56/56 tests cleanly. `flutter build web --release` compiled `build/web`.
+
 ## 2026-07-29 — Purged legacy sample items on load & added Clear Library Data button
 
 - **Agent/tool:** Antigravity

@@ -459,8 +459,8 @@ class _SearchTabState extends State<SearchTab> {
                       padding: EdgeInsets.zero,
                       backgroundColor: isAlreadyAdded
                           ? (isDark
-                                ? const Color(0xFF1E2E44)
-                                : const Color(0xFFE2E8F0))
+                              ? const Color(0xFF1E2E44)
+                              : const Color(0xFFE2E8F0))
                           : AppTheme.peachAccent,
                       foregroundColor: isAlreadyAdded
                           ? theme.colorScheme.onSurfaceVariant

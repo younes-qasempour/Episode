@@ -56,16 +56,19 @@ class LocalStorageRepository {
   /// Add a new media item or place it at the top of the library.
   Future<List<MediaItem>> saveMediaItem(MediaItem newItem) async {
     final currentItems = await loadMediaItems();
+    final itemToSave = newItem.updatedAt == null
+        ? newItem.copyWith(updatedAt: DateTime.now())
+        : newItem;
     final index = currentItems.indexWhere(
       (item) =>
-          item.id == newItem.id ||
-          item.title.toLowerCase() == newItem.title.toLowerCase(),
+          item.id == itemToSave.id ||
+          item.title.toLowerCase() == itemToSave.title.toLowerCase(),
     );
 
     if (index >= 0) {
-      currentItems[index] = newItem;
+      currentItems[index] = itemToSave;
     } else {
-      currentItems.insert(0, newItem);
+      currentItems.insert(0, itemToSave);
     }
 
     await saveAllMediaItems(currentItems);
@@ -78,7 +81,24 @@ class LocalStorageRepository {
     final index = currentItems.indexWhere((item) => item.id == updatedItem.id);
 
     if (index >= 0) {
-      currentItems[index] = updatedItem;
+      currentItems[index] = updatedItem.copyWith(updatedAt: DateTime.now());
+      await saveAllMediaItems(currentItems);
+    }
+
+    return currentItems;
+  }
+
+  /// Toggle favorite status for a media item by ID.
+  Future<List<MediaItem>> toggleFavorite(String id) async {
+    final currentItems = await loadMediaItems();
+    final index = currentItems.indexWhere((item) => item.id == id);
+
+    if (index >= 0) {
+      final item = currentItems[index];
+      currentItems[index] = item.copyWith(
+        isFavorite: !item.isFavorite,
+        updatedAt: DateTime.now(),
+      );
       await saveAllMediaItems(currentItems);
     }
 
@@ -120,7 +140,7 @@ class LocalStorageRepository {
       }
 
       if (!identical(updatedItem, item)) {
-        currentItems[index] = updatedItem;
+        currentItems[index] = updatedItem.copyWith(updatedAt: DateTime.now());
         await saveAllMediaItems(currentItems);
       }
     }

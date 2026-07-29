@@ -180,9 +180,9 @@ class MediaSeason {
     required int currentProgress,
     required int? totalCount,
     this.releaseStatus = ReleaseStatus.unknown,
-  }) : seasonNumber = seasonNumber < 1 ? 1 : seasonNumber,
-       currentProgress = currentProgress < 0 ? 0 : currentProgress,
-       totalCount = totalCount != null && totalCount >= 0 ? totalCount : null;
+  })  : seasonNumber = seasonNumber < 1 ? 1 : seasonNumber,
+        currentProgress = currentProgress < 0 ? 0 : currentProgress,
+        totalCount = totalCount != null && totalCount >= 0 ? totalCount : null;
 
   String get displayName {
     final customTitle = title?.trim();
@@ -265,6 +265,8 @@ class MediaItem {
   final bool isManual;
   final String? synopsis;
   final double rating;
+  final bool isFavorite;
+  final DateTime? updatedAt;
 
   const MediaItem({
     required this.id,
@@ -280,10 +282,11 @@ class MediaItem {
     this.isManual = false,
     this.synopsis,
     this.rating = 0.0,
-  }) : _flatCurrentProgress = currentProgress < 0 ? 0 : currentProgress,
-       _flatTotalCount = totalCount != null && totalCount >= 0
-           ? totalCount
-           : null;
+    this.isFavorite = false,
+    this.updatedAt,
+  })  : _flatCurrentProgress = currentProgress < 0 ? 0 : currentProgress,
+        _flatTotalCount =
+            totalCount != null && totalCount >= 0 ? totalCount : null;
 
   MediaType get type => mediaTypeFromStorage(mediaType);
 
@@ -367,8 +370,8 @@ class MediaItem {
   MediaSeason? get cardSeason => defaultIncrementSeason ?? latestSeason;
 
   static String createManualId({DateTime? timestamp}) {
-    final micros = (timestamp ?? DateTime.now()).microsecondsSinceEpoch
-        .toRadixString(36);
+    final micros =
+        (timestamp ?? DateTime.now()).microsecondsSinceEpoch.toRadixString(36);
     final sequence = (_manualIdSequence++).toRadixString(36);
     return 'manual_${micros}_$sequence';
   }
@@ -394,13 +397,13 @@ class MediaItem {
     String? synopsis,
     bool clearSynopsis = false,
     double? rating,
+    bool? isFavorite,
+    DateTime? updatedAt,
   }) {
     final nextMode = progressMode ?? this.progressMode;
-    final changingToFlat =
-        this.progressMode == ProgressMode.seasonal &&
+    final changingToFlat = this.progressMode == ProgressMode.seasonal &&
         nextMode == ProgressMode.flat;
-    final nextFlatProgress =
-        currentProgress ??
+    final nextFlatProgress = currentProgress ??
         (changingToFlat ? this.currentProgress : _flatCurrentProgress);
     final int? nextFlatTotal;
     if (clearTotalCount) {
@@ -427,6 +430,8 @@ class MediaItem {
       isManual: isManual ?? this.isManual,
       synopsis: clearSynopsis ? null : (synopsis ?? this.synopsis),
       rating: rating ?? this.rating,
+      isFavorite: isFavorite ?? this.isFavorite,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -537,6 +542,8 @@ class MediaItem {
       'isManual': isManual,
       'synopsis': synopsis,
       'rating': rating,
+      'isFavorite': isFavorite,
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
@@ -544,12 +551,12 @@ class MediaItem {
     final rawSeasons = map['seasons'];
     final seasons = rawSeasons is List
         ? rawSeasons
-              .whereType<Map>()
-              .map(
-                (season) =>
-                    MediaSeason.fromMap(Map<String, dynamic>.from(season)),
-              )
-              .toList()
+            .whereType<Map>()
+            .map(
+              (season) =>
+                  MediaSeason.fromMap(Map<String, dynamic>.from(season)),
+            )
+            .toList()
         : <MediaSeason>[];
     final mode = progressModeFromStorage(map['progressMode']);
     final currentProgress = _nonNegativeInt(
@@ -561,6 +568,10 @@ class MediaItem {
     final totalCount = hasFlatSnapshot
         ? _nonNegativeNullableInt(map['flatTotalCount'])
         : _positiveNullableInt(map['totalCount']);
+
+    final rawUpdatedAt = map['updatedAt']?.toString();
+    final updatedAt =
+        rawUpdatedAt != null ? DateTime.tryParse(rawUpdatedAt) : null;
 
     return MediaItem(
       id: map['id']?.toString() ?? '',
@@ -576,6 +587,8 @@ class MediaItem {
       isManual: map['isManual'] == true,
       synopsis: map['synopsis']?.toString(),
       rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
+      isFavorite: map['isFavorite'] == true,
+      updatedAt: updatedAt,
     );
   }
 
