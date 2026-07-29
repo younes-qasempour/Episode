@@ -3,6 +3,14 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-07-29 — Purged legacy sample items on load & added Clear Library Data button
+
+- **Agent/tool:** Antigravity
+- **Task:** Purged existing browser-stored sample items (IDs '1'-'8') automatically on app startup and added a 1-tap "Clear All Library Data" button in Profile/Settings.
+- **Summary:** Updated `loadMediaItems` in `LocalStorageRepository` to filter out legacy sample items and persist clean empty storage. Added `clearAllMediaItems` method, wired `_clearLibrary` in `MainNavigationScreen`, and added a "Clear All Library Data" tile with a confirmation dialog in `ProfileTab`.
+- **Files changed:** `lib/repositories/local_storage_repository.dart`, `lib/screens/profile_tab.dart`, `lib/screens/main_navigation_screen.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors. `flutter test` 46/46 passed cleanly. `flutter build web --release` compiled `build/web`.
+
 ## 2026-07-29 — Removed sample items for clean fresh install library
 
 - **Agent/tool:** Antigravity

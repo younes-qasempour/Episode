@@ -10,21 +10,39 @@ class LocalStorageRepository {
   }
 
   /// Load all media items from local storage.
-  /// Returns an empty list by default when no items are saved in storage.
+  /// Automatically purges legacy sample mock items (IDs '1'-'8') so libraries default to 0 items.
   Future<List<MediaItem>> loadMediaItems() async {
     try {
       final prefs = await _getPrefs();
       final String? jsonString = prefs.getString(_storageKey);
       if (jsonString != null && jsonString.isNotEmpty) {
         final List dynamicList = jsonDecode(jsonString);
-        return dynamicList
+        final items = dynamicList
             .map((e) => MediaItem.fromMap(Map<String, dynamic>.from(e)))
+            .where((item) => !_isSampleItem(item))
             .toList();
+
+        if (items.length != dynamicList.length) {
+          await saveAllMediaItems(items);
+        }
+        return items;
       }
     } catch (_) {
       // Fallback on decode error
     }
 
+    return [];
+  }
+
+  static bool _isSampleItem(MediaItem item) {
+    const sampleIds = {'1', '2', '3', '4', '5', '6', '7', '8'};
+    return sampleIds.contains(item.id);
+  }
+
+  /// Clear all media items from local storage.
+  Future<List<MediaItem>> clearAllMediaItems() async {
+    final prefs = await _getPrefs();
+    await prefs.remove(_storageKey);
     return [];
   }
 

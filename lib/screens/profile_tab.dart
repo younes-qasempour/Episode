@@ -4,12 +4,43 @@ import '../theme/app_theme.dart';
 class ProfileTab extends StatelessWidget {
   final ThemeMode currentThemeMode;
   final ValueChanged<ThemeMode> onThemeModeChanged;
+  final VoidCallback? onClearLibrary;
 
   const ProfileTab({
     super.key,
     required this.currentThemeMode,
     required this.onThemeModeChanged,
+    this.onClearLibrary,
   });
+
+  void _showClearConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear All Library Data?'),
+        content: const Text(
+          'This will remove all saved anime, manga, and TV series from your local library. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              onClearLibrary?.call();
+            },
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -221,6 +252,16 @@ class ProfileTab extends StatelessWidget {
                 const Divider(height: 1, indent: 56),
                 _buildSettingTile(
                   context,
+                  icon: Icons.delete_sweep_rounded,
+                  title: 'Clear All Library Data',
+                  subtitle: 'Remove all saved media items',
+                  iconColor: Colors.redAccent,
+                  textColor: Colors.redAccent,
+                  onTap: () => _showClearConfirmation(context),
+                ),
+                const Divider(height: 1, indent: 56),
+                _buildSettingTile(
+                  context,
                   icon: Icons.info_outline_rounded,
                   title: 'About OtakuLog',
                   subtitle: 'v1.0.0 (Build 2026)',
@@ -287,17 +328,20 @@ class ProfileTab extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
+    Color? iconColor,
+    Color? textColor,
+    VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
     return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary),
+      leading: Icon(icon, color: iconColor ?? theme.colorScheme.primary),
       title: Text(
         title,
         style: TextStyle(
           fontFamily: 'Plus Jakarta Sans',
           fontSize: 14,
           fontWeight: FontWeight.w700,
-          color: theme.colorScheme.onSurface,
+          color: textColor ?? theme.colorScheme.onSurface,
         ),
       ),
       subtitle: Text(
@@ -309,7 +353,7 @@ class ProfileTab extends StatelessWidget {
         ),
       ),
       trailing: const Icon(Icons.chevron_right_rounded),
-      onTap: () {},
+      onTap: onTap ?? () {},
     );
   }
 }

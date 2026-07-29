@@ -90,6 +90,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
+  Future<void> _clearLibrary() async {
+    final updatedList = await _storageRepository.clearAllMediaItems();
+    if (mounted) {
+      setState(() {
+        _items = updatedList;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Library cleared successfully!'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   void _openDetailScreen(MediaItem item) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -131,6 +147,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ProfileTab(
         currentThemeMode: widget.currentThemeMode,
         onThemeModeChanged: widget.onThemeModeChanged,
+        onClearLibrary: _clearLibrary,
       ),
     ];
 
