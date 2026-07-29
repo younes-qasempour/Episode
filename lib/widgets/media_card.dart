@@ -27,13 +27,49 @@ class MediaCard extends StatelessWidget {
         onIncrementProgress != null &&
         item.supportsProgress &&
         (item.progressMode == ProgressMode.flat || incrementSeason != null);
-    final progressText = item.type == MediaType.movie
-        ? '${item.releaseStatus.label} release'
-        : item.progressMode == ProgressMode.seasonal
-        ? cardSeason == null
-              ? 'No seasons added'
-              : '${cardSeason.displayName} · ${cardSeason.progressSummary} Ep'
-        : '${item.progressSummary} ${item.unitLabel}';
+    final String progressText;
+    if (item.type == MediaType.movie) {
+      progressText = '${item.releaseStatus.label} release';
+    } else if (item.currentProgress > 0) {
+      if (item.progressMode == ProgressMode.seasonal) {
+        progressText = cardSeason == null
+            ? 'No seasons added'
+            : '${cardSeason.displayName} · ${cardSeason.progressSummary} Ep';
+      } else {
+        progressText = '${item.progressSummary} ${item.unitLabel}';
+      }
+    } else {
+      if (item.progressMode == ProgressMode.seasonal &&
+          item.seasons.isNotEmpty) {
+        final totalEps = item.hasKnownTotal ? ' · ${item.totalCount} Ep' : '';
+        progressText = '${item.seasons.length} Seasons$totalEps';
+      } else if (item.hasKnownTotal) {
+        progressText =
+            '${item.totalCount} ${item.unitLabel == 'Ch' ? 'chapters' : 'episodes'}';
+      } else {
+        switch (item.releaseStatus) {
+          case ReleaseStatus.ongoing:
+            progressText =
+                'Ongoing · ${item.unitLabel == 'Ch' ? 'Publishing' : 'Airing'}';
+            break;
+          case ReleaseStatus.upcoming:
+            progressText = 'Upcoming';
+            break;
+          case ReleaseStatus.finished:
+            progressText = 'Finished';
+            break;
+          case ReleaseStatus.hiatus:
+            progressText = 'On Hiatus';
+            break;
+          case ReleaseStatus.cancelled:
+            progressText = 'Cancelled';
+            break;
+          default:
+            progressText = 'Ongoing';
+            break;
+        }
+      }
+    }
 
     IconData typeIcon;
     switch (item.mediaType.toLowerCase()) {

@@ -3,6 +3,14 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-07-29 — Enhanced TVMaze season enrichment & human-friendly card labels
+
+- **Agent/tool:** Antigravity
+- **Task:** Enriched TV series search results with embedded season breakdowns and total episode counts; eliminated cold "Ch count: Unknown" card labels in favor of contextual status/count badges.
+- **Summary:** Updated `_searchSeries` and `_enrichTvMazeShow` in `ApiService` to fetch TVMaze embedded seasons (`/shows/$id?embed=seasons`), populating `seasons` and `totalCount` by default. Enhanced `MediaCard` `progressText` logic to show clean status badges (e.g. `Ongoing · Publishing`, `Ongoing · Airing`, `5 Seasons · 62 Ep`, `272 chapters`) for unstarted or search items.
+- **Files changed:** `lib/services/api_service.dart`, `lib/widgets/media_card.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors. `flutter test` 46/46 passed cleanly. `flutter build web --release` compiled `build/web`.
+
 ## 2026-07-29 — Added Kitsu API fallback for Anime & Manga searches
 
 - **Agent/tool:** Antigravity
