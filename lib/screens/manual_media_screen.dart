@@ -130,9 +130,8 @@ class _ManualMediaScreenState extends State<ManualMediaScreen> {
       id: _draftId,
       title: _titleController.text.trim(),
       coverUrl: _coverController.text.trim(),
-      currentProgress: isMovie || isSeasonal
-          ? 0
-          : int.parse(_progressController.text),
+      currentProgress:
+          isMovie || isSeasonal ? 0 : int.parse(_progressController.text),
       totalCount: isMovie || isSeasonal || !_knownTotal
           ? null
           : int.parse(_totalController.text),

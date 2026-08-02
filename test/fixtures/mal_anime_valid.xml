@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<myanimelist>
+  <myinfo>
+    <user_id>0</user_id>
+    <user_name>fixture-user</user_name>
+    <user_export_type>1</user_export_type>
+    <user_total_anime>2</user_total_anime>
+  </myinfo>
+  <anime>
+    <series_animedb_id>5114</series_animedb_id>
+    <series_title><![CDATA[Fullmetal Alchemist: Brotherhood]]></series_title>
+    <series_type>TV</series_type>
+    <series_episodes>64</series_episodes>
+    <series_status>2</series_status>
+    <my_watched_episodes>64</my_watched_episodes>
+    <my_start_date>2024-01-02</my_start_date>
+    <my_finish_date>2024-02-03</my_finish_date>
+    <my_score>10</my_score>
+    <my_status>Completed</my_status>
+    <my_comments><![CDATA[Great, emotional finale.
+Second line.]]></my_comments>
+    <my_times_watched>1</my_times_watched>
+    <my_tags>classic, favorite</my_tags>
+    <my_rewatching>0</my_rewatching>
+    <my_last_updated>1707000000</my_last_updated>
+    <update_on_import>1</update_on_import>
+  </anime>
+  <anime>
+    <series_animedb_id>9253</series_animedb_id>
+    <series_title><![CDATA[Steins;Gate — シュタインズ・ゲート]]></series_title>
+    <series_type>TV</series_type>
+    <series_episodes>24</series_episodes>
+    <series_status>2</series_status>
+    <my_watched_episodes>8</my_watched_episodes>
+    <my_start_date>0000-00-00</my_start_date>
+    <my_finish_date>0000-00-00</my_finish_date>
+    <my_score>8</my_score>
+    <my_status>Watching</my_status>
+    <my_comments><![CDATA[یادداشت فارسی]]></my_comments>
+    <my_times_watched>0</my_times_watched>
+    <my_tags>science fiction</my_tags>
+    <my_rewatching>0</my_rewatching>
+    <my_last_updated>0</my_last_updated>
+    <update_on_import>1</update_on_import>
+  </anime>
+</myanimelist>

@@ -1,7 +1,7 @@
 # Local Library and Home
 
 - **Status:** Functional but incomplete
-- **Last verified:** 2026-07-25
+- **Last verified:** 2026-08-01
 
 ## Purpose
 
@@ -12,7 +12,8 @@ and increment trackable progress without a hard cap.
 ## User flow
 
 1. App shell loads media through `LocalStorageRepository`.
-2. Missing/invalid/empty storage is seeded with eight sample items.
+2. A missing first-run key is seeded with eight sample items; valid empty
+   storage stays empty and corrupt storage displays recovery guidance.
 3. Home shows tracked, active, and completed counts.
 4. User filters by title or All/Anime/Manga/Series/Movie.
 5. User taps `+1`, opens an item for detailed editing, or uses the manual-add
@@ -61,6 +62,7 @@ Confirmed rules:
 - Store: one JSON string in SharedPreferences
 - Key: `otaku_log_media_items`
 - Seed: `sampleMediaItems`
+- Recovery: validated whole-library snapshot/write/round-trip/rollback
 - Remote API: none in this feature
 
 Legacy records decode as flat progress, unknown release status, empty seasons,
@@ -74,24 +76,28 @@ repository.
 - Home distinguishes an empty library from an empty filter result.
 - Empty library includes an `Add manually` action.
 - Network images have loading/error fallbacks in `MediaCard`.
-- Storage errors are not shown; decode errors still reset to sample data.
+- Corrupt storage is shown by the shell without changing the stored raw value.
+- Whole-library transfer failures restore the prior JSON snapshot.
 
 ## Tests
 
 `local_storage_repository_test.dart` covers seed, manual/reload, legacy decode,
 uncapped progress, seasonal persistence/targeting, update, and delete.
 `media_item_test.dart`, `media_card_test.dart`, and
-`manual_media_screen_test.dart` cover the new model and visible states. The
-full suite has not run successfully due to the package/toolchain blocker.
+`manual_media_screen_test.dart` cover the model and visible states. Transfer
+repository tests cover valid empty storage, corrupt raw data preservation,
+verified replacement rollback, and safety-backup retention. The full 79-test
+suite passes.
 
 ## Known limitations
 
 - Seed data may look like real user data.
-- Storage corruption can overwrite data with samples.
-- There is no explicit schema version, export, sync, or encrypted storage;
-  this additive change relies on tolerant decoding.
+- The active JSON array has no explicit envelope schema; additive fields rely
+  on tolerant decoding. Portable backups are separately versioned.
+- Active storage and automatic safety backups are unencrypted.
 - Home search is local title matching only.
-- Root load/mutations have no error state.
+- Root load has a corruption/retry state; ordinary single-item mutation errors
+  are still not surfaced consistently.
 - A seasonal card without an ongoing season requires detail-screen editing.
 
 ## Extension instructions

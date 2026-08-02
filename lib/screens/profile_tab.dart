@@ -4,11 +4,13 @@ import '../theme/app_theme.dart';
 class ProfileTab extends StatelessWidget {
   final ThemeMode currentThemeMode;
   final ValueChanged<ThemeMode> onThemeModeChanged;
+  final VoidCallback? onOpenDataManagement;
 
   const ProfileTab({
     super.key,
     required this.currentThemeMode,
     required this.onThemeModeChanged,
+    this.onOpenDataManagement,
   });
 
   @override
@@ -22,7 +24,8 @@ class ProfileTab extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
+            tooltip: 'Data, Backup & Transfer',
+            onPressed: onOpenDataManagement,
           ),
         ],
       ),
@@ -36,18 +39,30 @@ class ProfileTab extends StatelessWidget {
               color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(AppTheme.cardRadius),
               border: Border.all(
-                color: isDark
-                    ? const Color(0xFF263852)
-                    : const Color(0xFFE2E8F0),
+                color:
+                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
                 width: 1,
               ),
             ),
             child: Row(
               children: [
-                const CircleAvatar(
-                  radius: 34,
-                  backgroundImage: NetworkImage(
+                ClipOval(
+                  child: Image.network(
                     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                    width: 68,
+                    height: 68,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => ColoredBox(
+                      color: theme.colorScheme.primaryContainer,
+                      child: SizedBox.square(
+                        dimension: 68,
+                        child: Icon(
+                          Icons.person_rounded,
+                          color: theme.colorScheme.onPrimaryContainer,
+                          size: 34,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -81,7 +96,8 @@ class ProfileTab extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.12),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -102,17 +118,16 @@ class ProfileTab extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Theme Switcher Tile
-          Container(
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
+          Material(
+            color: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-              border: Border.all(
-                color: isDark
-                    ? const Color(0xFF263852)
-                    : const Color(0xFFE2E8F0),
-                width: 1,
+              side: BorderSide(
+                color:
+                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
               ),
             ),
+            clipBehavior: Clip.antiAlias,
             child: SwitchListTile(
               secondary: Icon(
                 isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
@@ -192,17 +207,16 @@ class ProfileTab extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          Container(
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
+          Material(
+            color: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-              border: Border.all(
-                color: isDark
-                    ? const Color(0xFF263852)
-                    : const Color(0xFFE2E8F0),
-                width: 1,
+              side: BorderSide(
+                color:
+                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
               ),
             ),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
                 _buildSettingTile(
@@ -215,8 +229,9 @@ class ProfileTab extends StatelessWidget {
                 _buildSettingTile(
                   context,
                   icon: Icons.cloud_sync_outlined,
-                  title: 'Data Backup & Sync',
-                  subtitle: 'Export collection to cloud',
+                  title: 'Data, Backup & Transfer',
+                  subtitle: 'Import, restore, and save local files',
+                  onTap: onOpenDataManagement,
                 ),
                 const Divider(height: 1, indent: 56),
                 _buildSettingTile(
@@ -287,6 +302,7 @@ class ProfileTab extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
+    VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
     return ListTile(
@@ -309,7 +325,7 @@ class ProfileTab extends StatelessWidget {
         ),
       ),
       trailing: const Icon(Icons.chevron_right_rounded),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }

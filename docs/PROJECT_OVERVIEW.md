@@ -5,7 +5,9 @@
 OtakuLog is a Flutter media-tracking prototype for a person who follows anime,
 manga, TV series, and movies. The current application lets a user maintain an
 on-device library, discover supported media from public APIs, manually create
-missing media, and edit flat or seasonal progress and metadata.
+missing media, and edit flat or seasonal progress and metadata. It can also
+import, export, back up, and restore the local library using local files
+without requiring an account.
 
 The target user is **inferred from current implementation**: an individual
 media fan managing one local collection. Accounts, multi-user behavior, social
@@ -28,6 +30,9 @@ features, and cloud synchronization are not implemented.
    can also delete the item.
 7. **Change appearance:** the Profile tab toggles between light and dark
    themes for the current process.
+8. **Move or protect data:** Profile opens a preview-first data screen for
+   native JSON backup/restore, MAL XML transfer, CSV export, automatic safety
+   snapshots, and transfer history.
 
 ## Current capabilities
 
@@ -40,6 +45,10 @@ features, and cloud synchronization are not implemented.
 - Unknown and exceeded totals
 - Flat and multi-season progress
 - Separate tracking/release status, rating, synopsis editing, and deletion
+- Versioned native JSON backup and restore with checksum validation
+- MAL anime/manga XML and XML.GZ import, MAL XML export, and UTF-8 CSV export
+- Deterministic matching, merge/add/replace/restore strategies, rollback, and
+  retained safety backups/history
 - Loading, empty, image-fallback, and selected feedback states
 - Unit and widget test files around API mapping, repositories, search, and
   details
@@ -52,10 +61,12 @@ The code is organized by technical responsibility rather than feature:
 
 ## Platform targets
 
-- **Android:** native project exists. Release application identity, signing,
-  and network permission require attention.
-- **Web:** `web/index.html` exists. A web build was attempted but blocked before
-  compilation by unresolved dependencies.
+- **Android:** native project and Storage Access Framework file adapter exist.
+  Release application identity, signing, and network permission require
+  attention. The debug build remains blocked by unavailable Android Gradle
+  Plugin 9.0.1 resolution in the current environment.
+- **Web:** browser pick/download adapter exists and `flutter build web --no-pub`
+  succeeds.
 - **iOS, macOS, Windows, Linux:** not present. Support is **Unknown** and must
   not be claimed.
 
@@ -69,17 +80,22 @@ The code is organized by technical responsibility rather than feature:
 - `flutter_lints` — analyzer rules, currently unavailable in the local package
   resolution environment
 
+The transfer subsystem additionally uses `xml` for MAL parsing/generation,
+`archive` for gzip input, `crypto` for SHA-256 integrity metadata, and `web`
+for browser file selection/download.
+
 ## Visible scope boundaries
 
 The repository does not implement authentication, user accounts, cloud sync,
-notifications, backup/export, pagination, offline API caching, localization,
-or analytics. Profile statistics and identity are fixed presentation data.
+notifications, pagination, offline API caching, localization, or analytics.
+Profile statistics and identity are fixed presentation data. MyAnimeList
+account/OAuth import is not enabled; transfer is local-file based.
 
 ## Unknown requirements
 
 - Whether TV series are a permanent product category or a prototype extension
 - Whether sample data should remain in a real user's library after first run
-- Account, synchronization, notification, and backup requirements
+- Account, synchronization, notification, and cloud-backup requirements
 - Production API rate-limit, attribution, privacy, and caching requirements
 - Supported device/OS matrix and accessibility targets
 - Whether theme preference should persist

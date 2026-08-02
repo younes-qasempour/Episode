@@ -6,6 +6,10 @@
 - `ApiService` owns HTTP URLs, response decoding, and provider-to-model mapping.
 - `SearchRepository` is the UI-facing remote-search boundary.
 - `LocalStorageRepository` owns the saved library and its mutation rules.
+- `MediaTransferRepository` owns import/export orchestration and history.
+- Format providers own parsing/serialization; `ImportPlanner` owns matching,
+  strategies, conflicts, and merge rules.
+- `FileTransferService` owns the platform file boundary.
 - Screens own transient presentation state and invoke repositories.
 
 Do not call `http.Client` or `SharedPreferences` directly from a screen.
@@ -86,9 +90,11 @@ requests. A slower old request can overwrite newer results.
 `otaku_log_media_items`. The value is a JSON array of `MediaItem.toMap()`
 objects.
 
-On missing, empty, invalid, or decoded-empty storage, the repository copies
-eight `sampleMediaItems`, saves them, and returns them. CRUD methods load the
-whole list, mutate it, and save the whole list.
+On a missing storage key, the repository copies eight `sampleMediaItems`, saves
+them, and returns them. A valid empty JSON list remains empty. Invalid JSON,
+wrong root shapes, invalid required fields, and duplicate IDs throw
+`StorageCorruptionException` without changing the stored raw value. CRUD
+methods load the whole list, mutate it, and save the whole list.
 
 Existing records without new fields decode as flat progress, unknown release
 status, no seasons, and non-manual origin. Existing positive totals and
@@ -96,9 +102,11 @@ progress are preserved. A legacy zero total is treated as unknown because the
 old model used zero as an absence fallback.
 
 New records serialize nullable totals, release status, progress mode, seasons,
-and manual origin. Seasonal records keep their season list as the authoritative
-progress source. Aggregate current/total values remain in the legacy keys for
-older readers, while inactive flat snapshots support reversible mode changes.
+manual origin, external provider IDs, notes, tags, dates, repeat/favorite
+state, and custom metadata. Seasonal records keep their season list as the
+authoritative progress source. Aggregate current/total values remain in the
+legacy keys for older readers, while inactive flat snapshots support
+reversible mode changes.
 
 Duplicate add behavior matches either:
 
@@ -109,12 +117,39 @@ Flat progress increments by one regardless of a known total and never changes
 tracking status. Seasonal increments change only an explicit season or the
 highest-numbered ongoing season. Movies do not increment.
 
+Whole-library transfer writes use `replaceAllMediaItemsAtomically`: validate
+the candidate list, snapshot the previous single-key JSON value, write the
+candidate, decode/compare the round trip, and restore the snapshot on any
+failure. The newest five automatic native backups and 25 transfer summaries
+are stored in separate versioned SharedPreferences keys.
+
+## Transfer formats
+
+Native OtakuLog backups are UTF-8 JSON schema v1 with application/platform/time
+metadata and a SHA-256 checksum over the data object. A migration maps legacy
+schema-0 media lists into v1. See [BACKUP_SCHEMA.md](BACKUP_SCHEMA.md).
+
+MAL imports accept anime or manga XML and gzip-compressed XML. They map provider
+IDs, title, progress/count, status, score, comments, tags, dates, repeat state,
+release state, and manga volume metadata into `ImportedMediaEntry`. Unsafe
+DOCTYPE/entity declarations, malformed/mixed documents, oversized files,
+duplicate provider IDs, invalid entries, and invalid scores/progress are
+rejected or reported before mutation. Native JSON and XML at or above 128 KB
+use Flutter `compute` after size checks; this is a background isolate on
+isolate-capable platforms and the main event loop on web.
+
+MAL export writes separate anime/manga XML and omits entries without a usable
+MAL/Jikan ID while reporting them. CSV export is UTF-8 with a BOM, fixed column
+order, RFC-style quoting, and full current metadata. Platform adapters use
+Android Storage Access Framework or browser selection/download APIs.
+
 ## Caching, offline, and migrations
 
 - Remote response cache: not implemented
 - Offline remote behavior: empty results, indistinguishable from errors
-- Local schema version/migration: no explicit version; tolerant additive
-  decoding provides compatibility for this change
+- Active library schema/migration: no explicit envelope version; tolerant
+  additive decoding preserves older records
+- Portable backup schema/migration: explicit schema v1 plus v0-to-v1 migration
 - Database: not implemented
 - Hive usage: not implemented, despite declared packages
 - Secure storage: not implemented
@@ -128,6 +163,8 @@ before implementation.
 ## Secrets and privacy
 
 No tokens or secrets are present or required by the confirmed APIs. Do not add
-credentials to source control. The local library is plain application
-preference data; whether future profile/user data requires stronger storage is
-**Needs confirmation**.
+credentials to source control. The library and automatic backups are plain
+application preference data, and exported JSON/XML/CSV may contain personal
+notes. Whether future account/profile data requires stronger storage is
+**Needs confirmation**. MyAnimeList OAuth is intentionally absent until a
+registered client, redirect URI, and secure token storage are available.

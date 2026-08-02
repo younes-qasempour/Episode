@@ -16,7 +16,7 @@ void main() {
     test(
       'loadMediaItems initializes with default sample items when empty',
       () async {
-        final repository = LocalStorageRepository();
+        const repository = LocalStorageRepository();
         final items = await repository.loadMediaItems();
 
         expect(items.length, greaterThan(0));
@@ -25,7 +25,7 @@ void main() {
     );
 
     test('saveMediaItem adds new item at the beginning', () async {
-      final repository = LocalStorageRepository();
+      const repository = LocalStorageRepository();
       await repository.loadMediaItems();
 
       const newItem = MediaItem(
@@ -47,7 +47,7 @@ void main() {
     test(
       'incrementProgress is not capped and keeps tracking status explicit',
       () async {
-        final repository = LocalStorageRepository();
+        const repository = LocalStorageRepository();
         const initialItem = MediaItem(
           id: 'test_inc',
           title: 'Short Anime',
@@ -75,7 +75,7 @@ void main() {
     );
 
     test('updateMediaItem modifies fields in local storage', () async {
-      final repository = LocalStorageRepository();
+      const repository = LocalStorageRepository();
       const initialItem = MediaItem(
         id: 'test_upd',
         title: 'Original Title',
@@ -99,7 +99,7 @@ void main() {
     });
 
     test('deleteMediaItem removes item from storage', () async {
-      final repository = LocalStorageRepository();
+      const repository = LocalStorageRepository();
       const initialItem = MediaItem(
         id: 'test_del',
         title: 'To Delete',
@@ -117,7 +117,7 @@ void main() {
     });
 
     test('unknown-total manual media increments and survives reload', () async {
-      final repository = LocalStorageRepository();
+      const repository = LocalStorageRepository();
       final manualItem = MediaItem(
         id: MediaItem.createManualId(),
         title: 'Manual Ongoing Anime',
@@ -155,7 +155,7 @@ void main() {
           },
         ]),
       });
-      final repository = LocalStorageRepository();
+      const repository = LocalStorageRepository();
 
       final items = await repository.loadMediaItems();
 
@@ -169,7 +169,7 @@ void main() {
     test(
       'updated and deleted season data persists without corrupting item',
       () async {
-        final repository = LocalStorageRepository();
+        const repository = LocalStorageRepository();
         const initial = MediaItem(
           id: 'season-persist',
           title: 'Season Persistence',
@@ -216,7 +216,7 @@ void main() {
     );
 
     test('seasonal increment only changes the selected season', () async {
-      final repository = LocalStorageRepository();
+      const repository = LocalStorageRepository();
       const initial = MediaItem(
         id: 'season-increment',
         title: 'Season Increment',

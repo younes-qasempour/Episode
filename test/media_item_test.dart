@@ -103,6 +103,37 @@ void main() {
       expect(decoded.flatCurrentProgress, 99);
       expect(decoded.seasons.last.displayName, 'The Return');
     });
+
+    test('provider IDs and personal metadata round-trip additively', () {
+      final original = MediaItem(
+        id: 'metadata-1',
+        title: 'Metadata',
+        coverUrl: '',
+        currentProgress: 4,
+        totalCount: 12,
+        mediaType: 'anime',
+        status: 'Watching',
+        externalIds: const {'mal': '1', 'anilist': '2'},
+        notes: 'Personal note',
+        tags: const ['favorite', '日本語'],
+        startedAt: DateTime.utc(2026, 1, 2),
+        updatedAt: DateTime.utc(2026, 2, 3, 4, 5),
+        repeatCount: 3,
+        isFavorite: true,
+        customMetadata: const {'providerField': 42},
+      );
+
+      final decoded = MediaItem.fromJson(original.toJson());
+
+      expect(decoded.externalIds, original.externalIds);
+      expect(decoded.notes, original.notes);
+      expect(decoded.tags, original.tags);
+      expect(decoded.startedAt, original.startedAt);
+      expect(decoded.updatedAt, original.updatedAt);
+      expect(decoded.repeatCount, 3);
+      expect(decoded.isFavorite, isTrue);
+      expect(decoded.customMetadata['providerField'], 42);
+    });
   });
 
   group('MediaItem progress rules', () {

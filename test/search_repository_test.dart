@@ -44,7 +44,7 @@ class MockApiService extends ApiService {
 
 void main() {
   group('SearchRepository Tests', () {
-    final animeItem = const MediaItem(
+    const animeItem = MediaItem(
       id: 'jikan_anime_1',
       title: 'Anime Test',
       coverUrl: 'https://example.com/anime.jpg',
@@ -54,7 +54,7 @@ void main() {
       status: 'Plan to Watch',
     );
 
-    final mangaItem = const MediaItem(
+    const mangaItem = MediaItem(
       id: 'jikan_manga_2',
       title: 'Manga Test',
       coverUrl: 'https://example.com/manga.jpg',
@@ -64,7 +64,7 @@ void main() {
       status: 'Plan to Watch',
     );
 
-    final seriesItem = const MediaItem(
+    const seriesItem = MediaItem(
       id: 'tvmaze_series_3',
       title: 'Series Test',
       coverUrl: 'https://example.com/series.jpg',

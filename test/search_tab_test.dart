@@ -25,7 +25,7 @@ void main() {
   testWidgets(
     'SearchTab renders search input, category chips, and search results',
     (WidgetTester tester) async {
-      final mockItem = const MediaItem(
+      const mockItem = MediaItem(
         id: 'jikan_anime_999',
         title: 'Steins;Gate',
         coverUrl: 'https://example.com/steinsgate.jpg',
@@ -60,7 +60,7 @@ void main() {
   testWidgets(
     'SearchTab displays "In Library" when item is already in existingItems',
     (WidgetTester tester) async {
-      final mockItem = const MediaItem(
+      const mockItem = MediaItem(
         id: 'jikan_anime_999',
         title: 'Steins;Gate',
         coverUrl: 'https://example.com/steinsgate.jpg',
@@ -78,7 +78,7 @@ void main() {
         MaterialApp(
           home: SearchTab(
             searchRepository: repository,
-            existingItems: [mockItem],
+            existingItems: const [mockItem],
           ),
         ),
       );
@@ -97,7 +97,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final mockItem = const MediaItem(
+    const mockItem = MediaItem(
       id: 'jikan_anime_999',
       title: 'Steins;Gate',
       coverUrl: 'https://example.com/steinsgate.jpg',

@@ -1,7 +1,7 @@
 # Profile and Theme
 
-- **Status:** Theme functional but incomplete; Profile placeholder
-- **Last verified:** 2026-07-25
+- **Status:** Theme and data-management entry point functional; remaining Profile content placeholder
+- **Last verified:** 2026-08-01
 
 ## Purpose
 
@@ -12,14 +12,15 @@ collection summary, and settings concepts.
 
 1. Open Profile at bottom navigation index 2.
 2. Toggle Dark Mode.
-3. Profile identity/statistics/settings are visible but not interactive beyond
-   the theme switch.
+3. Open **Data, Backup & Transfer** from the settings icon or preference row.
+4. Other identity/statistics/preferences remain presentation placeholders.
 
 ## Entry point and route
 
 `MainNavigationScreen` constructs `ProfileTab` inside its `IndexedStack`.
-`OtakuLogApp` supplies `ThemeMode` and a change callback. No settings subroute
-is implemented.
+`OtakuLogApp` supplies `ThemeMode` and a change callback.
+`MainNavigationScreen` supplies the data-management callback, which pushes
+`DataManagementScreen` using `MaterialPageRoute`.
 
 ## Screen and widgets
 
@@ -37,25 +38,28 @@ persist the choice.
 
 ## Models, repositories, APIs, persistence
 
-None. Profile identity/statistics/version are string literals. Notifications,
-backup/sync, settings, and user accounts have no model, repository, service, or
-API.
+Profile identity/statistics/version are string literals. Notifications and
+user accounts have no model, repository, service, or API. Backup/import/export
+is a local-file feature owned by `MediaTransferRepository`; it does not add an
+account or cloud synchronization.
 
 ## Loading, empty, and error states
 
-None are implemented because all Profile content is static. The avatar is a
-network image without a feature-specific error builder.
+The profile avatar has a local icon fallback. Data-management loading, errors,
+previews, results, and recovery are documented in
+[data-backup-and-transfer.md](data-backup-and-transfer.md).
 
 ## Tests
 
-No Profile or theme test exists. Test execution is currently blocked by package
-resolution.
+The app-shell test covers Profile construction and the data-management screen
+has focused action, cancellation, conflict-warning, and empty-restore widget
+tests. Theme persistence/selection remains uncovered.
 
 ## Known limitations
 
 - Hard-coded user identity, rank, member date, activity totals, and version
-- Settings app-bar action and all preference rows are no-ops
-- No notification, backup, cloud, account, or About implementation
+- Notification and About preference rows remain no-ops
+- No notification, cloud, or account implementation
 - Theme preference is not persisted and system mode is not selectable after a
   manual choice
 - Fonts named by the theme are not bundled
@@ -73,6 +77,7 @@ resolution.
 
 - `lib/main.dart`
 - `lib/screens/profile_tab.dart`
+- `lib/screens/data_management_screen.dart`
 - `lib/theme/app_theme.dart`
 - `DESIGN.md`
 - `docs/DESIGN_SYSTEM.md`

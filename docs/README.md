@@ -1,7 +1,7 @@
 # OtakuLog Documentation
 
 This directory is OtakuLog's persistent project memory. Claims are based on the
-repository as verified on **2026-07-25**; uncertainty is labeled explicitly.
+repository as verified on **2026-08-01**; uncertainty is labeled explicitly.
 
 ## Start here
 
@@ -13,6 +13,8 @@ repository as verified on **2026-07-25**; uncertainty is labeled explicitly.
 - [Design system](DESIGN_SYSTEM.md) — implemented UI patterns and gaps
 - [Data and API](DATA_AND_API.md) — local storage and remote endpoints
 - [Testing guide](TESTING_GUIDE.md) — test structure and expectations
+
+- [Native backup schema](BACKUP_SCHEMA.md) - portable format, integrity, and migrations
 
 ## Agent coordination
 

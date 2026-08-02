@@ -23,17 +23,16 @@ class MediaCard extends StatelessWidget {
     final cardSeason = item.cardSeason;
     final incrementSeason = item.defaultIncrementSeason;
     final isSeasonBeyondTotal = cardSeason?.isBeyondKnownTotal ?? false;
-    final canIncrement =
-        onIncrementProgress != null &&
+    final canIncrement = onIncrementProgress != null &&
         item.supportsProgress &&
         (item.progressMode == ProgressMode.flat || incrementSeason != null);
     final progressText = item.type == MediaType.movie
         ? '${item.releaseStatus.label} release'
         : item.progressMode == ProgressMode.seasonal
-        ? cardSeason == null
-              ? 'No seasons added'
-              : '${cardSeason.displayName} · ${cardSeason.progressSummary} Ep'
-        : '${item.progressSummary} ${item.unitLabel}';
+            ? cardSeason == null
+                ? 'No seasons added'
+                : '${cardSeason.displayName} · ${cardSeason.progressSummary} Ep'
+            : '${item.progressSummary} ${item.unitLabel}';
 
     IconData typeIcon;
     switch (item.mediaType.toLowerCase()) {
@@ -65,7 +64,7 @@ class MediaCard extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                  color: AppTheme.primaryIndigo.withOpacity(0.06),
+                  color: AppTheme.primaryIndigo.withValues(alpha: 0.06),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -159,7 +158,7 @@ class MediaCard extends StatelessWidget {
                                   ),
                                   decoration: BoxDecoration(
                                     color: theme.colorScheme.primary
-                                        .withOpacity(0.12),
+                                        .withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Row(
@@ -191,7 +190,7 @@ class MediaCard extends StatelessWidget {
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.14),
+                                    color: statusColor.withValues(alpha: 0.14),
                                     borderRadius: BorderRadius.circular(
                                       AppTheme.chipRadius,
                                     ),
@@ -214,7 +213,8 @@ class MediaCard extends StatelessWidget {
                                       vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.amber.withOpacity(0.15),
+                                      color:
+                                          Colors.amber.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Row(
@@ -268,8 +268,7 @@ class MediaCard extends StatelessWidget {
                                     fontFamily: 'Be Vietnam Pro',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color:
-                                        item.isBeyondKnownTotal ||
+                                    color: item.isBeyondKnownTotal ||
                                             isSeasonBeyondTotal
                                         ? theme.colorScheme.error
                                         : theme.colorScheme.onSurfaceVariant,
@@ -278,8 +277,7 @@ class MediaCard extends StatelessWidget {
                                 if (canIncrement)
                                   _PlusOneButton(
                                     onPressed: onIncrementProgress!,
-                                    tooltip:
-                                        item.progressMode ==
+                                    tooltip: item.progressMode ==
                                             ProgressMode.seasonal
                                         ? 'Add 1 episode to ${incrementSeason!.displayName}'
                                         : 'Add 1 ${item.unitLabel == 'Ch' ? 'chapter' : 'episode'}',
@@ -374,7 +372,7 @@ class _PlusOneButtonState extends State<_PlusOneButton> {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),

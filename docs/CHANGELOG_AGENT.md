@@ -3,6 +3,44 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-08-01 - Professional media import, export, and backup
+
+- **Agent/tool:** Codex
+- **Task:** Implement production-oriented local import/export, native backup
+  and restore, MyAnimeList XML interoperability, CSV export, recovery, tests,
+  and developer documentation.
+- **Summary:** Added provider-based inspection/export contracts, canonical
+  imported entries, deterministic external-ID/Unicode-title matching, four
+  strategies, four existing-entry policies, preview and result reporting,
+  schema-v1 native backups with SHA-256 integrity and v0 migration, MAL
+  anime/manga XML/XML.GZ import and XML export, UTF-8 CSV, automatic safety
+  snapshots, verified single-key rollback, retained history, and Android/web
+  file adapters. Wired a focused responsive Material data dashboard through
+  Profile and surfaced corrupt active storage without destructive reseeding.
+- **Files changed:** Transfer models/repository/services/screens; `MediaItem`
+  metadata and API provider IDs; local storage transaction/recovery/history;
+  Android `MainActivity`; Profile/shell/theme presentation; fixtures/tests;
+  dependencies and affected repository documentation.
+- **Backward compatibility:** Existing `MediaItem` constructors remain valid
+  and missing metadata defaults to empty/null values. Existing library JSON
+  remains a list. Missing storage still seeds samples, while valid empty
+  storage remains empty and corrupt raw data is preserved. Legacy native
+  backup schema 0 migrates to schema 1 before preview.
+- **Validation:** Online/offline package resolution, formatting, targeted
+  33-test transfer suite, full 79-test suite, static analysis, and web build
+  pass. A release-web browser smoke check navigated through Profile to the data
+  dashboard, completed a native backup download, and showed the saved operation
+  in transfer history. Android debug build
+  is blocked before Kotlin compilation because Gradle cannot resolve Android
+  application plugin 9.0.1; no source failure was reported.
+- **Documentation updated:** Project/current-state/architecture/codebase/data,
+  decision/issues/glossary/task/profile/feature indexes; new transfer feature
+  guide and native backup schema reference.
+- **Unresolved:** Verify MAL compatibility with fresh real account exports;
+  restore Android plugin resolution and perform device SAF checks; OAuth,
+  per-entry uncertain-match override, streaming XML, encryption, iOS/desktop
+  adapters, and CSV import are not implemented.
+
 ## 2026-07-25 — Manual media and flexible progress tracking
 
 - **Agent/tool:** Codex

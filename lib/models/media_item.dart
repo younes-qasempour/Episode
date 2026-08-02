@@ -180,9 +180,9 @@ class MediaSeason {
     required int currentProgress,
     required int? totalCount,
     this.releaseStatus = ReleaseStatus.unknown,
-  }) : seasonNumber = seasonNumber < 1 ? 1 : seasonNumber,
-       currentProgress = currentProgress < 0 ? 0 : currentProgress,
-       totalCount = totalCount != null && totalCount >= 0 ? totalCount : null;
+  })  : seasonNumber = seasonNumber < 1 ? 1 : seasonNumber,
+        currentProgress = currentProgress < 0 ? 0 : currentProgress,
+        totalCount = totalCount != null && totalCount >= 0 ? totalCount : null;
 
   String get displayName {
     final customTitle = title?.trim();
@@ -265,6 +265,16 @@ class MediaItem {
   final bool isManual;
   final String? synopsis;
   final double rating;
+  final Map<String, String> externalIds;
+  final String? notes;
+  final List<String> tags;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
+  final DateTime? addedAt;
+  final DateTime? updatedAt;
+  final int repeatCount;
+  final bool isFavorite;
+  final Map<String, dynamic> customMetadata;
 
   const MediaItem({
     required this.id,
@@ -280,10 +290,19 @@ class MediaItem {
     this.isManual = false,
     this.synopsis,
     this.rating = 0.0,
-  }) : _flatCurrentProgress = currentProgress < 0 ? 0 : currentProgress,
-       _flatTotalCount = totalCount != null && totalCount >= 0
-           ? totalCount
-           : null;
+    this.externalIds = const {},
+    this.notes,
+    this.tags = const [],
+    this.startedAt,
+    this.completedAt,
+    this.addedAt,
+    this.updatedAt,
+    this.repeatCount = 0,
+    this.isFavorite = false,
+    this.customMetadata = const {},
+  })  : _flatCurrentProgress = currentProgress < 0 ? 0 : currentProgress,
+        _flatTotalCount =
+            totalCount != null && totalCount >= 0 ? totalCount : null;
 
   MediaType get type => mediaTypeFromStorage(mediaType);
 
@@ -367,8 +386,8 @@ class MediaItem {
   MediaSeason? get cardSeason => defaultIncrementSeason ?? latestSeason;
 
   static String createManualId({DateTime? timestamp}) {
-    final micros = (timestamp ?? DateTime.now()).microsecondsSinceEpoch
-        .toRadixString(36);
+    final micros =
+        (timestamp ?? DateTime.now()).microsecondsSinceEpoch.toRadixString(36);
     final sequence = (_manualIdSequence++).toRadixString(36);
     return 'manual_${micros}_$sequence';
   }
@@ -394,13 +413,26 @@ class MediaItem {
     String? synopsis,
     bool clearSynopsis = false,
     double? rating,
+    Map<String, String>? externalIds,
+    String? notes,
+    bool clearNotes = false,
+    List<String>? tags,
+    DateTime? startedAt,
+    bool clearStartedAt = false,
+    DateTime? completedAt,
+    bool clearCompletedAt = false,
+    DateTime? addedAt,
+    bool clearAddedAt = false,
+    DateTime? updatedAt,
+    bool clearUpdatedAt = false,
+    int? repeatCount,
+    bool? isFavorite,
+    Map<String, dynamic>? customMetadata,
   }) {
     final nextMode = progressMode ?? this.progressMode;
-    final changingToFlat =
-        this.progressMode == ProgressMode.seasonal &&
+    final changingToFlat = this.progressMode == ProgressMode.seasonal &&
         nextMode == ProgressMode.flat;
-    final nextFlatProgress =
-        currentProgress ??
+    final nextFlatProgress = currentProgress ??
         (changingToFlat ? this.currentProgress : _flatCurrentProgress);
     final int? nextFlatTotal;
     if (clearTotalCount) {
@@ -427,6 +459,16 @@ class MediaItem {
       isManual: isManual ?? this.isManual,
       synopsis: clearSynopsis ? null : (synopsis ?? this.synopsis),
       rating: rating ?? this.rating,
+      externalIds: externalIds ?? this.externalIds,
+      notes: clearNotes ? null : (notes ?? this.notes),
+      tags: tags ?? this.tags,
+      startedAt: clearStartedAt ? null : (startedAt ?? this.startedAt),
+      completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+      addedAt: clearAddedAt ? null : (addedAt ?? this.addedAt),
+      updatedAt: clearUpdatedAt ? null : (updatedAt ?? this.updatedAt),
+      repeatCount: repeatCount ?? this.repeatCount,
+      isFavorite: isFavorite ?? this.isFavorite,
+      customMetadata: customMetadata ?? this.customMetadata,
     );
   }
 
@@ -537,6 +579,16 @@ class MediaItem {
       'isManual': isManual,
       'synopsis': synopsis,
       'rating': rating,
+      'externalIds': externalIds,
+      'notes': notes,
+      'tags': tags,
+      'startedAt': startedAt?.toUtc().toIso8601String(),
+      'completedAt': completedAt?.toUtc().toIso8601String(),
+      'addedAt': addedAt?.toUtc().toIso8601String(),
+      'updatedAt': updatedAt?.toUtc().toIso8601String(),
+      'repeatCount': repeatCount,
+      'isFavorite': isFavorite,
+      'customMetadata': customMetadata,
     };
   }
 
@@ -544,12 +596,12 @@ class MediaItem {
     final rawSeasons = map['seasons'];
     final seasons = rawSeasons is List
         ? rawSeasons
-              .whereType<Map>()
-              .map(
-                (season) =>
-                    MediaSeason.fromMap(Map<String, dynamic>.from(season)),
-              )
-              .toList()
+            .whereType<Map>()
+            .map(
+              (season) =>
+                  MediaSeason.fromMap(Map<String, dynamic>.from(season)),
+            )
+            .toList()
         : <MediaSeason>[];
     final mode = progressModeFromStorage(map['progressMode']);
     final currentProgress = _nonNegativeInt(
@@ -576,6 +628,16 @@ class MediaItem {
       isManual: map['isManual'] == true,
       synopsis: map['synopsis']?.toString(),
       rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
+      externalIds: _stringMap(map['externalIds']),
+      notes: map['notes']?.toString(),
+      tags: _stringList(map['tags']),
+      startedAt: _dateTimeOrNull(map['startedAt']),
+      completedAt: _dateTimeOrNull(map['completedAt']),
+      addedAt: _dateTimeOrNull(map['addedAt']),
+      updatedAt: _dateTimeOrNull(map['updatedAt']),
+      repeatCount: _nonNegativeInt(map['repeatCount']),
+      isFavorite: map['isFavorite'] == true,
+      customMetadata: _dynamicMap(map['customMetadata']),
     );
   }
 
@@ -610,4 +672,40 @@ int? _positiveNullableInt(Object? value) {
   }
   final converted = value.toInt();
   return converted > 0 ? converted : null;
+}
+
+Map<String, String> _stringMap(Object? value) {
+  if (value is! Map) {
+    return const {};
+  }
+  return {
+    for (final entry in value.entries)
+      if (entry.key.toString().trim().isNotEmpty && entry.value != null)
+        entry.key.toString(): entry.value.toString(),
+  };
+}
+
+List<String> _stringList(Object? value) {
+  if (value is! List) {
+    return const [];
+  }
+  return value
+      .where((item) => item != null)
+      .map((item) => item.toString())
+      .where((item) => item.trim().isNotEmpty)
+      .toList(growable: false);
+}
+
+DateTime? _dateTimeOrNull(Object? value) {
+  if (value == null) {
+    return null;
+  }
+  return DateTime.tryParse(value.toString());
+}
+
+Map<String, dynamic> _dynamicMap(Object? value) {
+  if (value is! Map) {
+    return const {};
+  }
+  return Map<String, dynamic>.from(value);
 }

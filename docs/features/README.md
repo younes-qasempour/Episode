@@ -8,7 +8,8 @@ Read the document matching the requested behavior before editing.
 | Remote discovery/Explore | [media-search.md](media-search.md) | Functional but incomplete |
 | Media details and editing | [media-details.md](media-details.md) | Functional but incomplete |
 | Manual media and flexible progress | [manual-media-and-progress.md](manual-media-and-progress.md) | Functional |
-| Profile and theme | [profile-and-theme.md](profile-and-theme.md) | Theme functional; profile placeholder |
+| Data backup and transfer | [data-backup-and-transfer.md](data-backup-and-transfer.md) | Functional on Android and web |
+| Profile and theme | [profile-and-theme.md](profile-and-theme.md) | Theme and data entry point functional; profile otherwise placeholder |
 
 Feature status is summarized repository-wide in
 [CURRENT_STATE.md](../CURRENT_STATE.md). Add a new feature document only when
