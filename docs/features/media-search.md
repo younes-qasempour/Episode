@@ -1,7 +1,7 @@
 # Remote Discovery and Explore
 
 - **Status:** Functional but incomplete
-- **Last verified:** 2026-07-25
+- **Last verified:** 2026-08-01
 
 ## Purpose
 
@@ -73,7 +73,8 @@ appear as empty results rather than the error branch.
 - Search tab rendering, duplicate, and add callback tests
 
 No real request construction, non-200, malformed response, debounce, race, or
-error-state widget test exists. Tests are currently blocked from execution.
+error-state widget test exists. Existing focused tests and the full 79-test
+suite pass.
 
 ## Known limitations
 

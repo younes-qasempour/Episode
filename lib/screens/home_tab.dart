@@ -31,11 +31,9 @@ class _HomeTabState extends State<HomeTab> {
     final isDark = theme.brightness == Brightness.dark;
 
     final filteredItems = widget.mediaItems.where((item) {
-      final matchesCategory =
-          _selectedCategory == 'All' ||
+      final matchesCategory = _selectedCategory == 'All' ||
           item.mediaType.toLowerCase() == _selectedCategory.toLowerCase();
-      final matchesSearch =
-          _searchQuery.isEmpty ||
+      final matchesSearch = _searchQuery.isEmpty ||
           item.title.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     }).toList();
@@ -94,10 +92,13 @@ class _HomeTabState extends State<HomeTab> {
                       width: 2,
                     ),
                   ),
-                  child: const CircleAvatar(
+                  child: CircleAvatar(
                     radius: 20,
-                    backgroundImage: NetworkImage(
-                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: Icon(
+                      Icons.person_rounded,
+                      color: theme.colorScheme.onPrimaryContainer,
+                      size: 20,
                     ),
                   ),
                 ),
@@ -256,7 +257,8 @@ class _HomeTabState extends State<HomeTab> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(

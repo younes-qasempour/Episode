@@ -54,10 +54,12 @@ is not documented.
 - **Status:** Accepted (current state)
 - **Context:** A local media collection must survive restarts.
 - **Decision:** Store the entire `MediaItem` list as one JSON string under
-  `otaku_log_media_items`; seed sample data when absent/invalid/empty.
+  `otaku_log_media_items`; seed sample data only when the key is absent. Keep a
+  valid empty list empty and surface invalid data without overwriting it.
 - **Evidence:** `local_storage_repository.dart`, `mock_data.dart`.
-- **Consequences:** Simple CRUD and tests; no schema version, migrations,
-  corruption feedback, query capability, or transactional updates.
+- **Consequences:** Simple CRUD and tests; no active-store envelope schema or
+  query capability. Transfer replacement adds snapshot rollback and corruption
+  feedback at the repository boundary.
 - **Alternatives:** Hive packages are declared but no Hive implementation or
   migration decision exists.
 - **Affected files:** `lib/repositories/local_storage_repository.dart`,
@@ -132,3 +134,34 @@ is not documented.
 - **Affected files:** `lib/models/media_item.dart`,
   `lib/repositories/local_storage_repository.dart`,
   `lib/services/api_service.dart`, presentation flows, tests, and data docs.
+
+## ADR-009 - Provider-based preview-first local data transfer
+
+- **Date:** 2026-08-01
+- **Status:** Accepted
+- **Context:** Users need reliable local backup/restore and interoperability
+  without introducing an account, second persistence engine, or format logic
+  in widgets. Import can overwrite valuable progress and notes, so parsing and
+  persistence must not be one step.
+- **Decision:** Keep `LocalStorageRepository` as the only persistence boundary.
+  Add `ImportProvider`/`ExportProvider` format contracts, a canonical
+  `ImportedMediaEntry`, `ImportPlanner` for deterministic matching/policy, and
+  `MediaTransferRepository` for inspect/preview/safety-backup/apply/history.
+  Native backups use a versioned schema with migrations and SHA-256 integrity.
+  Whole-library changes use snapshot, full write, round-trip verification, and
+  rollback. Android/web file I/O stays behind conditional adapters.
+- **Rationale:** Providers make formats extensible while preview and a retained
+  native snapshot keep all destructive behavior explicit and recoverable.
+  Reusing the one-key SharedPreferences library avoids a risky parallel store.
+- **Consequences:** Native JSON, MAL XML/XML.GZ, and CSV export share one
+  orchestration flow; uncertain matches fail safe; history and five safety
+  backups add local storage. SharedPreferences is still plaintext and does not
+  offer OS-level transactions. XML parsing is bounded and offloaded for large
+  inputs but remains DOM-based.
+- **Alternatives considered:** Direct parsing/writing in screens was rejected
+  because it bypasses repositories and is difficult to test. A new database or
+  state package was rejected by current architecture. Blind title merge was
+  rejected as unsafe. Account-based MAL import was deferred because client and
+  secure-token requirements are unavailable.
+- **Affected files:** transfer models/repository/services/screens, local
+  repository, Android runner, `MediaItem`, tests, and backup/feature docs.

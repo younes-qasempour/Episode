@@ -1,20 +1,100 @@
 import 'package:flutter/material.dart';
+import '../controllers/auth_controller.dart';
+import '../services/sync_service.dart';
 import '../theme/app_theme.dart';
 
 class ProfileTab extends StatelessWidget {
   final ThemeMode currentThemeMode;
   final ValueChanged<ThemeMode> onThemeModeChanged;
+  final VoidCallback? onOpenDataManagement;
+  final AuthController? authController;
+  final SyncService? syncService;
+  final VoidCallback? onOpenLogin;
+  final VoidCallback? onOpenRegister;
+  final VoidCallback? onOpenDeviceManagement;
 
   const ProfileTab({
     super.key,
     required this.currentThemeMode,
     required this.onThemeModeChanged,
+    this.onOpenDataManagement,
+    this.authController,
+    this.syncService,
+    this.onOpenLogin,
+    this.onOpenRegister,
+    this.onOpenDeviceManagement,
   });
+
+  Future<void> _handleDeleteAccount(BuildContext context) async {
+    final passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Account?'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'This will permanently delete your server account and cloud snapshots. Your local library on this device will remain intact as an offline library.',
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm Password',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) =>
+                    (val == null || val.isEmpty) ? 'Password required' : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.of(dialogContext).pop(true);
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Delete Account'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && authController != null) {
+      final success = await authController!.deleteAccount(
+        password: passwordController.text,
+      );
+      if (context.mounted && !success && authController!.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(authController!.errorMessage!)),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isAuthenticated = authController?.isAuthenticated == true;
+    final user = authController?.currentUser;
+    final syncStatus = syncService?.state ?? SyncStatusState.idle;
+    final metadata = syncService?.metadata;
 
     return Scaffold(
       appBar: AppBar(
@@ -22,32 +102,41 @@ class ProfileTab extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
+            tooltip: 'Data, Backup & Transfer',
+            onPressed: onOpenDataManagement,
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         children: [
-          // Profile Header Card
+          // Profile Header Card / Account Status Card
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(AppTheme.cardRadius),
               border: Border.all(
-                color: isDark
-                    ? const Color(0xFF263852)
-                    : const Color(0xFFE2E8F0),
+                color:
+                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
                 width: 1,
               ),
             ),
             child: Row(
               children: [
-                const CircleAvatar(
-                  radius: 34,
-                  backgroundImage: NetworkImage(
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                ClipOval(
+                  child: ColoredBox(
+                    color: theme.colorScheme.primaryContainer,
+                    child: SizedBox.square(
+                      dimension: 68,
+                      child: Icon(
+                        isAuthenticated
+                            ? Icons.account_circle_rounded
+                            : Icons.person_outline_rounded,
+                        color: theme.colorScheme.onPrimaryContainer,
+                        size: 38,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -56,17 +145,21 @@ class ProfileTab extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Alex Mercer',
+                        isAuthenticated
+                            ? (user?.email ?? 'Logged In User')
+                            : 'Guest User (Offline)',
                         style: TextStyle(
                           fontFamily: 'Plus Jakarta Sans',
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: theme.colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
-                        'Otaku Rank: SS-Class Collector',
+                        isAuthenticated
+                            ? 'Multi-device cloud backup active'
+                            : 'Local storage active • Accounts optional',
                         style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
                           fontSize: 12,
@@ -74,25 +167,51 @@ class ProfileTab extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
+                      const SizedBox(height: 8),
+                      if (!isAuthenticated) ...[
+                        Row(
+                          children: [
+                            FilledButton.tonal(
+                              onPressed: onOpenLogin,
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              child: const Text('Sign In'),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton(
+                              onPressed: onOpenRegister,
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              child: const Text('Create Account'),
+                            ),
+                          ],
                         ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(12),
+                      ] else ...[
+                        // Sync Badge
+                        Row(
+                          children: [
+                            _buildSyncStatusBadge(context, syncStatus),
+                            const Spacer(),
+                            if (syncService != null)
+                              TextButton.icon(
+                                onPressed: () {
+                                  syncService!.syncNow(boundUserId: user?.id);
+                                },
+                                icon: const Icon(Icons.sync_rounded, size: 16),
+                                label: const Text('Sync Now'),
+                                style: TextButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              ),
+                          ],
                         ),
-                        child: Text(
-                          'Member since 2024',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -102,17 +221,16 @@ class ProfileTab extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Theme Switcher Tile
-          Container(
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
+          Material(
+            color: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-              border: Border.all(
-                color: isDark
-                    ? const Color(0xFF263852)
-                    : const Color(0xFFE2E8F0),
-                width: 1,
+              side: BorderSide(
+                color:
+                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
               ),
             ),
+            clipBehavior: Clip.antiAlias,
             child: SwitchListTile(
               secondary: Icon(
                 isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
@@ -143,44 +261,51 @@ class ProfileTab extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Activity & Statistics Section
-          Text(
-            'Collection Overview',
-            style: TextStyle(
-              fontFamily: 'Plus Jakarta Sans',
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
+          // Sync Details Section (If Authenticated)
+          if (isAuthenticated && metadata != null) ...[
+            Text(
+              'Sync Metadata',
+              style: TextStyle(
+                fontFamily: 'Plus Jakarta Sans',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildOverviewCard(
-                  context,
-                  title: 'Episodes Watched',
-                  value: '1,420',
-                  icon: Icons.play_circle_fill_rounded,
-                  color: AppTheme.primaryIndigo,
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.cardTheme.color,
+                borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF263852)
+                      : const Color(0xFFE2E8F0),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildOverviewCard(
-                  context,
-                  title: 'Chapters Read',
-                  value: '3,850',
-                  icon: Icons.menu_book_rounded,
-                  color: AppTheme.peachAccent,
-                ),
+              child: Column(
+                children: [
+                  _buildMetaRow(
+                      context, 'Cloud Revision', 'v${metadata.serverRevision}'),
+                  const Divider(height: 16),
+                  _buildMetaRow(
+                    context,
+                    'Last Synced',
+                    metadata.lastSuccessfulSyncAt != null
+                        ? metadata.lastSuccessfulSyncAt!
+                            .toLocal()
+                            .toString()
+                            .split('.')[0]
+                        : 'Never',
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 20),
+          ],
 
-          // Settings Options Group
+          // Preferences Group
           Text(
             'Preferences',
             style: TextStyle(
@@ -192,93 +317,185 @@ class ProfileTab extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          Container(
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
+          Material(
+            color: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-              border: Border.all(
-                color: isDark
-                    ? const Color(0xFF263852)
-                    : const Color(0xFFE2E8F0),
-                width: 1,
+              side: BorderSide(
+                color:
+                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
               ),
             ),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
                 _buildSettingTile(
                   context,
-                  icon: Icons.notifications_none_rounded,
-                  title: 'Push Notifications',
-                  subtitle: 'Episode releases and chapter alerts',
-                ),
-                const Divider(height: 1, indent: 56),
-                _buildSettingTile(
-                  context,
                   icon: Icons.cloud_sync_outlined,
-                  title: 'Data Backup & Sync',
-                  subtitle: 'Export collection to cloud',
+                  title: 'Data, Backup & Transfer',
+                  subtitle: 'Import, restore, and save local files',
+                  onTap: onOpenDataManagement,
                 ),
+                if (isAuthenticated) ...[
+                  const Divider(height: 1, indent: 56),
+                  _buildSettingTile(
+                    context,
+                    icon: Icons.devices_other_rounded,
+                    title: 'Device Management',
+                    subtitle: 'Manage active sessions & revoke devices',
+                    onTap: onOpenDeviceManagement,
+                  ),
+                ],
                 const Divider(height: 1, indent: 56),
                 _buildSettingTile(
                   context,
                   icon: Icons.info_outline_rounded,
                   title: 'About OtakuLog',
-                  subtitle: 'v1.0.0 (Build 2026)',
+                  subtitle: 'v1.0.0 (Offline & Cloud Sync)',
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
+
+          // Auth Account Actions (If Authenticated)
+          if (isAuthenticated) ...[
+            Text(
+              'Account Actions',
+              style: TextStyle(
+                fontFamily: 'Plus Jakarta Sans',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Material(
+              color: theme.cardTheme.color,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF263852)
+                      : const Color(0xFFE2E8F0),
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.logout_rounded),
+                    title: const Text('Log Out'),
+                    subtitle: const Text('Keep local data on this device'),
+                    onTap: () => authController?.logout(),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: const Icon(Icons.phonelink_erase_rounded),
+                    title: const Text('Log Out All Devices'),
+                    subtitle: const Text('Revoke sessions on all devices'),
+                    onTap: () => authController?.logoutAll(),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: Icon(
+                      Icons.delete_forever_rounded,
+                      color: theme.colorScheme.error,
+                    ),
+                    title: Text(
+                      'Delete Account',
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                    subtitle: const Text('Permanently delete cloud account'),
+                    onTap: () => _handleDeleteAccount(context),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildOverviewCard(
-    BuildContext context, {
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
+  Widget _buildSyncStatusBadge(BuildContext context, SyncStatusState status) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    String text = 'Synced';
+    Color color = Colors.green;
+
+    switch (status) {
+      case SyncStatusState.syncing:
+        text = 'Syncing...';
+        color = theme.colorScheme.primary;
+        break;
+      case SyncStatusState.conflictResolving:
+        text = 'Resolving conflict...';
+        color = Colors.orange;
+        break;
+      case SyncStatusState.pending:
+        text = 'Changes waiting';
+        color = Colors.amber.shade800;
+        break;
+      case SyncStatusState.offline:
+        text = 'Offline';
+        color = Colors.grey;
+        break;
+      case SyncStatusState.error:
+        text = 'Sync failed';
+        color = theme.colorScheme.error;
+        break;
+      case SyncStatusState.authenticationRequired:
+        text = 'Session expired';
+        color = theme.colorScheme.error;
+        break;
+      case SyncStatusState.synced:
+      case SyncStatusState.idle:
+        text = 'Synced';
+        color = Colors.green;
+        break;
+    }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-        border: Border.all(
-          color: isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
-          width: 1,
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: TextStyle(
-              fontFamily: 'Plus Jakarta Sans',
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onSurface,
-            ),
+    );
+  }
+
+  Widget _buildMetaRow(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Be Vietnam Pro',
+            fontSize: 13,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            style: TextStyle(
-              fontFamily: 'Be Vietnam Pro',
-              fontSize: 11,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.onSurface,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -287,6 +504,7 @@ class ProfileTab extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
+    VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
     return ListTile(
@@ -309,7 +527,7 @@ class ProfileTab extends StatelessWidget {
         ),
       ),
       trailing: const Icon(Icons.chevron_right_rounded),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }

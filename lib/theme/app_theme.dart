@@ -41,6 +41,7 @@ class AppTheme {
       case 'Completed':
         return const Color(0xFF10B981); // Emerald Green
       case 'Plan to Watch':
+      case 'Plan to Read':
         return isDark ? primaryIndigoDark : primaryIndigo;
       case 'On Hold':
         return const Color(0xFFF59E0B); // Amber

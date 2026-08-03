@@ -2,7 +2,8 @@
 
 OtakuLog is a Flutter media-tracking prototype for anime, manga, and TV series.
 It provides an on-device library, progress/status/rating editing, remote
-discovery through Jikan and TVMaze, and light/dark themes.
+discovery through Jikan and TVMaze, light/dark themes, and local native/MAL/CSV
+data transfer with previewed backup and restore.
 
 ## Start here
 
@@ -17,6 +18,7 @@ known issues.
 - Widget-local `setState` and callbacks
 - `SharedPreferences` JSON persistence
 - `http` with repository/service boundaries
+- Provider-based native JSON, MAL XML/XML.GZ, and CSV transfer
 - Android and web project directories
 
 The app does not currently contain authentication, cloud sync, notifications,
@@ -46,19 +48,20 @@ flutter analyze
 flutter test
 ```
 
-The repository snapshot verified on 2026-07-25 has a package/toolchain blocker;
-consult [DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) before treating these
-commands as a passing baseline.
+The 2026-08-01 snapshot resolves packages online or from the local cache;
+analyzer, 79 tests, and the web build pass. Android Gradle plugin resolution
+remains an environment blocker. Consult
+[DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) for exact results.
 
 ## Source layout
 
 ```text
 lib/
   data/          static first-run sample data
-  models/        MediaItem and serialization
-  repositories/  local-library and search boundaries
-  screens/       app shell, tabs, and detail screen
-  services/      Jikan/TVMaze HTTP integration
+  models/        MediaItem, transfer contracts, and serialization
+  repositories/  local-library, search, and transfer boundaries
+  screens/       app shell, media, and data-management screens
+  services/      HTTP, import/export formats/planning, platform file adapters
   theme/         Material light/dark themes and tokens
   widgets/       reusable MediaCard
 ```

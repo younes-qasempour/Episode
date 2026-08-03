@@ -26,5 +26,10 @@
 | On Hold | Paused tracking status. |
 | Jikan | Public API used for anime and manga discovery; records use MyAnimeList IDs. |
 | TVMaze | Public API used for TV series discovery. |
-| Seed/sample data | Eight static `MediaItem` values saved when local storage is absent, invalid, or empty. Not verified user data. |
+| Seed/sample data | Eight static `MediaItem` values saved only when the local-library key is absent. Invalid data is surfaced and a valid empty list remains empty. |
+| Native backup | OtakuLog's versioned, integrity-checked JSON representation of the complete current media library. |
+| Safety backup | A native backup retained automatically immediately before an import or restore mutates the library. |
+| Import preview | The immutable parsed entries plus proposed add/update/skip/conflict actions shown before any library mutation. |
+| Safe merge | Default policy that never lowers progress, overwrites local notes, or replaces local seasonal progress with flat provider progress. |
+| Full restore | Native-backup-only strategy that explicitly replaces the complete active library after retaining a safety backup. |
 | Stage one | **Inferred/current-task wording:** the existing functional prototype implemented before the agent bootstrap. It is not a formal release milestone in code. |

@@ -8,12 +8,12 @@
 - Chrome for web work
 - Java 17 for the Android build
 
-`pubspec.yaml` allows Dart `>=3.0.0 <4.0.0`, but the current lockfile reports
-Dart `>=3.12.0` and Flutter `>=3.44.0`. The machine used for the 2026-07-25
-bootstrap has Flutter 3.41.6 / Dart 3.11.4 and cannot currently resolve
-packages. Until the environment is repaired, treat Flutter 3.44 / Dart 3.12 as
-the lockfile-derived reproducibility target, not a confirmed product support
-policy.
+`pubspec.yaml` allows Dart `>=3.0.0 <4.0.0`, while the current lockfile reports
+Dart `>=3.12.0` and Flutter `>=3.44.0`. The 2026-08-01 validation machine uses
+Flutter 3.44.8 / Dart 3.12.2. Online and offline cached package resolution
+succeed; Android Gradle plugin artifact resolution is still unavailable.
+Treat Flutter 3.44 / Dart 3.12 as the verified development baseline, not a
+confirmed long-term product support policy.
 
 ## Setup and run
 
@@ -31,8 +31,8 @@ API credentials. Jikan and TVMaze base URLs are public constants in
 ## Validation commands
 
 ```bash
-# Apply Dart formatting.
-dart format lib test
+# Apply repository Dart formatting.
+dart format .
 
 # Verify formatting without writing.
 dart format --output=none --set-exit-if-changed lib test
@@ -42,7 +42,7 @@ flutter test
 
 # Common build checks when relevant.
 flutter build apk --debug
-flutter build web --debug
+flutter build web
 ```
 
 Run targeted tests first during development, for example:
@@ -50,6 +50,7 @@ Run targeted tests first during development, for example:
 ```bash
 flutter test test/local_storage_repository_test.dart
 flutter test test/search_tab_test.dart
+flutter test test/media_transfer_repository_test.dart
 ```
 
 No code-generation, coverage, Markdown-lint, CI, or project script command is

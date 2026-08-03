@@ -1,94 +1,99 @@
 # Current State
 
-Snapshot verified on **2026-07-25** against base Git commit `9e7c995` and the
-current manual-media/progress-tracking working-tree change.
+Snapshot verified on **2026-08-01** on branch
+`feature/media-import-export-v2` with Flutter 3.44.8 and Dart 3.12.2.
 
 ## Feature status
 
 | Area | Status | Evidence | Important files | Notes |
 | --- | --- | --- | --- | --- |
-| App shell and tabs | Complete | `MaterialApp`, `IndexedStack`, and three bottom-nav items are wired | `lib/main.dart`, `lib/screens/main_navigation_screen.dart` | “Complete” describes the current three-tab scope, not final product navigation. |
-| Local library load/save | Functional but incomplete | CRUD, nullable totals, manual/movie fields, and seasonal data serialize in one backward-compatible JSON list | `lib/repositories/local_storage_repository.dart`, `lib/models/media_item.dart` | Decode failures still silently reset to seeded sample data; there is no explicit schema version. |
-| Home library | Functional but incomplete | Search, anime/manga/series/movie filters, stats, state-aware cards, detail navigation, manual add, and uncapped `+1` work in code | `lib/screens/home_tab.dart`, `lib/widgets/media_card.dart` | Seasonal card increments target only the latest ongoing season; other seasonal edits happen in details. |
-| Remote discovery | Functional but incomplete | Jikan anime/manga and TVMaze requests map to `MediaItem` | `lib/services/api_service.dart`, `lib/screens/search_tab.dart` | No pagination, timeout, retry, rate-limit handling, or visible transport error. |
-| Add to library | Complete | Remote results and manually created anime, manga, series, or movies use the same repository and root callback | `lib/screens/main_navigation_screen.dart`, `lib/screens/manual_media_screen.dart` | Duplicate matching uses ID or case-insensitive title. |
-| Media detail editing | Functional but incomplete | Tracking/release status, unknown totals, flat/seasonal progress, season CRUD, rating, synopsis, save, and delete are implemented | `lib/screens/media_detail_screen.dart`, `lib/widgets/season_editor_dialog.dart` | Save/delete callbacks remain synchronous at the screen boundary and are not awaited. |
-| Profile | Placeholder | Identity, rank, member date, and activity totals are fixed strings | `lib/screens/profile_tab.dart` | Settings, notification, sync, about, and app-bar actions are no-ops. |
-| Theme switching | Functional but incomplete | Light/dark themes and an in-memory switch work | `lib/main.dart`, `lib/theme/app_theme.dart` | System mode is lost after choosing a mode; choice is not persisted. |
-| Localization | Not implemented | No ARB files, localization delegates, or localization dependency | `lib/` | User-visible strings are English literals. |
-| Authentication/cloud sync | Not implemented | No auth/client/account or sync implementation | Repository-wide search | Profile text suggesting backup/sync is placeholder UI only. |
-| Tests | Blocked | Nine files contain 45 declared tests, including focused model/manual/season/card coverage | `test/` | Dependencies cannot currently resolve; the unrelated template smoke test still references nonexistent `MyApp`. |
-| Android release | Blocked | Template application ID/signing TODOs; INTERNET permission is debug/profile-only | `android/app/` | Release behavior was not built. |
-| Web build | Blocked | `web/index.html` exists | `web/index.html` | Build stops because `.dart_tool/package_config.json` is unavailable. |
+| App shell and tabs | Complete for current scope | Material root, IndexedStack, three destinations, and pushed detail/manual/data routes | `lib/main.dart`, `lib/screens/main_navigation_screen.dart` | No deep links or named router. |
+| Local library load/save | Functional | Backward-compatible whole-list JSON CRUD, valid empty library, visible corruption errors, verified replacement rollback | `lib/repositories/local_storage_repository.dart`, `lib/models/media_item.dart` | Active storage is still plaintext SharedPreferences without an envelope schema. |
+| Home library | Functional but incomplete | Search/type filters, stats, state-aware cards, details, manual add, and uncapped `+1` | `lib/screens/home_tab.dart`, `lib/widgets/media_card.dart` | Seasonal card increment targets the latest ongoing season. |
+| Remote discovery | Functional but incomplete | Jikan anime/manga and TVMaze map to `MediaItem` with provider IDs | `lib/services/api_service.dart`, `lib/screens/search_tab.dart` | No pagination, timeout, retry, rate-limit handling, or visible transport error. |
+| Manual add and detail editing | Functional | Anime/manga/series/movie, unknown totals, flat/seasonal progress, statuses, seasons, score, synopsis, save/delete | manual/detail screens and tests | Save/delete callbacks remain synchronous at the detail-screen boundary. |
+| Native backup/restore | Functional on Android/web | Schema v1 JSON, SHA-256, v0 migration, preview, full restore, safety backup, rollback | transfer repository, native codec, data screens | Portable files and local snapshots are unencrypted. |
+| MAL file transfer | Functional with release verification needed | Anime/manga XML and XML.GZ import, XML export for known MAL IDs, warnings and limits | `lib/services/mal_xml_service.dart`, fixtures/tests | Live official MAL export documentation was inaccessible; verify a fresh real export before release. |
+| CSV export | Functional | UTF-8 BOM, stable headers, escaping, Unicode and metadata coverage | `lib/services/csv_export_service.dart` | CSV re-import is not implemented. |
+| Transfer history/recovery | Functional | Latest 25 summaries; latest five automatic safety backups can be saved | history screen, local/transfer repositories | Retention is count-based, local, and unencrypted. |
+| Profile | Partially functional | Theme and data-management actions work | `lib/screens/profile_tab.dart` | Identity/statistics, notification, and About content remain fixed/no-op. |
+| Theme switching | Functional but incomplete | Light/dark themes and in-memory switch | `lib/main.dart`, `lib/theme/app_theme.dart` | Choice is not persisted; system mode cannot be reselected in UI. |
+| Tests | Passing | Fifteen Dart files declare 79 tests | `test/` | `flutter test --no-pub` passes 79/79. |
+| Android debug build | Environment-blocked | Gradle cannot resolve Android application plugin 9.0.1 | Android Gradle configuration/cache | Dart analysis/tests pass; Android platform code did not reach compilation in this environment. |
+| Web build | Passing | Browser file adapter compiles in release web build | `web/`, file transfer web service | `flutter build web --no-pub` succeeds. |
+| iOS/desktop | Not implemented | No runner directories | repository roots | File-transfer adapter reports unsupported platform. |
 
-Status vocabulary: **Complete**, **Functional but incomplete**, **In progress**,
-**Placeholder**, **Not implemented**, **Unknown**, and **Blocked**.
+## Data-transfer behavior
+
+- Entry matching order is exact external ID, exact Unicode-normalized title and
+  type, then cautious similar-title detection.
+- Uncertain or ambiguous title matches are previewed and skipped automatically.
+- Strategies are merge safely, add only, replace matching, and native-only full
+  restore; conflict policies are safe merge, keep local, use imported, and skip.
+- Safe merge never lowers progress, overwrites local notes, or flattens local
+  seasonal progress.
+- All imports/restores create a retained native safety backup before mutation.
+- Native backup input is capped at 20 MB; MAL input at 10 MB compressed and
+  25 MB expanded. XML entity/doctype declarations are rejected.
+- Large native/MAL input uses `compute` (a background isolate where the platform
+  supports isolates). Parsing is bounded but DOM-based for XML; Flutter web
+  still executes compute work on its main event loop.
+
+See [features/data-backup-and-transfer.md](features/data-backup-and-transfer.md)
+and [BACKUP_SCHEMA.md](BACKUP_SCHEMA.md).
 
 ## Mocked and hard-coded data
 
-- Eight `sampleMediaItems` seed first-run storage.
-- Profile identity, rank, join date, episode total, chapter total, and version
-  display are hard-coded.
-- Profile settings actions are empty callbacks.
-- Unknown Jikan/TVMaze counts remain `null` and render as `?`.
-- API base URLs and all user-visible strings are source constants.
-- Avatar and sample cover images use public Unsplash URLs.
-
-## TODO/FIXME inventory
-
-No Dart `TODO` or `FIXME` comments were found. Android contains two template
-TODOs:
-
-- choose a production application ID;
-- configure release signing instead of the debug key.
-
-Incomplete behavior is mostly represented by no-op callbacks and fixed UI
-content rather than TODO comments.
+- Eight `sampleMediaItems` seed only a genuinely missing first-run storage key.
+- Profile identity, rank, join date, activity totals, and version are fixed.
+- Notification and About profile actions are non-functional.
+- API base URLs and user-visible strings are source constants.
+- The profile avatar and sample covers use public URLs with visual fallbacks.
 
 ## Tooling and validation snapshot
 
 | Command | Result |
 | --- | --- |
-| `flutter --version` | Exit 0. Flutter 3.41.6 stable, Dart 3.11.4, DevTools 2.54.2. |
-| `dart --version` | Exit 0. Dart 3.11.4 on Windows x64. |
-| `flutter pub get` | Exit 1. Pub reports authorization failure for `https://pub.dev` while resolving `flutter_lints`. |
-| `flutter pub get --offline` | Exit 1. Cached package metadata cannot satisfy `flutter_lints ^3.0.0`. |
-| `dart format lib test` | Exit 0. Twenty-four Dart files formatted; seven required changes, including the pre-existing formatting baseline requested by this task. Package-lint resolution warnings were emitted. |
-| `dart format --output=none --set-exit-if-changed lib test` | Exit 0. Twenty-four Dart files checked; zero changes required. Package-lint resolution warnings were emitted. |
-| `flutter analyze` | Exit 1 during dependency resolution with the same pub.dev authorization failure; source analysis did not start. |
-| `flutter analyze --no-pub` | Exit 1 with 1,293 issues because package configuration and Flutter/package URIs are unavailable; this result is not a reliable source-code lint count. It also exposes the stale `MyApp` reference. |
-| `flutter test` | Exit 1 during dependency resolution with the same pub.dev authorization failure; tests did not start. |
-| `flutter test --no-pub` | Exit 1 before discovery because the unresolved package configuration hides `flutter_test`. |
-| `flutter build web --debug --no-pub` | Exit 1 before compilation because `.dart_tool/package_config.json` does not exist. |
+| `flutter --version` | Exit 0. Flutter 3.44.8 stable; Dart 3.12.2. |
+| `flutter pub get` | Exit 0. Online dependency resolution completed. |
+| `flutter pub get --offline` | Exit 0 using the approved local cache; generated `pubspec.lock`/package configuration. |
+| Transfer-focused tests | Six new files declare 33 tests; all are included in the passing full suite. The initial targeted command passed 30/30 before three final regression cases were added. |
+| `flutter analyze --no-pub` | Exit 0. No issues found. |
+| `flutter test --no-pub` | Exit 0. 79/79 tests passed. |
+| `flutter build apk --debug --no-pub` | Exit 1 after 185.9 s because Gradle could not resolve `com.android.application` 9.0.1 from configured repositories. |
+| `flutter build web --no-pub` | Exit 0 after 34.8 s on the final run; `build/web` produced successfully and Wasm dry run succeeded. |
 
-`pubspec.lock` was generated with constraints reporting Dart `>=3.12.0` and
-Flutter `>=3.44.0`, newer than the installed SDK. Online package authorization
-failed before a normal solve could confirm the full compatibility outcome.
+| `dart format .` | Exit 0. 44 files formatted; zero changes required. |
+| `dart format --output=none --set-exit-if-changed .` | Exit 0. 44 files checked; zero changes required. |
+| `flutter analyze` | Exit 0. No issues found. |
+| `flutter test` | Exit 0. 79/79 tests passed. |
+
+Manual browser smoke validation opened the release web artifact, navigated
+Home -> Profile -> Data, Backup & Transfer, verified the responsive dashboard,
+and created a native backup; the UI reported **Backup saved.** Transfer history
+then displayed the completed full-backup record with eight processed items.
 
 ## Existing technical debt
 
-- UI widgets own orchestration and asynchronous state; this is manageable at
-  current scale but has no structured state-test seam.
-- Service methods catch every failure and return `[]`, so the search screen's
-  exception error branch is normally unreachable with the real service.
-- Debounced searches do not cancel or order in-flight requests; older results
-  can replace newer ones.
-- Persistence has no corruption signal, explicit schema version, or atomic
-  domain migration strategy. New fields use tolerant defaults instead.
-- Typography names are referenced but fonts are not bundled in `pubspec.yaml`.
-- Hive, Hive Flutter, and path provider are unused dependencies.
-- Source formatting is clean for `lib/` and `test/`; lint packages still
-  cannot resolve.
+- Remote API errors remain indistinguishable from valid empty results.
+- Debounced searches do not cancel/order in-flight requests.
+- The active library JSON has tolerant additive decoding but no explicit
+  versioned envelope; portable native backups do have a schema/migration chain.
+- SharedPreferences, automatic snapshots, and exported files are unencrypted.
+- Individual override of uncertain import matches is not implemented.
+- MAL OAuth/account import is not implemented.
+- Typography names are referenced but fonts are not bundled.
+- Hive, Hive Flutter, and path provider remain unused dependencies.
+- Android release identity/signing/network-permission work remains.
 
 ## Recommended next implementation areas
 
 These are recommendations, not confirmed product requirements:
 
-1. Restore a reproducible Flutter/package environment and establish a valid
-   analyzer/test baseline.
-2. Replace or repair the stale template widget test.
-3. Define explicit API failure semantics so loading, empty, and error states
-   are distinguishable.
-4. Confirm which Profile/settings affordances are real requirements before
-   implementing them.
-5. Complete Android release configuration before distribution work.
+1. Verify MAL import/export with fresh real anime and manga account exports.
+2. Restore Android Gradle plugin resolution and run an emulator/device manual
+   backup-import-restore cycle.
+3. Add per-entry resolution for uncertain import matches if product scope
+   requires manual conflict editing.
+4. Define API failure semantics and request-order protection.
+5. Decide encryption/cloud/account requirements before storing account data.

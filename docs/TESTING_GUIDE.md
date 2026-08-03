@@ -2,78 +2,85 @@
 
 ## Current structure
 
-All tests are under `test/`; no integration-test or golden-test directory
-exists.
+All automated tests are under `test/`; no integration-test or golden-test
+directory exists. Fifteen Dart files declare **79 tests**.
 
-| File | Scope | Declared tests |
-| --- | --- | ---: |
-| `api_service_test.dart` | Jikan/TVMaze mapping helpers | 3 |
-| `local_storage_repository_test.dart` | Seed, add, progress, update, delete with mocked preferences | 5 |
-| `search_repository_test.dart` | Category delegation and thrown failure through a fake service | 5 |
-| `search_tab_test.dart` | Explore rendering, duplicate state, add callback | 3 |
-| `media_detail_screen_test.dart` | Detail save and confirmed delete callbacks | 2 |
-| `widget_test.dart` | Stale Flutter counter-template test | 1 |
-
-Total declared: **19**.
+| Area | Primary files | Coverage |
+| --- | --- | --- |
+| API/search | `api_service_test.dart`, `search_repository_test.dart`, `search_tab_test.dart` | Provider mapping, category delegation, Explore rendering/add state |
+| Library/model | `media_item_test.dart`, `local_storage_repository_test.dart` | Serialization, legacy/defaults, seed/empty/corrupt storage, CRUD/progress/seasons |
+| Manual/detail/card/shell | manual/detail/card/widget test files | Visible forms, progress states, callbacks, real app shell |
+| Native backup | `native_backup_service_test.dart` | Full-field round trip, checksum, v0 migration, future schema, invalid entry |
+| MAL transfer | `mal_xml_service_test.dart`, `test/fixtures/` | Anime/manga, gzip, empty/malformed/unsafe/status/ID cases, Unicode export |
+| CSV | `csv_export_service_test.dart` | BOM, escaping, Unicode, filtering |
+| Planning/orchestration | `import_planner_test.dart`, `media_transfer_repository_test.dart` | Matching, strategies, safe merge, full restore, rollback, safety retention |
+| Transfer UI | `data_management_screen_test.dart` | Actions, cancellation, conflict warning, explicit empty restore |
 
 ## Test techniques
 
-- `SharedPreferences.setMockInitialValues` resets local preference state.
-- Test subclasses override `ApiService.searchMedia`.
-- Constructor injection supplies repositories/services to widgets.
-- Widget tests resize the test view when scrolling/tapping requires space.
-- No general mocking library or fixture directory is used.
+- `SharedPreferences.setMockInitialValues` isolates local preference state.
+- Constructor injection supplies repositories, services, file adapters, and
+  HTTP fakes.
+- MAL fixtures include official-style anime/manga, gzip source generation,
+  malformed, empty, missing-ID, and unknown-status examples.
+- Repository transaction validation is injectable to force a deterministic
+  critical-write failure and prove rollback.
+- Widget tests resize/scroll only when interaction requires it and avoid live
+  image success assumptions.
 
 ## Commands
 
 ```bash
-flutter test
-flutter test test/api_service_test.dart
-flutter test test/local_storage_repository_test.dart
-flutter test test/search_tab_test.dart
+flutter test --no-pub
+flutter test --no-pub test/native_backup_service_test.dart
+flutter test --no-pub test/mal_xml_service_test.dart
+flutter test --no-pub test/media_transfer_repository_test.dart
+flutter test --coverage
 ```
 
-Coverage can be requested with `flutter test --coverage`, but no threshold or
-reporting tool is configured.
+Offline package resolution must have produced `.dart_tool/package_config.json`
+before `--no-pub` commands. Coverage has no enforced threshold.
 
-## Current status
+## Verified status
 
-Tests were **not successfully executed** on 2026-07-25. Package resolution is
-blocked, and `flutter test --no-pub` stops before test discovery because
-`.dart_tool/package_config.json` does not exist.
+On 2026-08-01 with Flutter 3.44.8/Dart 3.12.2:
 
-Separately, `test/widget_test.dart` references `MyApp`, while production defines
-`OtakuLogApp`. That template test will not compile after dependencies are
-restored. Do not report the suite as passing until both conditions are resolved
-and the full command succeeds.
+- six transfer-focused files declare 33 tests; all pass in the full suite (the
+  initial targeted command passed 30/30 before three final regressions);
+- full `flutter test --no-pub`: 79/79 passed;
+- `flutter analyze --no-pub`: no issues;
+- web release build: passed;
+- release-web browser smoke: Home -> Profile -> Data, Backup & Transfer rendered
+  and a native backup action reported `Backup saved.`; transfer history showed
+  the completed backup with eight processed items;
+- Android debug build: did not reach source compilation because Android Gradle
+  plugin 9.0.1 could not resolve from configured repositories.
+
+The prior stale counter test now constructs `OtakuLogApp` and verifies the
+actual three-destination shell.
 
 ## Coverage limitations
 
-- No direct `MediaItem` serialization/progress tests
-- No `HomeTab`, `MainNavigationScreen`, `ProfileTab`, `MediaCard`, or theme tests
-- No HTTP request/response tests with an injected mock client
-- No malformed storage/response, non-200, or timeout tests
-- No search debounce/out-of-order request test
-- No persistence failure UI tests
-- No accessibility, golden, responsive, integration, or build smoke tests
-- No Android/web platform test
+- No end-to-end platform picker/save automation or device integration tests
+- No fresh real-account MAL export fixture checked in (release manual check is
+  required)
+- No CSV import, MAL OAuth, or per-entry uncertain-conflict UI because those
+  behaviors are not implemented
+- No search debounce/out-of-order, API non-200/timeout, accessibility, golden,
+  or broad responsive-layout suite
+- No Android Kotlin compilation result until plugin resolution is restored
 
 ## Expectations for new work
 
-- Business/model/repository logic changes require unit tests.
-- State changes require a focused widget/state test using existing constructor
-  seams.
-- Reusable widgets require widget tests when behavior is non-trivial.
-- Bug fixes should add a regression test when feasible.
-- API parsing changes require mapper or repository tests, including missing or
-  malformed fields.
-- Persistence-field changes require backward-compatibility tests.
-- New asynchronous search behavior must cover stale results and failure states.
-
-Keep tests deterministic: inject clients/repositories, avoid live API requests,
-and do not rely on external image success.
+- Business/model/repository changes require unit tests.
+- State changes require a focused widget test using constructor seams.
+- Every import provider needs valid, malformed, empty, Unicode, duplicate,
+  oversized, and representative round-trip cases where export exists.
+- Persistence changes need backward-compatibility, failure, and rollback tests.
+- Keep tests deterministic: inject dependencies and never require live API or
+  image responses.
 
 ## Naming
 
-Existing tests use readable sentence-style names and group by class. Continue
-that pattern, stating behavior and condition rather than implementation detail.
+Use sentence-style behavior names grouped by unit. State the condition and
+observable result rather than the implementation detail.

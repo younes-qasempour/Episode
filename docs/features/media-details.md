@@ -1,7 +1,7 @@
 # Media Details and Editing
 
 - **Status:** Functional but incomplete
-- **Last verified:** 2026-07-25
+- **Last verified:** 2026-08-01
 
 ## Purpose
 
@@ -76,8 +76,8 @@ must not be treated as a second seasonal source of truth.
 
 `media_detail_screen_test.dart` covers legacy rendering/save, confirmed
 deletion, unknown totals, progress beyond total without auto-completion,
-season add/edit, and movie-specific presentation. Execution remains blocked
-by package resolution in the current environment.
+season add/edit, and movie-specific presentation. All seven focused tests and
+the full 79-test suite pass on Flutter 3.44.8.
 
 ## Known limitations
 

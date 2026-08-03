@@ -128,6 +128,7 @@ class ApiService {
       status: 'Plan to Watch',
       releaseStatus: releaseStatusFromStorage(json['status']),
       synopsis: synopsis,
+      externalIds: {'mal': '$malId', 'jikan': '$malId'},
     );
   }
 
@@ -151,6 +152,7 @@ class ApiService {
       status: 'Plan to Watch',
       releaseStatus: releaseStatusFromStorage(json['status']),
       synopsis: synopsis,
+      externalIds: {'mal': '$malId', 'jikan': '$malId'},
     );
   }
 
@@ -173,6 +175,7 @@ class ApiService {
       status: 'Plan to Watch',
       releaseStatus: releaseStatusFromStorage(show['status']),
       synopsis: synopsis,
+      externalIds: {'tvmaze': '$id'},
     );
   }
 
