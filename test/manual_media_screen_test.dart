@@ -27,7 +27,10 @@ void main() {
     expect(savedItem, isNotNull);
     expect(savedItem!.title, 'My Missing Anime');
     expect(savedItem!.isManual, isTrue);
-    expect(savedItem!.id, startsWith('manual_'));
+    final uuidRegex = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    );
+    expect(uuidRegex.hasMatch(savedItem!.id), isTrue);
     expect(savedItem!.totalCount, isNull);
   });
 

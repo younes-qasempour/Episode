@@ -339,31 +339,31 @@ class _ManualMediaScreenState extends State<ManualMediaScreen> {
             if (_mediaType.supportsProgress &&
                 _progressMode == ProgressMode.seasonal) ...[
               const SizedBox(height: 16),
-              ..._seasons.map(
-                (season) => Card(
-                  child: ListTile(
-                    title: Text(season.displayName),
-                    subtitle: Text(
-                      '${season.progressSummary} Ep · ${season.releaseStatus.label}',
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          tooltip: 'Edit ${season.displayName}',
-                          onPressed: () => _editSeason(season),
-                          icon: const Icon(Icons.edit_outlined),
+              ..._seasons.where((s) => s.deletedAt == null).map(
+                    (season) => Card(
+                      child: ListTile(
+                        title: Text(season.displayName),
+                        subtitle: Text(
+                          '${season.progressSummary} Ep · ${season.releaseStatus.label}',
                         ),
-                        IconButton(
-                          tooltip: 'Delete ${season.displayName}',
-                          onPressed: () => _deleteSeason(season),
-                          icon: const Icon(Icons.delete_outline),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'Edit ${season.displayName}',
+                              onPressed: () => _editSeason(season),
+                              icon: const Icon(Icons.edit_outlined),
+                            ),
+                            IconButton(
+                              tooltip: 'Delete ${season.displayName}',
+                              onPressed: () => _deleteSeason(season),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
               OutlinedButton.icon(
                 key: const Key('manual-add-season-button'),
                 onPressed: _editSeason,

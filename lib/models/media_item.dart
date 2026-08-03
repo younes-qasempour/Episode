@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 
 enum MediaType { anime, manga, series, movie }
 
@@ -172,6 +173,10 @@ class MediaSeason {
   final int currentProgress;
   final int? totalCount;
   final ReleaseStatus releaseStatus;
+  final DateTime? _rawCreatedAt;
+  final DateTime? _rawUpdatedAt;
+  final DateTime? deletedAt;
+  final int localRevision;
 
   const MediaSeason({
     required this.id,
@@ -180,9 +185,19 @@ class MediaSeason {
     required int currentProgress,
     required int? totalCount,
     this.releaseStatus = ReleaseStatus.unknown,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    this.deletedAt,
+    this.localRevision = 1,
   })  : seasonNumber = seasonNumber < 1 ? 1 : seasonNumber,
         currentProgress = currentProgress < 0 ? 0 : currentProgress,
-        totalCount = totalCount != null && totalCount >= 0 ? totalCount : null;
+        totalCount = totalCount != null && totalCount >= 0 ? totalCount : null,
+        _rawCreatedAt = createdAt,
+        _rawUpdatedAt = updatedAt;
+
+  DateTime get createdAt => (_rawCreatedAt ?? DateTime.now()).toUtc();
+  DateTime get updatedAt =>
+      (_rawUpdatedAt ?? _rawCreatedAt ?? DateTime.now()).toUtc();
 
   String get displayName {
     final customTitle = title?.trim();
@@ -215,6 +230,11 @@ class MediaSeason {
     int? totalCount,
     bool clearTotalCount = false,
     ReleaseStatus? releaseStatus,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    bool clearDeletedAt = false,
+    int? localRevision,
   }) {
     return MediaSeason(
       id: id ?? this.id,
@@ -223,6 +243,10 @@ class MediaSeason {
       currentProgress: currentProgress ?? this.currentProgress,
       totalCount: clearTotalCount ? null : (totalCount ?? this.totalCount),
       releaseStatus: releaseStatus ?? this.releaseStatus,
+      createdAt: createdAt ?? _rawCreatedAt,
+      updatedAt: updatedAt ?? _rawUpdatedAt,
+      deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
+      localRevision: localRevision ?? this.localRevision,
     );
   }
 
@@ -234,10 +258,23 @@ class MediaSeason {
       'currentProgress': currentProgress,
       'totalCount': totalCount,
       'releaseStatus': releaseStatus.storageValue,
+      'createdAt': createdAt.toUtc().toIso8601String(),
+      'updatedAt': updatedAt.toUtc().toIso8601String(),
+      'deletedAt': deletedAt?.toUtc().toIso8601String(),
+      'localRevision': localRevision,
     };
   }
 
-  factory MediaSeason.fromMap(Map<String, dynamic> map) {
+  factory MediaSeason.fromMap(
+    Map<String, dynamic> map, {
+    DateTime? fallbackTimestamp,
+  }) {
+    final now = (fallbackTimestamp ?? DateTime.now()).toUtc();
+    final createdAt = _dateTimeOrNull(map['createdAt'])?.toUtc() ?? now;
+    final updatedAt = _dateTimeOrNull(map['updatedAt'])?.toUtc() ?? createdAt;
+    final deletedAt = _dateTimeOrNull(map['deletedAt'])?.toUtc();
+    final revision = _nonNegativeInt(map['localRevision'], fallback: 1);
+
     return MediaSeason(
       id: map['id']?.toString() ?? '',
       seasonNumber: _nonNegativeInt(map['seasonNumber'], fallback: 1),
@@ -245,12 +282,16 @@ class MediaSeason {
       currentProgress: _nonNegativeInt(map['currentProgress']),
       totalCount: _nonNegativeNullableInt(map['totalCount']),
       releaseStatus: releaseStatusFromStorage(map['releaseStatus']),
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      deletedAt: deletedAt,
+      localRevision: revision < 1 ? 1 : revision,
     );
   }
 }
 
 class MediaItem {
-  static int _manualIdSequence = 0;
+  static const _uuid = Uuid();
 
   final String id;
   final String title;
@@ -271,7 +312,10 @@ class MediaItem {
   final DateTime? startedAt;
   final DateTime? completedAt;
   final DateTime? addedAt;
-  final DateTime? updatedAt;
+  final DateTime? _rawCreatedAt;
+  final DateTime? _rawUpdatedAt;
+  final DateTime? deletedAt;
+  final int localRevision;
   final int repeatCount;
   final bool isFavorite;
   final Map<String, dynamic> customMetadata;
@@ -296,13 +340,24 @@ class MediaItem {
     this.startedAt,
     this.completedAt,
     this.addedAt,
-    this.updatedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    this.deletedAt,
+    this.localRevision = 1,
     this.repeatCount = 0,
     this.isFavorite = false,
     this.customMetadata = const {},
   })  : _flatCurrentProgress = currentProgress < 0 ? 0 : currentProgress,
         _flatTotalCount =
-            totalCount != null && totalCount >= 0 ? totalCount : null;
+            totalCount != null && totalCount >= 0 ? totalCount : null,
+        _rawCreatedAt = createdAt,
+        _rawUpdatedAt = updatedAt;
+
+  DateTime get createdAt =>
+      (_rawCreatedAt ?? addedAt ?? _rawUpdatedAt ?? DateTime.now()).toUtc();
+
+  DateTime get updatedAt =>
+      (_rawUpdatedAt ?? addedAt ?? _rawCreatedAt ?? DateTime.now()).toUtc();
 
   MediaType get type => mediaTypeFromStorage(mediaType);
 
@@ -316,19 +371,24 @@ class MediaItem {
 
   int? get flatTotalCount => _flatTotalCount;
 
+  List<MediaSeason> get activeSeasons =>
+      seasons.where((s) => s.deletedAt == null).toList();
+
   int get currentProgress {
     if (progressMode == ProgressMode.seasonal) {
-      return seasons.fold(0, (sum, season) => sum + season.currentProgress);
+      return activeSeasons.fold(
+          0, (sum, season) => sum + season.currentProgress);
     }
     return _flatCurrentProgress;
   }
 
   int? get totalCount {
     if (progressMode == ProgressMode.seasonal) {
-      if (seasons.isEmpty || seasons.any((season) => !season.hasKnownTotal)) {
+      final active = activeSeasons;
+      if (active.isEmpty || active.any((season) => !season.hasKnownTotal)) {
         return null;
       }
-      return seasons.fold<int>(0, (sum, season) => sum + season.totalCount!);
+      return active.fold<int>(0, (sum, season) => sum + season.totalCount!);
     }
     return _flatTotalCount;
   }
@@ -362,7 +422,7 @@ class MediaItem {
 
   MediaSeason? get latestSeason {
     MediaSeason? result;
-    for (final season in seasons) {
+    for (final season in activeSeasons) {
       if (result == null || season.seasonNumber > result.seasonNumber) {
         result = season;
       }
@@ -372,7 +432,7 @@ class MediaItem {
 
   MediaSeason? get defaultIncrementSeason {
     MediaSeason? result;
-    for (final season in seasons) {
+    for (final season in activeSeasons) {
       if (season.releaseStatus != ReleaseStatus.ongoing) {
         continue;
       }
@@ -386,15 +446,11 @@ class MediaItem {
   MediaSeason? get cardSeason => defaultIncrementSeason ?? latestSeason;
 
   static String createManualId({DateTime? timestamp}) {
-    final micros =
-        (timestamp ?? DateTime.now()).microsecondsSinceEpoch.toRadixString(36);
-    final sequence = (_manualIdSequence++).toRadixString(36);
-    return 'manual_${micros}_$sequence';
+    return _uuid.v4();
   }
 
   static String createSeasonId(String mediaId, int seasonNumber) {
-    final micros = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
-    return '$mediaId-season-$seasonNumber-$micros';
+    return _uuid.v4();
   }
 
   MediaItem copyWith({
@@ -423,8 +479,12 @@ class MediaItem {
     bool clearCompletedAt = false,
     DateTime? addedAt,
     bool clearAddedAt = false,
+    DateTime? createdAt,
     DateTime? updatedAt,
     bool clearUpdatedAt = false,
+    DateTime? deletedAt,
+    bool clearDeletedAt = false,
+    int? localRevision,
     int? repeatCount,
     bool? isFavorite,
     Map<String, dynamic>? customMetadata,
@@ -465,40 +525,71 @@ class MediaItem {
       startedAt: clearStartedAt ? null : (startedAt ?? this.startedAt),
       completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
       addedAt: clearAddedAt ? null : (addedAt ?? this.addedAt),
-      updatedAt: clearUpdatedAt ? null : (updatedAt ?? this.updatedAt),
+      createdAt: createdAt ?? _rawCreatedAt,
+      updatedAt: clearUpdatedAt
+          ? DateTime.now().toUtc()
+          : (updatedAt ?? _rawUpdatedAt),
+      deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
+      localRevision: localRevision ?? this.localRevision,
       repeatCount: repeatCount ?? this.repeatCount,
       isFavorite: isFavorite ?? this.isFavorite,
       customMetadata: customMetadata ?? this.customMetadata,
     );
   }
 
-  MediaItem incrementFlatProgress() {
+  MediaItem incrementFlatProgress({DateTime? now, int? newRevision}) {
     if (!supportsProgress || progressMode != ProgressMode.flat) {
       return this;
     }
-    return copyWith(currentProgress: _flatCurrentProgress + 1);
+    final time = (now ?? DateTime.now()).toUtc();
+    return copyWith(
+      currentProgress: _flatCurrentProgress + 1,
+      updatedAt: time,
+      localRevision: newRevision ?? (localRevision + 1),
+    );
   }
 
-  MediaItem incrementSeason(String seasonId) {
+  MediaItem incrementSeason(
+    String seasonId, {
+    DateTime? now,
+    int? newRevision,
+  }) {
     if (progressMode != ProgressMode.seasonal) {
       return this;
     }
+    final time = (now ?? DateTime.now()).toUtc();
     var found = false;
     final updatedSeasons = seasons.map((season) {
       if (season.id != seasonId) {
         return season;
       }
       found = true;
-      return season.copyWith(currentProgress: season.currentProgress + 1);
+      return season.copyWith(
+        currentProgress: season.currentProgress + 1,
+        updatedAt: time,
+        localRevision: season.localRevision + 1,
+      );
     }).toList();
-    return found ? copyWith(seasons: updatedSeasons) : this;
+
+    return found
+        ? copyWith(
+            seasons: updatedSeasons,
+            updatedAt: time,
+            localRevision: newRevision ?? (localRevision + 1),
+          )
+        : this;
   }
 
-  MediaItem upsertSeason(MediaSeason season) {
+  MediaItem upsertSeason(
+    MediaSeason season, {
+    DateTime? now,
+    int? newRevision,
+  }) {
     if (!supportsSeasons) {
       throw StateError('$mediaType does not support season tracking.');
     }
-    final hasDuplicateNumber = seasons.any(
+    final time = (now ?? DateTime.now()).toUtc();
+    final hasDuplicateNumber = activeSeasons.any(
       (existing) =>
           existing.id != season.id &&
           existing.seasonNumber == season.seasonNumber,
@@ -511,29 +602,73 @@ class MediaItem {
       );
     }
 
+    final stampedSeason = season.copyWith(
+      updatedAt: time,
+      localRevision:
+          season.id.isNotEmpty && seasons.any((s) => s.id == season.id)
+              ? season.localRevision + 1
+              : season.localRevision,
+    );
+
     final updated = List<MediaSeason>.from(seasons);
-    final index = updated.indexWhere((existing) => existing.id == season.id);
+    final index =
+        updated.indexWhere((existing) => existing.id == stampedSeason.id);
     if (index >= 0) {
-      updated[index] = season;
+      updated[index] = stampedSeason;
     } else {
-      updated.add(season);
+      updated.add(stampedSeason);
     }
     updated.sort((a, b) => a.seasonNumber.compareTo(b.seasonNumber));
-    return copyWith(seasons: updated);
-  }
 
-  MediaItem removeSeason(String seasonId) {
     return copyWith(
-      seasons: seasons.where((season) => season.id != seasonId).toList(),
+      seasons: updated,
+      updatedAt: time,
+      localRevision: newRevision ?? (localRevision + 1),
     );
   }
 
-  MediaItem convertedTo(ProgressMode mode) {
+  MediaItem removeSeason(
+    String seasonId, {
+    DateTime? now,
+    int? newRevision,
+  }) {
+    final time = (now ?? DateTime.now()).toUtc();
+    var found = false;
+    final updatedSeasons = seasons.map((season) {
+      if (season.id != seasonId) {
+        return season;
+      }
+      found = true;
+      return season.copyWith(
+        deletedAt: time,
+        updatedAt: time,
+        localRevision: season.localRevision + 1,
+      );
+    }).toList();
+
+    if (!found) {
+      return this;
+    }
+    return copyWith(
+      seasons: updatedSeasons,
+      updatedAt: time,
+      localRevision: newRevision ?? (localRevision + 1),
+    );
+  }
+
+  MediaItem convertedTo(
+    ProgressMode mode, {
+    DateTime? now,
+    int? newRevision,
+  }) {
     if (!supportsSeasons || progressMode == mode) {
       return this;
     }
+    final time = (now ?? DateTime.now()).toUtc();
+    final revision = newRevision ?? (localRevision + 1);
+
     if (mode == ProgressMode.seasonal) {
-      final convertedSeasons = seasons.isNotEmpty
+      final convertedSeasons = activeSeasons.isNotEmpty
           ? seasons
           : [
               MediaSeason(
@@ -542,11 +677,16 @@ class MediaItem {
                 currentProgress: _flatCurrentProgress,
                 totalCount: _flatTotalCount,
                 releaseStatus: releaseStatus,
+                createdAt: time,
+                updatedAt: time,
+                localRevision: 1,
               ),
             ];
       return copyWith(
         progressMode: ProgressMode.seasonal,
         seasons: convertedSeasons,
+        updatedAt: time,
+        localRevision: revision,
       );
     }
 
@@ -556,6 +696,8 @@ class MediaItem {
       currentProgress: currentProgress,
       totalCount: aggregateTotal,
       clearTotalCount: aggregateTotal == null,
+      updatedAt: time,
+      localRevision: revision,
     );
   }
 
@@ -564,11 +706,8 @@ class MediaItem {
       'id': id,
       'title': title,
       'coverUrl': coverUrl,
-      // Active values remain in legacy keys for backward-compatible readers.
       'currentProgress': currentProgress,
       'totalCount': totalCount,
-      // Flat snapshots make progress-mode conversion reversible. They are only
-      // authoritative while progressMode is flat.
       'flatCurrentProgress': _flatCurrentProgress,
       'flatTotalCount': _flatTotalCount,
       'mediaType': type.storageValue,
@@ -585,21 +724,40 @@ class MediaItem {
       'startedAt': startedAt?.toUtc().toIso8601String(),
       'completedAt': completedAt?.toUtc().toIso8601String(),
       'addedAt': addedAt?.toUtc().toIso8601String(),
-      'updatedAt': updatedAt?.toUtc().toIso8601String(),
+      'createdAt': createdAt.toUtc().toIso8601String(),
+      'updatedAt': updatedAt.toUtc().toIso8601String(),
+      'deletedAt': deletedAt?.toUtc().toIso8601String(),
+      'localRevision': localRevision,
       'repeatCount': repeatCount,
       'isFavorite': isFavorite,
       'customMetadata': customMetadata,
     };
   }
 
-  factory MediaItem.fromMap(Map<String, dynamic> map) {
+  factory MediaItem.fromMap(
+    Map<String, dynamic> map, {
+    DateTime? fallbackTimestamp,
+  }) {
+    final defaultTime = (fallbackTimestamp ?? DateTime.now()).toUtc();
+    final addedAt = _dateTimeOrNull(map['addedAt'])?.toUtc();
+    final rawUpdatedAt = _dateTimeOrNull(map['updatedAt'])?.toUtc();
+    final createdAt = _dateTimeOrNull(map['createdAt'])?.toUtc() ??
+        addedAt ??
+        rawUpdatedAt ??
+        defaultTime;
+    final updatedAt = rawUpdatedAt ?? addedAt ?? createdAt;
+    final deletedAt = _dateTimeOrNull(map['deletedAt'])?.toUtc();
+    final localRevision = _nonNegativeInt(map['localRevision'], fallback: 1);
+
     final rawSeasons = map['seasons'];
     final seasons = rawSeasons is List
         ? rawSeasons
             .whereType<Map>()
             .map(
-              (season) =>
-                  MediaSeason.fromMap(Map<String, dynamic>.from(season)),
+              (season) => MediaSeason.fromMap(
+                Map<String, dynamic>.from(season),
+                fallbackTimestamp: updatedAt,
+              ),
             )
             .toList()
         : <MediaSeason>[];
@@ -633,8 +791,11 @@ class MediaItem {
       tags: _stringList(map['tags']),
       startedAt: _dateTimeOrNull(map['startedAt']),
       completedAt: _dateTimeOrNull(map['completedAt']),
-      addedAt: _dateTimeOrNull(map['addedAt']),
-      updatedAt: _dateTimeOrNull(map['updatedAt']),
+      addedAt: addedAt,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      deletedAt: deletedAt,
+      localRevision: localRevision < 1 ? 1 : localRevision,
       repeatCount: _nonNegativeInt(map['repeatCount']),
       isFavorite: map['isFavorite'] == true,
       customMetadata: _dynamicMap(map['customMetadata']),

@@ -1,8 +1,8 @@
 import '../models/media_item.dart';
 
 final List<MediaItem> sampleMediaItems = [
-  const MediaItem(
-    id: '1',
+  MediaItem(
+    id: '550e8400-e29b-41d4-a716-446655440001',
     title: 'Jujutsu Kaisen Season 2',
     coverUrl:
         'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80',
@@ -10,9 +10,12 @@ final List<MediaItem> sampleMediaItems = [
     totalCount: 23,
     mediaType: 'anime',
     status: 'Watching',
+    createdAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    updatedAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    localRevision: 1,
   ),
-  const MediaItem(
-    id: '2',
+  MediaItem(
+    id: '550e8400-e29b-41d4-a716-446655440002',
     title: 'Chainsaw Man',
     coverUrl:
         'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80',
@@ -20,9 +23,12 @@ final List<MediaItem> sampleMediaItems = [
     totalCount: 160,
     mediaType: 'manga',
     status: 'Reading',
+    createdAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    updatedAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    localRevision: 1,
   ),
-  const MediaItem(
-    id: '3',
+  MediaItem(
+    id: '550e8400-e29b-41d4-a716-446655440003',
     title: 'Frieren: Beyond Journey\'s End',
     coverUrl:
         'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80',
@@ -30,9 +36,12 @@ final List<MediaItem> sampleMediaItems = [
     totalCount: 28,
     mediaType: 'anime',
     status: 'Completed',
+    createdAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    updatedAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    localRevision: 1,
   ),
-  const MediaItem(
-    id: '4',
+  MediaItem(
+    id: '550e8400-e29b-41d4-a716-446655440004',
     title: 'Solo Leveling',
     coverUrl:
         'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop&q=80',
@@ -40,9 +49,12 @@ final List<MediaItem> sampleMediaItems = [
     totalCount: 12,
     mediaType: 'anime',
     status: 'Watching',
+    createdAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    updatedAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    localRevision: 1,
   ),
-  const MediaItem(
-    id: '5',
+  MediaItem(
+    id: '550e8400-e29b-41d4-a716-446655440005',
     title: 'One Piece - Wano Arc',
     coverUrl:
         'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
@@ -50,9 +62,12 @@ final List<MediaItem> sampleMediaItems = [
     totalCount: 1100,
     mediaType: 'manga',
     status: 'Reading',
+    createdAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    updatedAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    localRevision: 1,
   ),
-  const MediaItem(
-    id: '6',
+  MediaItem(
+    id: '550e8400-e29b-41d4-a716-446655440006',
     title: 'Alice in Borderland S2',
     coverUrl:
         'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop&q=80',
@@ -60,9 +75,12 @@ final List<MediaItem> sampleMediaItems = [
     totalCount: 8,
     mediaType: 'series',
     status: 'Plan to Watch',
+    createdAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    updatedAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    localRevision: 1,
   ),
-  const MediaItem(
-    id: '7',
+  MediaItem(
+    id: '550e8400-e29b-41d4-a716-446655440007',
     title: 'Demon Slayer: Hashira Training',
     coverUrl:
         'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
@@ -70,9 +88,12 @@ final List<MediaItem> sampleMediaItems = [
     totalCount: 8,
     mediaType: 'anime',
     status: 'Watching',
+    createdAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    updatedAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    localRevision: 1,
   ),
-  const MediaItem(
-    id: '8',
+  MediaItem(
+    id: '550e8400-e29b-41d4-a716-446655440008',
     title: 'Spy x Family Code: White',
     coverUrl:
         'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=600&auto=format&fit=crop&q=80',
@@ -80,5 +101,8 @@ final List<MediaItem> sampleMediaItems = [
     totalCount: 1,
     mediaType: 'anime',
     status: 'On Hold',
+    createdAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    updatedAt: DateTime.parse('2026-01-01T00:00:00Z'),
+    localRevision: 1,
   ),
 ];

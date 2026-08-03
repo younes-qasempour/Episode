@@ -9,10 +9,15 @@ class ImportPlanner {
     List<MediaItem> localItems,
     ImportOptions options,
   ) {
+    final uuidIndex = <String, List<MediaItem>>{};
     final externalIndex = <String, List<MediaItem>>{};
     final titleIndex = <String, List<MediaItem>>{};
     final fuzzyIndex = <MediaType, Map<String, List<_FuzzyTitleCandidate>>>{};
+
     for (final item in localItems) {
+      if (item.id.isNotEmpty) {
+        uuidIndex.putIfAbsent(item.id, () => []).add(item);
+      }
       for (final entry in _externalIds(item).entries) {
         externalIndex
             .putIfAbsent('${entry.key}:${entry.value}', () => [])
@@ -30,7 +35,9 @@ class ImportPlanner {
 
     final warnings = List<ImportWarning>.from(inspection.warnings);
     final candidates = <ImportCandidate>[];
+
     for (final imported in inspection.entries) {
+      // 1. Match by exact external provider ID
       final externalMatches = <MediaItem>{};
       for (final entry in imported.externalIds.entries) {
         externalMatches.addAll(
@@ -38,15 +45,28 @@ class ImportPlanner {
         );
       }
       if (externalMatches.length == 1) {
-        candidates.add(
-          _candidate(
-            imported,
-            externalMatches.single,
-            'Exact external provider ID',
-            true,
-            options,
-          ),
-        );
+        final local = externalMatches.single;
+        if (local.deletedAt != null) {
+          candidates.add(
+            ImportCandidate(
+              imported: imported,
+              local: local,
+              action: ImportAction.conflict,
+              matchReason: 'Imported item matches a deleted local tombstone',
+              isConfidentMatch: false,
+            ),
+          );
+        } else {
+          candidates.add(
+            _candidate(
+              imported,
+              local,
+              'Exact external provider ID',
+              true,
+              options,
+            ),
+          );
+        }
         continue;
       }
       if (externalMatches.length > 1) {
@@ -62,6 +82,38 @@ class ImportPlanner {
         continue;
       }
 
+      // 2. Match by exact UUID
+      final importedUuid = imported.localId ?? imported.sourceId;
+      if (importedUuid != null && importedUuid.isNotEmpty) {
+        final uuidMatches = uuidIndex[importedUuid] ?? const [];
+        if (uuidMatches.length == 1) {
+          final local = uuidMatches.single;
+          if (local.deletedAt != null) {
+            candidates.add(
+              ImportCandidate(
+                imported: imported,
+                local: local,
+                action: ImportAction.conflict,
+                matchReason: 'Imported item matches a deleted local tombstone',
+                isConfidentMatch: false,
+              ),
+            );
+          } else {
+            candidates.add(
+              _candidate(
+                imported,
+                local,
+                'Exact local UUID match',
+                true,
+                options,
+              ),
+            );
+          }
+          continue;
+        }
+      }
+
+      // 3. Match by exact normalized title & media type
       final titleMatches = titleIndex[_titleKey(
             imported.mediaType,
             imported.title,
@@ -69,6 +121,19 @@ class ImportPlanner {
           const [];
       if (titleMatches.length == 1) {
         final local = titleMatches.single;
+        if (local.deletedAt != null) {
+          candidates.add(
+            ImportCandidate(
+              imported: imported,
+              local: local,
+              action: ImportAction.conflict,
+              matchReason: 'Imported item matches a deleted local tombstone',
+              isConfidentMatch: false,
+            ),
+          );
+          continue;
+        }
+
         if (local.progressMode == ProgressMode.seasonal &&
             imported.progress > local.currentProgress) {
           warnings.add(
@@ -105,22 +170,36 @@ class ImportPlanner {
         continue;
       }
 
+      // 4. Fuzzy title match
       final uncertain = _uncertainMatch(
         imported,
         fuzzyIndex[imported.mediaType] ?? const {},
       );
       if (uncertain != null) {
-        candidates.add(
-          ImportCandidate(
-            imported: imported,
-            local: uncertain.item,
-            action: ImportAction.conflict,
-            matchReason: uncertain.comparisonLimited
-                ? 'Too many similar-title candidates to compare safely'
-                : 'Similar title requires confirmation',
-            isConfidentMatch: false,
-          ),
-        );
+        final local = uncertain.item;
+        if (local != null && local.deletedAt != null) {
+          candidates.add(
+            ImportCandidate(
+              imported: imported,
+              local: local,
+              action: ImportAction.conflict,
+              matchReason: 'Imported item matches a deleted local tombstone',
+              isConfidentMatch: false,
+            ),
+          );
+        } else {
+          candidates.add(
+            ImportCandidate(
+              imported: imported,
+              local: local,
+              action: ImportAction.conflict,
+              matchReason: uncertain.comparisonLimited
+                  ? 'Too many similar-title candidates to compare safely'
+                  : 'Similar title requires confirmation',
+              isConfidentMatch: false,
+            ),
+          );
+        }
         continue;
       }
 
@@ -226,8 +305,14 @@ class ImportPlanner {
     final incoming = imported.toMediaItem(id: local.id);
     final combinedExternalIds = Map<String, String>.from(imported.externalIds)
       ..addAll(local.externalIds);
+
+    final now = DateTime.now().toUtc();
     if (policy == ConflictPolicy.useImported) {
       return incoming.copyWith(
+        id: local.id,
+        createdAt: local.createdAt,
+        updatedAt: now,
+        localRevision: local.localRevision + 1,
         coverUrl:
             incoming.coverUrl.isEmpty ? local.coverUrl : incoming.coverUrl,
         synopsis:
@@ -245,7 +330,11 @@ class ImportPlanner {
         incoming.currentProgress > local.currentProgress;
     final tags =
         <String>{...local.tags, ...incoming.tags}.toList(growable: false);
+
     return local.copyWith(
+      createdAt: local.createdAt,
+      updatedAt: _latest(local.updatedAt, incoming.updatedAt) ?? now,
+      localRevision: local.localRevision + 1,
       currentProgress: useImportedProgress
           ? incoming.currentProgress
           : local.flatCurrentProgress,
@@ -266,7 +355,6 @@ class ImportPlanner {
       startedAt: _earliest(local.startedAt, incoming.startedAt),
       completedAt: _latest(local.completedAt, incoming.completedAt),
       addedAt: _earliest(local.addedAt, incoming.addedAt),
-      updatedAt: _latest(local.updatedAt, incoming.updatedAt),
       repeatCount: local.repeatCount >= incoming.repeatCount
           ? local.repeatCount
           : incoming.repeatCount,

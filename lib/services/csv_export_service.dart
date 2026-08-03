@@ -45,9 +45,10 @@ class CsvExportProvider implements ExportProvider {
     List<MediaItem> items, {
     MediaType? mediaType,
   }) async {
+    final activeItems = items.where((item) => item.deletedAt == null).toList();
     final selected = mediaType == null
-        ? items
-        : items.where((item) => item.type == mediaType).toList();
+        ? activeItems
+        : activeItems.where((item) => item.type == mediaType).toList();
     final buffer = StringBuffer('\uFEFF')..writeln(_row(_headers));
     for (final item in selected) {
       buffer.writeln(
@@ -67,7 +68,7 @@ class CsvExportProvider implements ExportProvider {
           item.startedAt?.toUtc().toIso8601String(),
           item.completedAt?.toUtc().toIso8601String(),
           item.addedAt?.toUtc().toIso8601String(),
-          item.updatedAt?.toUtc().toIso8601String(),
+          item.updatedAt.toUtc().toIso8601String(),
           item.tags.join(', '),
           item.notes,
           item.synopsis,

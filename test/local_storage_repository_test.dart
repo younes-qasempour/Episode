@@ -208,9 +208,9 @@ void main() {
         final saved = reloaded.firstWhere(
           (item) => item.id == 'season-persist',
         );
-        expect(saved.seasons, hasLength(1));
-        expect(saved.seasons.single.id, 'season-b');
-        expect(saved.seasons.single.currentProgress, 4);
+        expect(saved.activeSeasons, hasLength(1));
+        expect(saved.activeSeasons.single.id, 'season-b');
+        expect(saved.activeSeasons.single.currentProgress, 4);
         expect(saved.currentProgress, 4);
       },
     );

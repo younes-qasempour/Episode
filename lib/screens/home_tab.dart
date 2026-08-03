@@ -92,10 +92,13 @@ class _HomeTabState extends State<HomeTab> {
                       width: 2,
                     ),
                   ),
-                  child: const CircleAvatar(
+                  child: CircleAvatar(
                     radius: 20,
-                    backgroundImage: NetworkImage(
-                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: Icon(
+                      Icons.person_rounded,
+                      color: theme.colorScheme.onPrimaryContainer,
+                      size: 20,
                     ),
                   ),
                 ),

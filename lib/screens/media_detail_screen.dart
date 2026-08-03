@@ -593,57 +593,58 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        if (_seasons.isEmpty)
+        if (_seasons.where((s) => s.deletedAt == null).isEmpty)
           _buildInfoPanel(
             context,
             icon: Icons.video_library_outlined,
             text: 'No seasons yet. Add one when you are ready to track it.',
           ),
-        ..._seasons.map(
-          (season) => Card(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: ListTile(
-                title: Text(season.displayName),
-                subtitle: Text(
-                  '${season.progressSummary} Ep · ${season.releaseStatus.label}'
-                  '${season.isBeyondKnownTotal ? ' · Beyond saved total' : ''}',
-                ),
-                trailing: Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    IconButton(
-                      tooltip: 'Decrease ${season.displayName}',
-                      onPressed: season.currentProgress > 0
-                          ? () => _changeSeasonProgress(season, -1)
-                          : null,
-                      icon: const Icon(Icons.remove_circle_outline),
+        ..._seasons.where((s) => s.deletedAt == null).map(
+              (season) => Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    title: Text(season.displayName),
+                    subtitle: Text(
+                      '${season.progressSummary} Ep · ${season.releaseStatus.label}'
+                      '${season.isBeyondKnownTotal ? ' · Beyond saved total' : ''}',
                     ),
-                    IconButton(
-                      tooltip: 'Increase ${season.displayName}',
-                      onPressed: () => _changeSeasonProgress(season, 1),
-                      icon: const Icon(Icons.add_circle_outline),
-                    ),
-                    PopupMenuButton<String>(
-                      tooltip: 'Season actions',
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          _editSeason(season);
-                        } else if (value == 'delete') {
-                          _deleteSeason(season);
-                        }
-                      },
-                      itemBuilder: (context) => const [
-                        PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        PopupMenuItem(value: 'delete', child: Text('Delete')),
+                    trailing: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        IconButton(
+                          tooltip: 'Decrease ${season.displayName}',
+                          onPressed: season.currentProgress > 0
+                              ? () => _changeSeasonProgress(season, -1)
+                              : null,
+                          icon: const Icon(Icons.remove_circle_outline),
+                        ),
+                        IconButton(
+                          tooltip: 'Increase ${season.displayName}',
+                          onPressed: () => _changeSeasonProgress(season, 1),
+                          icon: const Icon(Icons.add_circle_outline),
+                        ),
+                        PopupMenuButton<String>(
+                          tooltip: 'Season actions',
+                          onSelected: (value) {
+                            if (value == 'edit') {
+                              _editSeason(season);
+                            } else if (value == 'delete') {
+                              _deleteSeason(season);
+                            }
+                          },
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(value: 'edit', child: Text('Edit')),
+                            PopupMenuItem(
+                                value: 'delete', child: Text('Delete')),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           key: const Key('detail-add-season-button'),

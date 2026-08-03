@@ -113,6 +113,9 @@ class _SeasonEditorDialogState extends State<_SeasonEditorDialog> {
         totalCount:
             _knownTotal ? int.parse(_totalController.text.trim()) : null,
         releaseStatus: _releaseStatus,
+        createdAt: widget.season?.createdAt,
+        updatedAt: DateTime.now().toUtc(),
+        localRevision: (widget.season?.localRevision ?? 0) + 1,
       ),
     );
   }

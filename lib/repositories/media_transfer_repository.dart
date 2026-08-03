@@ -68,7 +68,7 @@ class MediaTransferRepository {
     TransferStageCallback? onStage,
   }) async {
     final stopwatch = Stopwatch()..start();
-    final current = await storageRepository.loadMediaItems();
+    final current = await storageRepository.loadAllMediaItemsIncludingDeleted();
     AutomaticBackupRecord? safetyBackup;
     try {
       onStage?.call(TransferStage.creatingBackup);

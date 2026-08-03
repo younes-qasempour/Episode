@@ -48,7 +48,11 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({
-      'otaku_log_media_items': jsonEncode([local.toMap()]),
+      'otaku_log_media_items': jsonEncode({
+        'schemaVersion': 2,
+        'migratedAt': '2026-08-03T00:00:00.000Z',
+        'mediaItems': [local.toMap()],
+      }),
     });
   });
 

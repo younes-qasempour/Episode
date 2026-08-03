@@ -427,7 +427,9 @@ class MalXmlExportProvider implements ExportProvider {
       );
     }
     final selectedType = mediaType!;
-    final matching = items.where((item) => item.type == selectedType).toList();
+    final activeItems = items.where((item) => item.deletedAt == null).toList();
+    final matching =
+        activeItems.where((item) => item.type == selectedType).toList();
     final representable = <(MediaItem, int)>[];
     final warnings = <String>[];
     for (final item in matching) {

@@ -58,7 +58,10 @@ void main() {
 
       final decoded = MediaItem.fromJson(original.toJson());
 
-      expect(decoded.id, startsWith('manual_'));
+      final uuidRegex = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      );
+      expect(uuidRegex.hasMatch(decoded.id), isTrue);
       expect(decoded.type, MediaType.movie);
       expect(decoded.isManual, isTrue);
       expect(decoded.supportsProgress, isFalse);
