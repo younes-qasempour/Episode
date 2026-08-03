@@ -6,12 +6,14 @@ class MediaCard extends StatelessWidget {
   final MediaItem item;
   final VoidCallback? onIncrementProgress;
   final VoidCallback? onTap;
+  final VoidCallback? onToggleFavorite;
 
   const MediaCard({
     super.key,
     required this.item,
     this.onIncrementProgress,
     this.onTap,
+    this.onToggleFavorite,
   });
 
   @override
@@ -26,13 +28,49 @@ class MediaCard extends StatelessWidget {
     final canIncrement = onIncrementProgress != null &&
         item.supportsProgress &&
         (item.progressMode == ProgressMode.flat || incrementSeason != null);
-    final progressText = item.type == MediaType.movie
-        ? '${item.releaseStatus.label} release'
-        : item.progressMode == ProgressMode.seasonal
-            ? cardSeason == null
-                ? 'No seasons added'
-                : '${cardSeason.displayName} · ${cardSeason.progressSummary} Ep'
-            : '${item.progressSummary} ${item.unitLabel}';
+    final String progressText;
+    if (item.type == MediaType.movie) {
+      progressText = '${item.releaseStatus.label} release';
+    } else if (item.currentProgress > 0) {
+      if (item.progressMode == ProgressMode.seasonal) {
+        progressText = cardSeason == null
+            ? 'No seasons added'
+            : '${cardSeason.displayName} · ${cardSeason.progressSummary} Ep';
+      } else {
+        progressText = '${item.progressSummary} ${item.unitLabel}';
+      }
+    } else {
+      if (item.progressMode == ProgressMode.seasonal &&
+          item.seasons.isNotEmpty) {
+        final totalEps = item.hasKnownTotal ? ' · ${item.totalCount} Ep' : '';
+        progressText = '${item.seasons.length} Seasons$totalEps';
+      } else if (item.hasKnownTotal) {
+        progressText =
+            '${item.totalCount} ${item.unitLabel == 'Ch' ? 'chapters' : 'episodes'}';
+      } else {
+        switch (item.releaseStatus) {
+          case ReleaseStatus.ongoing:
+            progressText =
+                'Ongoing · ${item.unitLabel == 'Ch' ? 'Publishing' : 'Airing'}';
+            break;
+          case ReleaseStatus.upcoming:
+            progressText = 'Upcoming';
+            break;
+          case ReleaseStatus.finished:
+            progressText = 'Finished';
+            break;
+          case ReleaseStatus.hiatus:
+            progressText = 'On Hiatus';
+            break;
+          case ReleaseStatus.cancelled:
+            progressText = 'Cancelled';
+            break;
+          default:
+            progressText = 'Ongoing';
+            break;
+        }
+      }
+    }
 
     IconData typeIcon;
     switch (item.mediaType.toLowerCase()) {
@@ -150,92 +188,134 @@ class MediaCard extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                // Media Type Chip
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary
-                                        .withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        typeIcon,
-                                        size: 12,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        item.mediaType.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          color: theme.colorScheme.primary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-
-                                // Status Badge Pill
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withValues(alpha: 0.14),
-                                    borderRadius: BorderRadius.circular(
-                                      AppTheme.chipRadius,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    trackingStatusLabel,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: statusColor,
-                                    ),
-                                  ),
-                                ),
-
-                                if (item.rating > 0) ...[
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Colors.amber.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
                                     child: Row(
-                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(
-                                          Icons.star_rounded,
-                                          size: 12,
-                                          color: Colors.amber,
-                                        ),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          item.rating.toStringAsFixed(1),
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.amber,
+                                        // Media Type Chip
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.primary
+                                                .withValues(alpha: 0.12),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                typeIcon,
+                                                size: 12,
+                                                color:
+                                                    theme.colorScheme.primary,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                item.mediaType.toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color:
+                                                      theme.colorScheme.primary,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
+                                        const SizedBox(width: 6),
+
+                                        // Status Badge Pill
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: statusColor.withValues(
+                                              alpha: 0.14,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              AppTheme.chipRadius,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            trackingStatusLabel,
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: statusColor,
+                                            ),
+                                          ),
+                                        ),
+
+                                        if (item.rating > 0) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 3,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.amber.withValues(
+                                                alpha: 0.15,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.star_rounded,
+                                                  size: 12,
+                                                  color: Colors.amber,
+                                                ),
+                                                const SizedBox(width: 2),
+                                                Text(
+                                                  item.rating
+                                                      .toStringAsFixed(1),
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Colors.amber,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
+                                  ),
+                                ),
+                                if (onToggleFavorite != null ||
+                                    item.isFavorite) ...[
+                                  IconButton(
+                                    icon: Icon(
+                                      item.isFavorite
+                                          ? Icons.favorite_rounded
+                                          : Icons.favorite_border_rounded,
+                                      color: item.isFavorite
+                                          ? Colors.redAccent
+                                          : theme.colorScheme.onSurfaceVariant
+                                              .withValues(alpha: 0.5),
+                                      size: 18,
+                                    ),
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 28,
+                                      minHeight: 28,
+                                    ),
+                                    onPressed: onToggleFavorite,
+                                    tooltip: item.isFavorite
+                                        ? 'Remove from favorites'
+                                        : 'Add to favorites',
                                   ),
                                 ],
                               ],

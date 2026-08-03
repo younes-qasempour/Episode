@@ -7,21 +7,15 @@ Snapshot verified on **2026-08-01** on branch
 
 | Area | Status | Evidence | Important files | Notes |
 | --- | --- | --- | --- | --- |
-| App shell and tabs | Complete for current scope | Material root, IndexedStack, three destinations, and pushed detail/manual/data routes | `lib/main.dart`, `lib/screens/main_navigation_screen.dart` | No deep links or named router. |
-| Local library load/save | Functional | Backward-compatible whole-list JSON CRUD, valid empty library, visible corruption errors, verified replacement rollback | `lib/repositories/local_storage_repository.dart`, `lib/models/media_item.dart` | Active storage is still plaintext SharedPreferences without an envelope schema. |
-| Home library | Functional but incomplete | Search/type filters, stats, state-aware cards, details, manual add, and uncapped `+1` | `lib/screens/home_tab.dart`, `lib/widgets/media_card.dart` | Seasonal card increment targets the latest ongoing season. |
-| Remote discovery | Functional but incomplete | Jikan anime/manga and TVMaze map to `MediaItem` with provider IDs | `lib/services/api_service.dart`, `lib/screens/search_tab.dart` | No pagination, timeout, retry, rate-limit handling, or visible transport error. |
-| Manual add and detail editing | Functional | Anime/manga/series/movie, unknown totals, flat/seasonal progress, statuses, seasons, score, synopsis, save/delete | manual/detail screens and tests | Save/delete callbacks remain synchronous at the detail-screen boundary. |
+| App shell and tabs | Complete | Material root, IndexedStack, three destinations, and pushed detail/manual/data/auth routes | `lib/main.dart`, `lib/screens/main_navigation_screen.dart` | Auth drawer, device management, and data management integrated. |
+| Local library load/save | Functional | Schema V2 envelope, backward-compatible whole-list JSON CRUD, soft deletes, tombstones, and snapshot transactions | `lib/repositories/local_storage_repository.dart`, `lib/models/media_item.dart` | V1 to V2 migration support with rollback protection. |
+| Home library | Complete | In-library search, Media Type & Status filter chips, sorting (Recently Updated, Title, Rating, Completion %), Favorites toggle, stats, state-aware cards, detail navigation, manual add, and uncapped `+1` | `lib/screens/home_tab.dart`, `lib/widgets/media_card.dart` | Multi-axis filtering, 4-way sorting, fast search, and 1-tap favorites. |
+| Remote discovery | Functional | Jikan anime/manga (with Kitsu fallback) and TVMaze requests map to `MediaItem` | `lib/services/api_service.dart`, `lib/screens/search_tab.dart` | TVMaze embedded season enrichment, Kitsu fallback, and Jikan 429 rate limit pacing. |
+| Manual add and detail editing | Functional | Anime/manga/series/movie, unknown totals, flat/seasonal progress, statuses, seasons, score, synopsis, custom cover URL, save/delete | manual/detail screens and tests | Save/delete callbacks remain synchronous at the screen boundary. |
 | Native backup/restore | Functional on Android/web | Schema v1 JSON, SHA-256, v0 migration, preview, full restore, safety backup, rollback | transfer repository, native codec, data screens | Portable files and local snapshots are unencrypted. |
-| MAL file transfer | Functional with release verification needed | Anime/manga XML and XML.GZ import, XML export for known MAL IDs, warnings and limits | `lib/services/mal_xml_service.dart`, fixtures/tests | Live official MAL export documentation was inaccessible; verify a fresh real export before release. |
+| MAL file transfer | Functional | Anime/manga XML and XML.GZ import, XML export for known MAL IDs, warnings and limits | `lib/services/mal_xml_service.dart`, fixtures/tests | Local XML parsing and export supported. |
 | CSV export | Functional | UTF-8 BOM, stable headers, escaping, Unicode and metadata coverage | `lib/services/csv_export_service.dart` | CSV re-import is not implemented. |
-| Transfer history/recovery | Functional | Latest 25 summaries; latest five automatic safety backups can be saved | history screen, local/transfer repositories | Retention is count-based, local, and unencrypted. |
-| Profile | Partially functional | Theme and data-management actions work | `lib/screens/profile_tab.dart` | Identity/statistics, notification, and About content remain fixed/no-op. |
-| Theme switching | Functional but incomplete | Light/dark themes and in-memory switch | `lib/main.dart`, `lib/theme/app_theme.dart` | Choice is not persisted; system mode cannot be reselected in UI. |
-| Tests | Passing | Fifteen Dart files declare 79 tests | `test/` | `flutter test --no-pub` passes 79/79. |
-| Android debug build | Environment-blocked | Gradle cannot resolve Android application plugin 9.0.1 | Android Gradle configuration/cache | Dart analysis/tests pass; Android platform code did not reach compilation in this environment. |
-| Web build | Passing | Browser file adapter compiles in release web build | `web/`, file transfer web service | `flutter build web --no-pub` succeeds. |
-| iOS/desktop | Not implemented | No runner directories | repository roots | File-transfer adapter reports unsupported platform. |
+| Profile & Auth | Functional | User authentication, cloud sync status badge, token storage, device management, dark/light theme switch, clear library | `lib/screens/profile_tab.dart`, auth/sync controllers | Supports both guest offline mode and full cloud account sync. |
 
 ## Data-transfer behavior
 

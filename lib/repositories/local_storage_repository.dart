@@ -50,14 +50,17 @@ class LocalStorageRepository {
     final jsonString = prefs.getString(_storageKey);
 
     if (jsonString == null) {
-      // First-run initialization with migrated sample items
-      final now = clock.nowUtc();
-      final seededItems = _migrateSampleData(now);
-      await saveAllMediaItems(seededItems);
-      return seededItems;
+      return [];
     }
 
     return await _decodeAndMigrateLibrary(jsonString, prefs);
+  }
+
+  /// Clear all media items from local storage.
+  Future<List<MediaItem>> clearAllMediaItems() async {
+    final prefs = await _getPrefs();
+    await prefs.remove(_storageKey);
+    return [];
   }
 
   /// Save all media items under schema version 2 envelope.
@@ -185,6 +188,25 @@ class LocalStorageRepository {
         createdAt: existing.createdAt,
         updatedAt: now,
         localRevision: existing.localRevision + 1,
+      );
+      await saveAllMediaItems(currentItems);
+    }
+
+    return loadActiveMediaItems();
+  }
+
+  /// Toggle favorite status for a media item by ID.
+  Future<List<MediaItem>> toggleFavorite(String id) async {
+    final currentItems = await loadAllMediaItemsIncludingDeleted();
+    final now = clock.nowUtc();
+    final index = currentItems.indexWhere((item) => item.id == id);
+
+    if (index >= 0) {
+      final item = currentItems[index];
+      currentItems[index] = item.copyWith(
+        isFavorite: !item.isFavorite,
+        updatedAt: now,
+        localRevision: item.localRevision + 1,
       );
       await saveAllMediaItems(currentItems);
     }

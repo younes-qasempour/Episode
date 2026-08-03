@@ -3,11 +3,22 @@ import '../models/media_item.dart';
 import '../widgets/media_card.dart';
 import '../theme/app_theme.dart';
 
+enum LibrarySortOption {
+  recentlyUpdated('Recently Updated'),
+  titleAZ('Title (A-Z)'),
+  ratingHighToLow('Rating (High → Low)'),
+  completionPercentage('Completion %');
+
+  final String label;
+  const LibrarySortOption(this.label);
+}
+
 class HomeTab extends StatefulWidget {
   final List<MediaItem> mediaItems;
   final Function(String id) onIncrementProgress;
   final Function(MediaItem item)? onItemTap;
   final VoidCallback? onAddManually;
+  final Function(String id)? onToggleFavorite;
 
   const HomeTab({
     super.key,
@@ -15,6 +26,7 @@ class HomeTab extends StatefulWidget {
     required this.onIncrementProgress,
     this.onItemTap,
     this.onAddManually,
+    this.onToggleFavorite,
   });
 
   @override
@@ -23,7 +35,32 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   String _selectedCategory = 'All';
+  String _selectedStatus = 'All';
   String _searchQuery = '';
+  LibrarySortOption _sortOption = LibrarySortOption.recentlyUpdated;
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _resetFiltersAndSearch() {
+    _searchController.clear();
+    setState(() {
+      _searchQuery = '';
+      _selectedCategory = 'All';
+      _selectedStatus = 'All';
+      _sortOption = LibrarySortOption.recentlyUpdated;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,10 +70,39 @@ class _HomeTabState extends State<HomeTab> {
     final filteredItems = widget.mediaItems.where((item) {
       final matchesCategory = _selectedCategory == 'All' ||
           item.mediaType.toLowerCase() == _selectedCategory.toLowerCase();
+
+      bool matchesStatus = true;
+      if (_selectedStatus == 'Watching') {
+        matchesStatus = item.trackingStatus == TrackingStatus.watching ||
+            item.trackingStatus == TrackingStatus.reading;
+      } else if (_selectedStatus == 'Completed') {
+        matchesStatus = item.trackingStatus == TrackingStatus.completed;
+      } else if (_selectedStatus == 'Favorites') {
+        matchesStatus = item.isFavorite;
+      }
+
       final matchesSearch = _searchQuery.isEmpty ||
           item.title.toLowerCase().contains(_searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesStatus && matchesSearch;
     }).toList();
+
+    filteredItems.sort((a, b) {
+      switch (_sortOption) {
+        case LibrarySortOption.titleAZ:
+          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+        case LibrarySortOption.ratingHighToLow:
+          final ratingCompare = b.rating.compareTo(a.rating);
+          if (ratingCompare != 0) return ratingCompare;
+          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+        case LibrarySortOption.completionPercentage:
+          final pctCompare =
+              b.progressPercentage.compareTo(a.progressPercentage);
+          if (pctCompare != 0) return pctCompare;
+          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+        case LibrarySortOption.recentlyUpdated:
+          return b.updatedAt.compareTo(a.updatedAt);
+      }
+    });
 
     final currentlyWatchingCount = widget.mediaItems
         .where(
@@ -48,6 +114,10 @@ class _HomeTabState extends State<HomeTab> {
     final completedCount = widget.mediaItems
         .where((item) => item.trackingStatus == TrackingStatus.completed)
         .length;
+
+    final isFilteredOrSearched = _selectedCategory != 'All' ||
+        _selectedStatus != 'All' ||
+        _searchQuery.isNotEmpty;
 
     return CustomScrollView(
       slivers: [
@@ -154,67 +224,106 @@ class _HomeTabState extends State<HomeTab> {
           ),
         ),
 
-        // Search Bar Input
+        // Fast In-Library Search Bar Input
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: TextField(
-              onChanged: (value) => setState(() => _searchQuery = value),
+              controller: _searchController,
+              onChanged: (value) => setState(() => _searchQuery = value.trim()),
               decoration: InputDecoration(
-                hintText: 'Search your anime, manga, or series...',
+                hintText: 'Search saved titles...',
                 prefixIcon: Icon(
                   Icons.search_rounded,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                        tooltip: 'Clear search',
+                      )
+                    : null,
               ),
             ),
           ),
         ),
 
-        // Category Filter Chips
+        // Multi-Axis Filter Chips (Media Type & Status)
         SliverToBoxAdapter(
-          child: SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              children: ['All', 'Anime', 'Manga', 'Series', 'Movie'].map((
-                category,
-              ) {
-                final isSelected = _selectedCategory == category;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedCategory = category);
-                      }
-                    },
-                    selectedColor: theme.colorScheme.primary,
-                    backgroundColor: isDark
-                        ? const Color(0xFF16253B)
-                        : const Color(0xFFE5EEFF),
-                    labelStyle: TextStyle(
-                      fontFamily: 'Be Vietnam Pro',
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Colors.white
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.chipRadius),
-                      side: BorderSide.none,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Media Type Chips
+              SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  children: ['All', 'Anime', 'Manga', 'Series', 'Movie']
+                      .map((category) {
+                    final isSelected = _selectedCategory == category;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: ChoiceChip(
+                        label: Text(category),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() => _selectedCategory = category);
+                          }
+                        },
+                        selectedColor: theme.colorScheme.primary,
+                        backgroundColor: isDark
+                            ? const Color(0xFF16253B)
+                            : const Color(0xFFE5EEFF),
+                        labelStyle: TextStyle(
+                          fontFamily: 'Be Vietnam Pro',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          color: isSelected
+                              ? Colors.white
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.chipRadius),
+                          side: BorderSide.none,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 4),
+              // Status Filter Chips
+              SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  children: [
+                    _buildStatusChip('All', 'All Status',
+                        Icons.filter_alt_outlined, theme, isDark),
+                    _buildStatusChip('Watching', 'Watching',
+                        Icons.play_circle_outline_rounded, theme, isDark),
+                    _buildStatusChip('Completed', 'Completed',
+                        Icons.check_circle_outline_rounded, theme, isDark),
+                    _buildStatusChip('Favorites', 'Favorites',
+                        Icons.favorite_border_rounded, theme, isDark),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
 
-        // Title Section
+        // Header Section with Item Count and Sort Menu
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -225,18 +334,82 @@ class _HomeTabState extends State<HomeTab> {
                   'Continue Watching & Reading',
                   style: TextStyle(
                     fontFamily: 'Plus Jakarta Sans',
-                    fontSize: 17,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: theme.colorScheme.onSurface,
                   ),
                 ),
-                Text(
-                  '${filteredItems.length} items',
-                  style: TextStyle(
-                    fontFamily: 'Be Vietnam Pro',
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurfaceVariant,
+                PopupMenuButton<LibrarySortOption>(
+                  initialValue: _sortOption,
+                  onSelected: (option) => setState(() => _sortOption = option),
+                  tooltip: 'Sort Options',
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF16253B)
+                          : const Color(0xFFE5EEFF),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.sort_rounded,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _sortOption.label,
+                          style: TextStyle(
+                            fontFamily: 'Be Vietnam Pro',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ],
+                    ),
                   ),
+                  itemBuilder: (context) =>
+                      LibrarySortOption.values.map((option) {
+                    return PopupMenuItem<LibrarySortOption>(
+                      value: option,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            option == _sortOption
+                                ? Icons.check_rounded
+                                : Icons.radio_button_unchecked,
+                            size: 16,
+                            color: option == _sortOption
+                                ? theme.colorScheme.primary
+                                : Colors.transparent,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              option.label,
+                              style: TextStyle(
+                                fontFamily: 'Be Vietnam Pro',
+                                fontWeight: option == _sortOption
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
               ],
             ),
@@ -286,7 +459,7 @@ class _HomeTabState extends State<HomeTab> {
                       Text(
                         widget.mediaItems.isEmpty
                             ? 'Explore remote results or add anime, manga, series, and movies manually.'
-                            : 'Try clearing your search term or switching category filters.',
+                            : 'Try clearing your search term or resetting your category/status filters.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
@@ -302,6 +475,13 @@ class _HomeTabState extends State<HomeTab> {
                           icon: const Icon(Icons.add_rounded),
                           label: const Text('Add manually'),
                         ),
+                      ] else if (isFilteredOrSearched) ...[
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: _resetFiltersAndSearch,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Reset filters & search'),
+                        ),
                       ],
                     ],
                   ),
@@ -316,6 +496,9 @@ class _HomeTabState extends State<HomeTab> {
                       item: item,
                       onIncrementProgress: () =>
                           widget.onIncrementProgress(item.id),
+                      onToggleFavorite: widget.onToggleFavorite != null
+                          ? () => widget.onToggleFavorite!(item.id)
+                          : null,
                       onTap: () {
                         if (widget.onItemTap != null) {
                           widget.onItemTap!(item);
@@ -327,6 +510,47 @@ class _HomeTabState extends State<HomeTab> {
               ),
         const SliverToBoxAdapter(child: SizedBox(height: 24)),
       ],
+    );
+  }
+
+  Widget _buildStatusChip(
+    String key,
+    String label,
+    IconData icon,
+    ThemeData theme,
+    bool isDark,
+  ) {
+    final isSelected = _selectedStatus == key;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ChoiceChip(
+        avatar: Icon(
+          icon,
+          size: 14,
+          color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
+        ),
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (selected) {
+          if (selected) {
+            setState(() => _selectedStatus = key);
+          }
+        },
+        selectedColor:
+            key == 'Favorites' ? Colors.redAccent : theme.colorScheme.primary,
+        backgroundColor:
+            isDark ? const Color(0xFF16253B) : const Color(0xFFE5EEFF),
+        labelStyle: TextStyle(
+          fontFamily: 'Be Vietnam Pro',
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+          color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.chipRadius),
+          side: BorderSide.none,
+        ),
+      ),
     );
   }
 

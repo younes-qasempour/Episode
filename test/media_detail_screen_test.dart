@@ -58,6 +58,63 @@ void main() {
     },
   );
 
+  testWidgets(
+    'MediaDetailScreen allows updating cover URL via edit dialog',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const testItem = MediaItem(
+        id: 'detail_cover_test',
+        title: 'Cover Test Anime',
+        coverUrl: 'https://example.com/old_cover.jpg',
+        currentProgress: 5,
+        totalCount: 12,
+        mediaType: 'anime',
+        status: 'Watching',
+      );
+
+      MediaItem? savedItem;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaDetailScreen(
+            item: testItem,
+            onSave: (item) {
+              savedItem = item;
+            },
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final editCoverBtn = find.byKey(const Key('detail-edit-cover-button'));
+      expect(editCoverBtn, findsOneWidget);
+      await tester.tap(editCoverBtn);
+      await tester.pumpAndSettle();
+
+      final urlField = find.byKey(const Key('detail-cover-url-field'));
+      expect(urlField, findsOneWidget);
+      await tester.enterText(urlField, 'https://example.com/new_cover.jpg');
+      await tester.pumpAndSettle();
+
+      final applyBtn = find.byKey(const Key('detail-save-cover-url-button'));
+      await tester.tap(applyBtn);
+      await tester.pumpAndSettle();
+
+      final saveButton = find.text('Save Changes');
+      await tester.ensureVisible(saveButton);
+      await tester.tap(saveButton);
+      await tester.pumpAndSettle();
+
+      expect(savedItem, isNotNull);
+      expect(savedItem!.coverUrl, equals('https://example.com/new_cover.jpg'));
+    },
+  );
+
   testWidgets('MediaDetailScreen triggers onDelete when delete confirmed', (
     WidgetTester tester,
   ) async {

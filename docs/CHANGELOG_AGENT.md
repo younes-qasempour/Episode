@@ -41,6 +41,62 @@ changelog.
   per-entry uncertain-match override, streaming XML, encryption, iOS/desktop
   adapters, and CSV import are not implemented.
 
+## 2026-07-29 — Added Smart Library Filtering, Sorting & Search (Home Tab)
+
+- **Agent/tool:** Antigravity
+- **Task:** Added Smart Library Filtering (Media Type & Status/Favorites chips), 4-way Sorting (Recently Updated, Title A-Z, Rating, Completion %), Fast In-Library Search with clear action, and 1-tap Favorites toggle.
+- **Summary:** Extended `MediaItem` with `isFavorite` and `updatedAt` fields. Added `toggleFavorite` method to `LocalStorageRepository`. Rewrote `HomeTab` to feature fast title search, dual filter chip rows (Media Type & Status/Favorites), sort options selector dropdown, 1-tap card heart toggles, and an empty state reset button. Added `test/home_tab_test.dart` and updated `media_item_test.dart` and `local_storage_repository_test.dart`.
+- **Files changed:** `lib/models/media_item.dart`, `lib/repositories/local_storage_repository.dart`, `lib/screens/home_tab.dart`, `lib/widgets/media_card.dart`, `lib/screens/main_navigation_screen.dart`, `lib/screens/media_detail_screen.dart`, `test/media_item_test.dart`, `test/local_storage_repository_test.dart`, `test/home_tab_test.dart`, `docs/features/local-library.md`, `docs/CURRENT_STATE.md`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors/warnings. `flutter test` passed 56/56 tests cleanly. `flutter build web --release` compiled `build/web`.
+
+## 2026-07-29 — Purged legacy sample items on load & added Clear Library Data button
+
+- **Agent/tool:** Antigravity
+- **Task:** Purged existing browser-stored sample items (IDs '1'-'8') automatically on app startup and added a 1-tap "Clear All Library Data" button in Profile/Settings.
+- **Summary:** Updated `loadMediaItems` in `LocalStorageRepository` to filter out legacy sample items and persist clean empty storage. Added `clearAllMediaItems` method, wired `_clearLibrary` in `MainNavigationScreen`, and added a "Clear All Library Data" tile with a confirmation dialog in `ProfileTab`.
+- **Files changed:** `lib/repositories/local_storage_repository.dart`, `lib/screens/profile_tab.dart`, `lib/screens/main_navigation_screen.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors. `flutter test` 46/46 passed cleanly. `flutter build web --release` compiled `build/web`.
+
+## 2026-07-29 — Removed sample items for clean fresh install library
+
+- **Agent/tool:** Antigravity
+- **Task:** Updated local storage repository so brand new app installations start with a completely empty library instead of loading default sample items.
+- **Summary:** Updated `loadMediaItems` in `LocalStorageRepository` to return an empty list (`[]`) when no saved library items exist. Removed unused `mock_data.dart` import and updated test assertions.
+- **Files changed:** `lib/repositories/local_storage_repository.dart`, `test/local_storage_repository_test.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors. `flutter test` 46/46 passed cleanly. `flutter build web --release` compiled `build/web`.
+
+## 2026-07-29 — Enhanced TVMaze season enrichment & human-friendly card labels
+
+- **Agent/tool:** Antigravity
+- **Task:** Enriched TV series search results with embedded season breakdowns and total episode counts; eliminated cold "Ch count: Unknown" card labels in favor of contextual status/count badges.
+- **Summary:** Updated `_searchSeries` and `_enrichTvMazeShow` in `ApiService` to fetch TVMaze embedded seasons (`/shows/$id?embed=seasons`), populating `seasons` and `totalCount` by default. Enhanced `MediaCard` `progressText` logic to show clean status badges (e.g. `Ongoing · Publishing`, `Ongoing · Airing`, `5 Seasons · 62 Ep`, `272 chapters`) for unstarted or search items.
+- **Files changed:** `lib/services/api_service.dart`, `lib/widgets/media_card.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors. `flutter test` 46/46 passed cleanly. `flutter build web --release` compiled `build/web`.
+
+## 2026-07-29 — Added Kitsu API fallback for Anime & Manga searches
+
+- **Agent/tool:** Antigravity
+- **Task:** Diagnosed and resolved Jikan API 504 Gateway Timeout errors on manga search queries by integrating Kitsu API fallback for Anime and Manga.
+- **Summary:** Added `kitsuBaseUrl` (`https://kitsu.io/api/edge`) and mapping methods (`mapKitsuMangaToMediaItem`, `mapKitsuAnimeToMediaItem`) in `ApiService`. If Jikan API times out or returns 504/404/empty error states, `_searchManga` and `_searchAnime` automatically fall back to Kitsu, ensuring reliable search results for queries like "Jujutsu Kaisen", "JoJo", "One Piece", and "Naruto".
+- **Files changed:** `lib/services/api_service.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors. `flutter test` 46/46 passed cleanly. `flutter build web --release` compiled `build/web`.
+
+## 2026-07-29 — Fixed Manga search 429 rate limits, search race conditions & custom cover editing
+
+- **Agent/tool:** Antigravity
+- **Task:** Resolved Manga search failure when searching "All", added custom cover URL editing for users in detail & manual views, prevented search race conditions, and handled API rate limits defensively.
+- **Summary:** Added `_getWithRetry` and pacing delay between consecutive Jikan API calls in `ApiService` to prevent Jikan HTTP 429 rate limiting. Implemented `_searchRequestId` in `SearchTab` to discard stale out-of-order responses. Added custom cover URL editing via dialog and interactive header thumbnail in `MediaDetailScreen`. Updated test coverage.
+- **Files changed:** `lib/services/api_service.dart`, `lib/screens/search_tab.dart`, `lib/screens/media_detail_screen.dart`, `test/media_detail_screen_test.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` 0 errors. `flutter test` 46/46 passed cleanly. `flutter build web --release` compiled `build/web`.
+
+## 2026-07-29 — Fixed test suite & Material card assertion, verified web build
+
+- **Agent/tool:** Antigravity
+- **Task:** Pulled remote updates, fixed test suite assertion in `_sectionCard` and obsolete smoke test in `widget_test.dart`, ran analysis & 45/45 tests, built release web app.
+- **Summary:** Updated `widget_test.dart` to test `OtakuLogApp` smoke test instead of obsolete `MyApp` template counter. Wrapped `_sectionCard` in a `Material` widget in `lib/screens/media_detail_screen.dart` to resolve Flutter Framework assertion regarding `ListTile` ink splashes on `DecoratedBox`.
+- **Files changed:** `lib/screens/media_detail_screen.dart`, `test/widget_test.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter analyze` ran with 0 errors. `flutter test` passed all 45 tests cleanly. `flutter build web --release` compiled successfully (`build/web`).
+
 ## 2026-07-25 — Manual media and flexible progress tracking
 
 - **Agent/tool:** Codex

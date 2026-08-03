@@ -12,6 +12,7 @@ class ProfileTab extends StatelessWidget {
   final VoidCallback? onOpenLogin;
   final VoidCallback? onOpenRegister;
   final VoidCallback? onOpenDeviceManagement;
+  final VoidCallback? onClearLibrary;
 
   const ProfileTab({
     super.key,
@@ -23,7 +24,37 @@ class ProfileTab extends StatelessWidget {
     this.onOpenLogin,
     this.onOpenRegister,
     this.onOpenDeviceManagement,
+    this.onClearLibrary,
   });
+
+  void _showClearConfirmation(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear All Library Data?'),
+        content: const Text(
+          'This will remove all saved anime, manga, and TV series from your local library. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              onClearLibrary?.call();
+            },
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _handleDeleteAccount(BuildContext context) async {
     final passwordController = TextEditingController();
@@ -349,6 +380,16 @@ class ProfileTab extends StatelessWidget {
                 const Divider(height: 1, indent: 56),
                 _buildSettingTile(
                   context,
+                  icon: Icons.delete_sweep_rounded,
+                  title: 'Clear All Library Data',
+                  subtitle: 'Remove all saved media items',
+                  iconColor: Colors.redAccent,
+                  textColor: Colors.redAccent,
+                  onTap: () => _showClearConfirmation(context),
+                ),
+                const Divider(height: 1, indent: 56),
+                _buildSettingTile(
+                  context,
                   icon: Icons.info_outline_rounded,
                   title: 'About OtakuLog',
                   subtitle: 'v1.0.0 (Offline & Cloud Sync)',
@@ -504,18 +545,20 @@ class ProfileTab extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
+    Color? iconColor,
+    Color? textColor,
     VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
     return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary),
+      leading: Icon(icon, color: iconColor ?? theme.colorScheme.primary),
       title: Text(
         title,
         style: TextStyle(
           fontFamily: 'Plus Jakarta Sans',
           fontSize: 14,
           fontWeight: FontWeight.w700,
-          color: theme.colorScheme.onSurface,
+          color: textColor ?? theme.colorScheme.onSurface,
         ),
       ),
       subtitle: Text(

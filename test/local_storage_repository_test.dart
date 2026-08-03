@@ -14,13 +14,12 @@ void main() {
 
   group('LocalStorageRepository Tests', () {
     test(
-      'loadMediaItems initializes with default sample items when empty',
+      'loadMediaItems returns empty list when no items exist in storage',
       () async {
         const repository = LocalStorageRepository();
         final items = await repository.loadMediaItems();
 
-        expect(items.length, greaterThan(0));
-        expect(items.any((i) => i.title == 'Jujutsu Kaisen Season 2'), isTrue);
+        expect(items, isEmpty);
       },
     );
 
@@ -250,6 +249,30 @@ void main() {
 
       expect(updated.seasons.first.currentProgress, 12);
       expect(updated.seasons.last.currentProgress, 4);
+    });
+
+    test('toggleFavorite toggles favorite status and sets updatedAt', () async {
+      const repository = LocalStorageRepository();
+      const initialItem = MediaItem(
+        id: 'test_fav',
+        title: 'Favorite Test',
+        coverUrl: '',
+        currentProgress: 0,
+        totalCount: 12,
+        mediaType: 'anime',
+        status: 'Watching',
+        isFavorite: false,
+      );
+      await repository.saveMediaItem(initialItem);
+
+      final result1 = await repository.toggleFavorite('test_fav');
+      final favItem = result1.firstWhere((i) => i.id == 'test_fav');
+      expect(favItem.isFavorite, isTrue);
+      expect(favItem.updatedAt, isNotNull);
+
+      final result2 = await repository.toggleFavorite('test_fav');
+      final unfavItem = result2.firstWhere((i) => i.id == 'test_fav');
+      expect(unfavItem.isFavorite, isFalse);
     });
   });
 }

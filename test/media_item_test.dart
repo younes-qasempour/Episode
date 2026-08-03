@@ -19,6 +19,28 @@ void main() {
       expect(item.progressMode, ProgressMode.flat);
       expect(item.releaseStatus, ReleaseStatus.unknown);
       expect(item.seasons, isEmpty);
+      expect(item.isFavorite, isFalse);
+      expect(item.updatedAt, isNotNull);
+    });
+
+    test('isFavorite and updatedAt serialize and deserialize correctly', () {
+      final now = DateTime.utc(2026, 7, 29, 12, 0, 0);
+      final original = MediaItem(
+        id: 'fav-1',
+        title: 'Favorite Anime',
+        coverUrl: '',
+        currentProgress: 5,
+        totalCount: 12,
+        mediaType: 'anime',
+        status: 'Watching',
+        isFavorite: true,
+        updatedAt: now,
+      );
+
+      final decoded = MediaItem.fromJson(original.toJson());
+
+      expect(decoded.isFavorite, isTrue);
+      expect(decoded.updatedAt, now);
     });
 
     test('unknown total serializes and deserializes as null', () {
