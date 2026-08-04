@@ -326,4 +326,92 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+    'changing tracking status to Completed automatically updates flat progress to total',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const testItem = MediaItem(
+        id: 'auto_complete_flat',
+        title: 'Flat Progress Show',
+        coverUrl: '',
+        currentProgress: 3,
+        totalCount: 12,
+        mediaType: 'anime',
+        status: 'Watching',
+      );
+
+      await tester.pumpWidget(
+        const MaterialApp(home: MediaDetailScreen(item: testItem)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Watching'), findsWidgets);
+
+      await tester.tap(find.text('Watching').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Completed').last);
+      await tester.pumpAndSettle();
+
+      final progressField = tester.widget<TextFormField>(
+        find.byKey(const Key('detail-progress-field')),
+      );
+      expect(progressField.controller?.text, equals('12'));
+    },
+  );
+
+  testWidgets(
+    'Complete Season button updates season progress and completes item when all seasons finish',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(900, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const testItem = MediaItem(
+        id: 'complete_season_test',
+        title: 'Multi Season Anime',
+        coverUrl: '',
+        currentProgress: 0,
+        totalCount: null,
+        mediaType: 'series',
+        status: 'Watching',
+        progressMode: ProgressMode.seasonal,
+        seasons: [
+          MediaSeason(
+            id: 'season-1',
+            seasonNumber: 1,
+            currentProgress: 12,
+            totalCount: 12,
+          ),
+          MediaSeason(
+            id: 'season-2',
+            seasonNumber: 2,
+            currentProgress: 4,
+            totalCount: 24,
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        const MaterialApp(home: MediaDetailScreen(item: testItem)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Completed ✓'), findsOneWidget);
+
+      final completeBtn = find.byKey(const Key('complete-season-season-2'));
+      expect(completeBtn, findsOneWidget);
+
+      await tester.tap(completeBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Completed ✓'), findsNWidgets(2));
+      expect(find.text('Completed'), findsWidgets);
+    },
+  );
 }

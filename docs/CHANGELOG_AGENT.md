@@ -3,6 +3,14 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-08-04 — Automatic Completion Progress & Status Synchronization
+
+- **Agent/tool:** Antigravity
+- **Task:** Implement production-ready automatic completion progress for flat media and multi-season media, per-season completion actions, and automatic tracking status synchronization.
+- **Summary:** Added `isComplete` & `completeSeason` to `MediaSeason`, and `isFullyCompleted`, `applyCompletedStatus`, `completeSeason`, and `syncStatusWithProgress` to `MediaItem`. Flat and multi-season items automatically max known totals when setting status to `Completed`. Multi-season items support per-season completion actions in `MediaDetailScreen` with visual `Completed ✓` badges and automatic overall item status completion when all seasons finish. Manually reducing progress from `Completed` automatically reverts tracking status to active status (`Watching` or `Reading` for Manga) without altering release status. Preserved unknown total safety. Added 10 new unit and widget test cases.
+- **Files changed:** `lib/models/media_item.dart`, `lib/screens/media_detail_screen.dart`, `test/media_item_test.dart`, `test/media_detail_screen_test.dart`, `docs/CHANGELOG_AGENT.md`, `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md`.
+- **Validation:** `dart format .` (exit 0), `flutter analyze` (0 issues), `flutter test` (125/125 tests passed).
+
 ## 2026-08-01 - Professional media import, export, and backup
 
 - **Agent/tool:** Codex

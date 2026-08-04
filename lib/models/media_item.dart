@@ -208,8 +208,21 @@ class MediaSeason {
 
   bool get hasKnownTotal => totalCount != null;
 
+  bool get isComplete => hasKnownTotal && currentProgress >= totalCount!;
+
   bool get isBeyondKnownTotal =>
       totalCount != null && currentProgress > totalCount!;
+
+  MediaSeason completeSeason({DateTime? now}) {
+    if (!hasKnownTotal) {
+      return this;
+    }
+    return copyWith(
+      currentProgress: totalCount,
+      updatedAt: (now ?? DateTime.now()).toUtc(),
+      localRevision: localRevision + 1,
+    );
+  }
 
   double get progressPercentage {
     final total = totalCount;
@@ -534,6 +547,109 @@ class MediaItem {
       repeatCount: repeatCount ?? this.repeatCount,
       isFavorite: isFavorite ?? this.isFavorite,
       customMetadata: customMetadata ?? this.customMetadata,
+    );
+  }
+
+  bool get isFullyCompleted {
+    if (progressMode == ProgressMode.seasonal) {
+      final active = activeSeasons;
+      return active.isNotEmpty && active.every((s) => s.isComplete);
+    }
+    return hasKnownTotal && currentProgress >= totalCount!;
+  }
+
+  String get activeTrackingStatusLabel {
+    return type == MediaType.manga
+        ? TrackingStatus.reading.label
+        : TrackingStatus.watching.label;
+  }
+
+  MediaItem applyCompletedStatus({DateTime? now, int? newRevision}) {
+    final time = (now ?? DateTime.now()).toUtc();
+    final revision = newRevision ?? (localRevision + 1);
+
+    if (progressMode == ProgressMode.seasonal) {
+      final updatedSeasons = seasons.map((season) {
+        if (season.deletedAt != null || !season.hasKnownTotal) {
+          return season;
+        }
+        return season.completeSeason(now: time);
+      }).toList();
+
+      return copyWith(
+        status: TrackingStatus.completed.label,
+        seasons: updatedSeasons,
+        completedAt: time,
+        updatedAt: time,
+        localRevision: revision,
+      );
+    }
+
+    final newFlatProgress =
+        _flatTotalCount != null ? _flatTotalCount! : _flatCurrentProgress;
+    return copyWith(
+      status: TrackingStatus.completed.label,
+      currentProgress: newFlatProgress,
+      completedAt: time,
+      updatedAt: time,
+      localRevision: revision,
+    );
+  }
+
+  MediaItem completeSeason(
+    String seasonId, {
+    DateTime? now,
+    int? newRevision,
+  }) {
+    if (progressMode != ProgressMode.seasonal) {
+      return this;
+    }
+    final time = (now ?? DateTime.now()).toUtc();
+    var found = false;
+    final updatedSeasons = seasons.map((season) {
+      if (season.id != seasonId) {
+        return season;
+      }
+      if (!season.hasKnownTotal) {
+        return season;
+      }
+      found = true;
+      return season.completeSeason(now: time);
+    }).toList();
+
+    if (!found) {
+      return this;
+    }
+
+    final tempItem = copyWith(
+      seasons: updatedSeasons,
+      updatedAt: time,
+      localRevision: newRevision ?? (localRevision + 1),
+    );
+
+    if (tempItem.isFullyCompleted) {
+      return tempItem.copyWith(
+        status: TrackingStatus.completed.label,
+        completedAt: time,
+      );
+    }
+
+    return tempItem;
+  }
+
+  MediaItem syncStatusWithProgress({DateTime? now, int? newRevision}) {
+    if (trackingStatus != TrackingStatus.completed) {
+      return this;
+    }
+    if (isFullyCompleted) {
+      return this;
+    }
+    final time = (now ?? DateTime.now()).toUtc();
+    return copyWith(
+      status: activeTrackingStatusLabel,
+      clearCompletedAt: true,
+      updatedAt: time,
+      localRevision: newRevision ?? (localRevision + 1),
     );
   }
 

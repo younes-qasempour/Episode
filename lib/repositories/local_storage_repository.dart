@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-import '../data/mock_data.dart';
 import '../models/data_transfer.dart';
 import '../models/local_library_document.dart';
 import '../models/media_item.dart';
@@ -595,38 +594,6 @@ class LocalStorageRepository {
     }
 
     return migratedItems;
-  }
-
-  List<MediaItem> _migrateSampleData(DateTime migrationTime) {
-    return sampleMediaItems.map((item) {
-      final newId = _uuid.v4();
-      final mergedExternalIds = Map<String, String>.from(item.externalIds);
-
-      final jikanMatch =
-          RegExp(r'^jikan_(anime|manga)_(\d+)$').firstMatch(item.id);
-      if (jikanMatch != null) {
-        mergedExternalIds.putIfAbsent('mal', () => jikanMatch.group(2)!);
-        mergedExternalIds.putIfAbsent('jikan', () => jikanMatch.group(2)!);
-      }
-
-      final seasons = item.seasons.map((season) {
-        return season.copyWith(
-          id: _uuid.v4(),
-          createdAt: migrationTime,
-          updatedAt: migrationTime,
-          localRevision: 1,
-        );
-      }).toList();
-
-      return item.copyWith(
-        id: newId,
-        externalIds: mergedExternalIds,
-        seasons: seasons,
-        createdAt: migrationTime,
-        updatedAt: migrationTime,
-        localRevision: 1,
-      );
-    }).toList();
   }
 
   void _validateLibrary(List<MediaItem> items) {

@@ -144,11 +144,34 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     );
   }
 
+  void _syncStatusWithCurrentState() {
+    final updated = _workingItem().syncStatusWithProgress();
+    if (updated.trackingStatus != _trackingStatus) {
+      _trackingStatus = updated.trackingStatus;
+    }
+  }
+
+  void _onTrackingStatusChanged(TrackingStatus status) {
+    if (status == TrackingStatus.completed) {
+      final updated = _workingItem().applyCompletedStatus();
+      setState(() {
+        _trackingStatus = status;
+        _flatCurrentProgress = updated.flatCurrentProgress;
+        _flatTotalCount = updated.flatTotalCount;
+        _seasons = List<MediaSeason>.from(updated.seasons);
+        _progressController.text = '$_flatCurrentProgress';
+      });
+    } else {
+      setState(() => _trackingStatus = status);
+    }
+  }
+
   void _setFlatProgress(int value) {
     final nextValue = value < 0 ? 0 : value;
     setState(() {
       _flatCurrentProgress = nextValue;
       _progressController.text = '$nextValue';
+      _syncStatusWithCurrentState();
     });
   }
 
@@ -164,6 +187,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       _seasons = List<MediaSeason>.from(converted.seasons);
       _progressController.text = '$_flatCurrentProgress';
       _totalController.text = _flatTotalCount?.toString() ?? '';
+      _syncStatusWithCurrentState();
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -188,7 +212,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       return;
     }
     final updated = _workingItem().upsertSeason(result);
-    setState(() => _seasons = List<MediaSeason>.from(updated.seasons));
+    setState(() {
+      _seasons = List<MediaSeason>.from(updated.seasons);
+      _syncStatusWithCurrentState();
+    });
   }
 
   Future<void> _deleteSeason(MediaSeason season) async {
@@ -213,6 +240,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     if (confirmed == true && mounted) {
       setState(() {
         _seasons = _seasons.where((item) => item.id != season.id).toList();
+        _syncStatusWithCurrentState();
       });
     }
   }
@@ -226,6 +254,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       _seasons = _seasons
           .map((item) => item.id == season.id ? updated : item)
           .toList();
+      _syncStatusWithCurrentState();
+    });
+  }
+
+  void _completeSeasonAction(MediaSeason season) {
+    if (!season.hasKnownTotal) {
+      return;
+    }
+    final updatedItem = _workingItem().completeSeason(season.id);
+    setState(() {
+      _seasons = List<MediaSeason>.from(updatedItem.seasons);
+      _trackingStatus = updatedItem.trackingStatus;
     });
   }
 
@@ -291,7 +331,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
               value: _trackingStatus,
               values: TrackingStatus.values,
               labelFor: (status) => status.label,
-              onChanged: (value) => setState(() => _trackingStatus = value),
+              onChanged: _onTrackingStatusChanged,
             ),
             const SizedBox(height: 20),
             _buildDropdownSection<ReleaseStatus>(
@@ -707,6 +747,84 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           onPressed: () => _changeSeasonProgress(season, 1),
                           icon: const Icon(Icons.add_circle_outline),
                         ),
+                        if (season.isComplete)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Chip(
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              labelPadding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
+                              avatar: const Icon(
+                                Icons.check_rounded,
+                                size: 14,
+                                color: Color(0xFF10B981),
+                              ),
+                              label: const Text(
+                                'Completed ✓',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              backgroundColor: const Color(0xFF10B981)
+                                  .withValues(alpha: 0.12),
+                              side: BorderSide.none,
+                            ),
+                          )
+                        else if (season.hasKnownTotal)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: FilledButton.tonal(
+                              key: Key('complete-season-${season.id}'),
+                              style: FilledButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 0,
+                                ),
+                                minimumSize: const Size(0, 32),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              onPressed: () => _completeSeasonAction(season),
+                              child: const Text(
+                                'Complete',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          Tooltip(
+                            message:
+                                'Cannot complete season with unknown total',
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 0,
+                                  ),
+                                  minimumSize: const Size(0, 32),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: null,
+                                child: const Text(
+                                  'Complete',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         PopupMenuButton<String>(
                           tooltip: 'Season actions',
                           onSelected: (value) {

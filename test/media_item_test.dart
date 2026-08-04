@@ -252,5 +252,261 @@ void main() {
       expect(flatAgain.totalCount, 12);
       expect(flatAgain.seasons, isNotEmpty);
     });
+
+    group('automatic completion progress and status sync', () {
+      test('flat: setting status to Completed updates 1/25 to 25/25', () {
+        const item = MediaItem(
+          id: 'flat-complete-1',
+          title: 'Flat Anime',
+          coverUrl: '',
+          currentProgress: 1,
+          totalCount: 25,
+          mediaType: 'anime',
+          status: 'Watching',
+        );
+
+        final completed = item.applyCompletedStatus();
+
+        expect(completed.currentProgress, 25);
+        expect(completed.totalCount, 25);
+        expect(completed.trackingStatus, TrackingStatus.completed);
+        expect(completed.completedAt, isNotNull);
+      });
+
+      test(
+          'flat: setting status to Completed with unknown total preserves progress',
+          () {
+        const item = MediaItem(
+          id: 'flat-unknown',
+          title: 'Unknown Total',
+          coverUrl: '',
+          currentProgress: 10,
+          totalCount: null,
+          mediaType: 'anime',
+          status: 'Watching',
+        );
+
+        final completed = item.applyCompletedStatus();
+
+        expect(completed.currentProgress, 10);
+        expect(completed.totalCount, isNull);
+        expect(completed.trackingStatus, TrackingStatus.completed);
+      });
+
+      test(
+          'flat: reducing progress below total changes status from Completed to Watching/Reading',
+          () {
+        const completedAnime = MediaItem(
+          id: 'flat-anime',
+          title: 'Flat Anime',
+          coverUrl: '',
+          currentProgress: 25,
+          totalCount: 25,
+          mediaType: 'anime',
+          status: 'Completed',
+        );
+
+        final reducedAnime = completedAnime
+            .copyWith(currentProgress: 24)
+            .syncStatusWithProgress();
+        expect(reducedAnime.trackingStatus, TrackingStatus.watching);
+
+        const completedManga = MediaItem(
+          id: 'flat-manga',
+          title: 'Flat Manga',
+          coverUrl: '',
+          currentProgress: 100,
+          totalCount: 100,
+          mediaType: 'manga',
+          status: 'Completed',
+        );
+
+        final reducedManga = completedManga
+            .copyWith(currentProgress: 99)
+            .syncStatusWithProgress();
+        expect(reducedManga.trackingStatus, TrackingStatus.reading);
+      });
+
+      test(
+          'seasonal: setting overall status to Completed completes all seasons with known totals',
+          () {
+        const item = MediaItem(
+          id: 'seasonal-all',
+          title: 'Multi Season',
+          coverUrl: '',
+          currentProgress: 0,
+          totalCount: null,
+          mediaType: 'series',
+          status: 'Watching',
+          progressMode: ProgressMode.seasonal,
+          seasons: [
+            MediaSeason(
+              id: 's1',
+              seasonNumber: 1,
+              currentProgress: 3,
+              totalCount: 12,
+            ),
+            MediaSeason(
+              id: 's2',
+              seasonNumber: 2,
+              currentProgress: 8,
+              totalCount: 24,
+            ),
+            MediaSeason(
+              id: 's3',
+              seasonNumber: 3,
+              currentProgress: 0,
+              totalCount: 10,
+            ),
+          ],
+        );
+
+        final completed = item.applyCompletedStatus();
+
+        expect(completed.trackingStatus, TrackingStatus.completed);
+        expect(completed.seasons[0].currentProgress, 12);
+        expect(completed.seasons[1].currentProgress, 24);
+        expect(completed.seasons[2].currentProgress, 10);
+        expect(completed.currentProgress, 46);
+        expect(completed.totalCount, 46);
+      });
+
+      test(
+          'seasonal: completing one season updates only that season and recalculates total',
+          () {
+        const item = MediaItem(
+          id: 'seasonal-one',
+          title: 'Multi Season',
+          coverUrl: '',
+          currentProgress: 0,
+          totalCount: null,
+          mediaType: 'series',
+          status: 'Watching',
+          progressMode: ProgressMode.seasonal,
+          seasons: [
+            MediaSeason(
+              id: 's1',
+              seasonNumber: 1,
+              currentProgress: 4,
+              totalCount: 12,
+            ),
+            MediaSeason(
+              id: 's2',
+              seasonNumber: 2,
+              currentProgress: 2,
+              totalCount: 24,
+            ),
+          ],
+        );
+
+        final updated = item.completeSeason('s1');
+
+        expect(updated.seasons[0].currentProgress, 12);
+        expect(updated.seasons[1].currentProgress, 2);
+        expect(updated.currentProgress, 14);
+        expect(updated.trackingStatus, TrackingStatus.watching);
+      });
+
+      test(
+          'seasonal: completing final incomplete season automatically changes overall status to Completed',
+          () {
+        const item = MediaItem(
+          id: 'seasonal-final',
+          title: 'Final Season',
+          coverUrl: '',
+          currentProgress: 0,
+          totalCount: null,
+          mediaType: 'series',
+          status: 'Watching',
+          progressMode: ProgressMode.seasonal,
+          seasons: [
+            MediaSeason(
+              id: 's1',
+              seasonNumber: 1,
+              currentProgress: 12,
+              totalCount: 12,
+            ),
+            MediaSeason(
+              id: 's2',
+              seasonNumber: 2,
+              currentProgress: 23,
+              totalCount: 24,
+            ),
+          ],
+        );
+
+        final completed = item.completeSeason('s2');
+
+        expect(completed.seasons[1].currentProgress, 24);
+        expect(completed.isFullyCompleted, isTrue);
+        expect(completed.trackingStatus, TrackingStatus.completed);
+      });
+
+      test('seasonal: a season with unknown total cannot be completed falsely',
+          () {
+        const item = MediaItem(
+          id: 'seasonal-unknown',
+          title: 'Unknown Season Total',
+          coverUrl: '',
+          currentProgress: 0,
+          totalCount: null,
+          mediaType: 'series',
+          status: 'Watching',
+          progressMode: ProgressMode.seasonal,
+          seasons: [
+            MediaSeason(
+              id: 's1',
+              seasonNumber: 1,
+              currentProgress: 5,
+              totalCount: null,
+            ),
+          ],
+        );
+
+        final attempted = item.completeSeason('s1');
+
+        expect(attempted.seasons[0].currentProgress, 5);
+        expect(attempted.seasons[0].isComplete, isFalse);
+        expect(attempted.trackingStatus, TrackingStatus.watching);
+      });
+
+      test(
+          'seasonal: reducing one completed season progress reverts status from Completed to Watching',
+          () {
+        const item = MediaItem(
+          id: 'seasonal-revert',
+          title: 'Completed Series',
+          coverUrl: '',
+          currentProgress: 0,
+          totalCount: null,
+          mediaType: 'series',
+          status: 'Completed',
+          progressMode: ProgressMode.seasonal,
+          seasons: [
+            MediaSeason(
+              id: 's1',
+              seasonNumber: 1,
+              currentProgress: 12,
+              totalCount: 12,
+            ),
+            MediaSeason(
+              id: 's2',
+              seasonNumber: 2,
+              currentProgress: 24,
+              totalCount: 24,
+            ),
+          ],
+        );
+
+        final updatedSeasons = item.seasons.map((s) {
+          return s.id == 's1' ? s.copyWith(currentProgress: 11) : s;
+        }).toList();
+
+        final reduced =
+            item.copyWith(seasons: updatedSeasons).syncStatusWithProgress();
+
+        expect(reduced.trackingStatus, TrackingStatus.watching);
+      });
+    });
   });
 }
