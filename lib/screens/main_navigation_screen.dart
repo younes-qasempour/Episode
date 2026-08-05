@@ -65,7 +65,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final tokenStorage = SecureAuthTokenStorage();
     _deviceIdentityService =
         widget.deviceIdentityService ?? DeviceIdentityService();
-    final apiClient = ApiClient(config: config, tokenStorage: tokenStorage);
+    final apiClient = ApiClient(
+      config: config,
+      tokenStorage: tokenStorage,
+      deviceIdentityService: _deviceIdentityService,
+    );
 
     _authRepository = widget.authRepository ??
         AuthRepository(

@@ -1,6 +1,21 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/media_item.dart';
+import '../models/search_result.dart';
+
+class SearchException implements Exception {
+  final SearchFailureType type;
+  final String? technicalMessage;
+  final int? statusCode;
+
+  const SearchException({
+    required this.type,
+    this.technicalMessage,
+    this.statusCode,
+  });
+}
 
 class ApiService {
   static const String jikanBaseUrl = 'https://api.jikan.moe/v4';
@@ -11,59 +26,166 @@ class ApiService {
 
   ApiService({http.Client? client}) : _client = client ?? http.Client();
 
-  Future<http.Response?> _getWithRetry(Uri uri) async {
+  Future<http.Response> _getWithRetry(Uri uri) async {
     for (int attempt = 0; attempt < 2; attempt++) {
       try {
-        final response = await _client.get(uri);
+        final response =
+            await _client.get(uri).timeout(const Duration(seconds: 10));
         if (response.statusCode == 429 && attempt == 0) {
           await Future.delayed(const Duration(milliseconds: 500));
           continue;
         }
         return response;
-      } catch (_) {
-        if (attempt == 1) rethrow;
+      } on SocketException catch (e) {
+        if (attempt == 1) {
+          throw SearchException(
+            type: SearchFailureType.network,
+            technicalMessage: e.toString(),
+          );
+        }
+        await Future.delayed(const Duration(milliseconds: 300));
+      } on TimeoutException catch (e) {
+        if (attempt == 1) {
+          throw SearchException(
+            type: SearchFailureType.timeout,
+            technicalMessage: e.toString(),
+          );
+        }
+        await Future.delayed(const Duration(milliseconds: 300));
+      } on http.ClientException catch (e) {
+        if (attempt == 1) {
+          throw SearchException(
+            type: SearchFailureType.network,
+            technicalMessage: e.toString(),
+          );
+        }
+        await Future.delayed(const Duration(milliseconds: 300));
+      } catch (e) {
+        if (e is SearchException) {
+          if (attempt == 1) rethrow;
+        } else {
+          if (attempt == 1) {
+            throw SearchException(
+              type: SearchFailureType.unknown,
+              technicalMessage: e.toString(),
+            );
+          }
+        }
         await Future.delayed(const Duration(milliseconds: 300));
       }
     }
-    return null;
+    throw const SearchException(
+      type: SearchFailureType.unknown,
+      technicalMessage: 'Max retries reached',
+    );
   }
 
   /// Search across Anime, Manga, and TV Series based on query and type filter.
   /// [category] can be 'All', 'Anime', 'Manga', or 'Series'.
-  Future<List<MediaItem>> searchMedia(
+  Future<SearchResult<List<MediaItem>>> searchMedia(
     String query, {
     String category = 'All',
   }) async {
     final String cleanQuery = query.trim();
     final List<MediaItem> results = [];
+    final List<SearchFailure<List<MediaItem>>> failures = [];
 
     final String catLower = category.toLowerCase();
     final bool searchAnime = catLower == 'all' || catLower == 'anime';
     final bool searchManga = catLower == 'all' || catLower == 'manga';
     final bool searchSeries = catLower == 'all' || catLower == 'series';
 
-    // Start TVMaze concurrently as it uses a separate provider domain
-    final Future<List<MediaItem>> seriesTask =
-        searchSeries ? _searchSeries(cleanQuery) : Future.value([]);
+    Future<List<MediaItem>>? seriesTask;
+    SearchFailure<List<MediaItem>>? seriesFailure;
+
+    if (searchSeries) {
+      seriesTask = _searchSeries(cleanQuery).catchError((e) {
+        if (e is SearchException) {
+          seriesFailure = SearchFailure<List<MediaItem>>(
+            type: e.type,
+            technicalMessage: e.technicalMessage,
+            statusCode: e.statusCode,
+          );
+        } else {
+          seriesFailure = SearchFailure<List<MediaItem>>(
+            type: SearchFailureType.unknown,
+            technicalMessage: e.toString(),
+          );
+        }
+        return <MediaItem>[];
+      });
+    }
 
     if (searchAnime) {
-      final animeResults = await _searchAnime(cleanQuery);
-      results.addAll(animeResults);
+      try {
+        final animeResults = await _searchAnime(cleanQuery);
+        results.addAll(animeResults);
+      } on SearchException catch (e) {
+        failures.add(SearchFailure<List<MediaItem>>(
+          type: e.type,
+          technicalMessage: e.technicalMessage,
+          statusCode: e.statusCode,
+        ));
+      } catch (e) {
+        failures.add(SearchFailure<List<MediaItem>>(
+          type: SearchFailureType.unknown,
+          technicalMessage: e.toString(),
+        ));
+      }
     }
 
     if (searchManga) {
       if (searchAnime) {
-        // Pacing delay between API calls
         await Future.delayed(const Duration(milliseconds: 200));
       }
-      final mangaResults = await _searchManga(cleanQuery);
-      results.addAll(mangaResults);
+      try {
+        final mangaResults = await _searchManga(cleanQuery);
+        results.addAll(mangaResults);
+      } on SearchException catch (e) {
+        failures.add(SearchFailure<List<MediaItem>>(
+          type: e.type,
+          technicalMessage: e.technicalMessage,
+          statusCode: e.statusCode,
+        ));
+      } catch (e) {
+        failures.add(SearchFailure<List<MediaItem>>(
+          type: SearchFailureType.unknown,
+          technicalMessage: e.toString(),
+        ));
+      }
     }
 
-    final seriesResults = await seriesTask;
-    results.addAll(seriesResults);
+    if (seriesTask != null) {
+      final seriesResults = await seriesTask;
+      results.addAll(seriesResults);
+      if (seriesFailure != null) {
+        failures.add(seriesFailure!);
+      }
+    }
 
-    return results;
+    if (results.isNotEmpty || failures.isEmpty) {
+      return SearchSuccess(results);
+    }
+
+    return _selectPrimaryFailure(failures);
+  }
+
+  SearchFailure<List<MediaItem>> _selectPrimaryFailure(
+      List<SearchFailure<List<MediaItem>>> failures) {
+    const priority = [
+      SearchFailureType.network,
+      SearchFailureType.timeout,
+      SearchFailureType.rateLimited,
+      SearchFailureType.server,
+      SearchFailureType.invalidResponse,
+      SearchFailureType.unknown,
+    ];
+
+    for (final type in priority) {
+      final match = failures.where((f) => f.type == type).firstOrNull;
+      if (match != null) return match;
+    }
+    return failures.first;
   }
 
   /// Search Anime via Jikan API with Kitsu fallback
@@ -76,17 +198,51 @@ class ApiService {
             );
 
       final response = await _getWithRetry(uri);
-      if (response != null && response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        final List items = data['data'] ?? [];
-        if (items.isNotEmpty) {
+      if (response.statusCode == 200) {
+        try {
+          final Map<String, dynamic> data = jsonDecode(response.body);
+          final List items = data['data'] ?? [];
           return items.map((item) => mapJikanAnimeToMediaItem(item)).toList();
+        } catch (e) {
+          throw SearchException(
+            type: SearchFailureType.invalidResponse,
+            statusCode: 200,
+            technicalMessage: 'Jikan anime parse error: $e',
+          );
+        }
+      } else if (response.statusCode == 429) {
+        throw const SearchException(
+          type: SearchFailureType.rateLimited,
+          statusCode: 429,
+        );
+      } else if (response.statusCode >= 500 && response.statusCode <= 599) {
+        throw SearchException(
+          type: SearchFailureType.server,
+          statusCode: response.statusCode,
+        );
+      } else {
+        throw SearchException(
+          type: SearchFailureType.unknown,
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (jikanError) {
+      // Gracefully fall back to Kitsu
+      try {
+        return await _searchKitsuAnime(query);
+      } catch (kitsuError) {
+        if (jikanError is SearchException) {
+          rethrow;
+        } else if (kitsuError is SearchException) {
+          rethrow;
+        } else {
+          throw SearchException(
+            type: SearchFailureType.unknown,
+            technicalMessage: jikanError.toString(),
+          );
         }
       }
-    } catch (_) {
-      // Gracefully fall back on endpoint error
     }
-    return _searchKitsuAnime(query);
   }
 
   /// Search Manga via Jikan API with Kitsu fallback
@@ -99,67 +255,141 @@ class ApiService {
             );
 
       final response = await _getWithRetry(uri);
-      if (response != null && response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        final List items = data['data'] ?? [];
-        if (items.isNotEmpty) {
+      if (response.statusCode == 200) {
+        try {
+          final Map<String, dynamic> data = jsonDecode(response.body);
+          final List items = data['data'] ?? [];
           return items.map((item) => mapJikanMangaToMediaItem(item)).toList();
+        } catch (e) {
+          throw SearchException(
+            type: SearchFailureType.invalidResponse,
+            statusCode: 200,
+            technicalMessage: 'Jikan manga parse error: $e',
+          );
+        }
+      } else if (response.statusCode == 429) {
+        throw const SearchException(
+          type: SearchFailureType.rateLimited,
+          statusCode: 429,
+        );
+      } else if (response.statusCode >= 500 && response.statusCode <= 599) {
+        throw SearchException(
+          type: SearchFailureType.server,
+          statusCode: response.statusCode,
+        );
+      } else {
+        throw SearchException(
+          type: SearchFailureType.unknown,
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (jikanError) {
+      // Gracefully fall back to Kitsu
+      try {
+        return await _searchKitsuManga(query);
+      } catch (kitsuError) {
+        if (jikanError is SearchException) {
+          rethrow;
+        } else if (kitsuError is SearchException) {
+          rethrow;
+        } else {
+          throw SearchException(
+            type: SearchFailureType.unknown,
+            technicalMessage: jikanError.toString(),
+          );
         }
       }
-    } catch (_) {
-      // Gracefully fall back on endpoint error
     }
-    return _searchKitsuManga(query);
   }
 
   /// Search Manga via Kitsu API
   Future<List<MediaItem>> _searchKitsuManga(String query) async {
-    try {
-      final Uri uri = query.isEmpty
-          ? Uri.parse('$kitsuBaseUrl/manga?page[limit]=12&sort=-userCount')
-          : Uri.parse(
-              '$kitsuBaseUrl/manga?filter[text]=${Uri.encodeComponent(query)}&page[limit]=12',
-            );
+    final Uri uri = query.isEmpty
+        ? Uri.parse('$kitsuBaseUrl/manga?page[limit]=12&sort=-userCount')
+        : Uri.parse(
+            '$kitsuBaseUrl/manga?filter[text]=${Uri.encodeComponent(query)}&page[limit]=12',
+          );
 
-      final response = await _getWithRetry(uri);
-      if (response != null && response.statusCode == 200) {
+    final response = await _getWithRetry(uri);
+    if (response.statusCode == 200) {
+      try {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final List items = data['data'] ?? [];
         return items.map((item) => mapKitsuMangaToMediaItem(item)).toList();
+      } catch (e) {
+        throw SearchException(
+          type: SearchFailureType.invalidResponse,
+          statusCode: 200,
+          technicalMessage: 'Kitsu manga parse error: $e',
+        );
       }
-    } catch (_) {}
-    return [];
+    } else if (response.statusCode == 429) {
+      throw const SearchException(
+        type: SearchFailureType.rateLimited,
+        statusCode: 429,
+      );
+    } else if (response.statusCode >= 500 && response.statusCode <= 599) {
+      throw SearchException(
+        type: SearchFailureType.server,
+        statusCode: response.statusCode,
+      );
+    } else {
+      throw SearchException(
+        type: SearchFailureType.unknown,
+        statusCode: response.statusCode,
+      );
+    }
   }
 
   /// Search Anime via Kitsu API
   Future<List<MediaItem>> _searchKitsuAnime(String query) async {
-    try {
-      final Uri uri = query.isEmpty
-          ? Uri.parse('$kitsuBaseUrl/anime?page[limit]=12&sort=-userCount')
-          : Uri.parse(
-              '$kitsuBaseUrl/anime?filter[text]=${Uri.encodeComponent(query)}&page[limit]=12',
-            );
+    final Uri uri = query.isEmpty
+        ? Uri.parse('$kitsuBaseUrl/anime?page[limit]=12&sort=-userCount')
+        : Uri.parse(
+            '$kitsuBaseUrl/anime?filter[text]=${Uri.encodeComponent(query)}&page[limit]=12',
+          );
 
-      final response = await _getWithRetry(uri);
-      if (response != null && response.statusCode == 200) {
+    final response = await _getWithRetry(uri);
+    if (response.statusCode == 200) {
+      try {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final List items = data['data'] ?? [];
         return items.map((item) => mapKitsuAnimeToMediaItem(item)).toList();
+      } catch (e) {
+        throw SearchException(
+          type: SearchFailureType.invalidResponse,
+          statusCode: 200,
+          technicalMessage: 'Kitsu anime parse error: $e',
+        );
       }
-    } catch (_) {}
-    return [];
+    } else if (response.statusCode == 429) {
+      throw const SearchException(
+        type: SearchFailureType.rateLimited,
+        statusCode: 429,
+      );
+    } else if (response.statusCode >= 500 && response.statusCode <= 599) {
+      throw SearchException(
+        type: SearchFailureType.server,
+        statusCode: response.statusCode,
+      );
+    } else {
+      throw SearchException(
+        type: SearchFailureType.unknown,
+        statusCode: response.statusCode,
+      );
+    }
   }
 
   /// Search TV Series via TVMaze API with season enrichment
   Future<List<MediaItem>> _searchSeries(String query) async {
-    try {
-      final String searchQuery = query.isEmpty ? 'drama' : query;
-      final Uri uri = Uri.parse(
-        '$tvmazeBaseUrl/search/shows?q=${Uri.encodeComponent(searchQuery)}',
-      );
+    final String searchQuery = query.isEmpty ? 'drama' : query;
+    final Uri uri = Uri.parse(
+      '$tvmazeBaseUrl/search/shows?q=${Uri.encodeComponent(searchQuery)}',
+    );
 
-      final response = await _getWithRetry(uri);
-      if (response != null && response.statusCode == 200) {
+    final response = await _getWithRetry(uri);
+    if (response.statusCode == 200) {
+      try {
         final List items = jsonDecode(response.body);
         final List<Future<MediaItem?>> tasks = [];
 
@@ -171,11 +401,29 @@ class ApiService {
 
         final enriched = await Future.wait(tasks);
         return enriched.whereType<MediaItem>().toList();
+      } catch (e) {
+        throw SearchException(
+          type: SearchFailureType.invalidResponse,
+          statusCode: 200,
+          technicalMessage: 'TVMaze parse error: $e',
+        );
       }
-    } catch (_) {
-      // Gracefully return empty on endpoint error
+    } else if (response.statusCode == 429) {
+      throw const SearchException(
+        type: SearchFailureType.rateLimited,
+        statusCode: 429,
+      );
+    } else if (response.statusCode >= 500 && response.statusCode <= 599) {
+      throw SearchException(
+        type: SearchFailureType.server,
+        statusCode: response.statusCode,
+      );
+    } else {
+      throw SearchException(
+        type: SearchFailureType.unknown,
+        statusCode: response.statusCode,
+      );
     }
-    return [];
   }
 
   Future<MediaItem?> _enrichTvMazeShow(Map<String, dynamic> show) async {
@@ -188,7 +436,7 @@ class ApiService {
         final Uri seasonUri =
             Uri.parse('$tvmazeBaseUrl/shows/$id?embed=seasons');
         final response = await _getWithRetry(seasonUri);
-        if (response != null && response.statusCode == 200) {
+        if (response.statusCode == 200) {
           final Map<String, dynamic> data = jsonDecode(response.body);
           final List embeddedSeasons = data['_embedded']?['seasons'] ?? [];
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/media_item.dart';
+import '../models/search_result.dart';
 import '../repositories/search_repository.dart';
 import '../theme/app_theme.dart';
 
@@ -29,7 +30,7 @@ class _SearchTabState extends State<SearchTab> {
   String _selectedCategory = 'All';
   List<MediaItem> _searchResults = [];
   bool _isLoading = false;
-  String? _errorMessage;
+  SearchFailure? _searchFailure;
   Timer? _debounceTimer;
   int _searchRequestId = 0;
 
@@ -59,25 +60,35 @@ class _SearchTabState extends State<SearchTab> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
+      _searchFailure = null;
     });
 
     try {
-      final results = await _searchRepository.searchMedia(
+      final result = await _searchRepository.searchMedia(
         query,
         category: _selectedCategory,
       );
       if (mounted && requestId == _searchRequestId) {
         setState(() {
-          _searchResults = results;
           _isLoading = false;
+          switch (result) {
+            case SearchSuccess(:final data):
+              _searchResults = data;
+              _searchFailure = null;
+            case SearchFailure():
+              _searchResults = [];
+              _searchFailure = result;
+          }
         });
       }
     } catch (e) {
       if (mounted && requestId == _searchRequestId) {
         setState(() {
-          _errorMessage =
-              'Failed to fetch search results. Check your connection or rate limit.';
+          _searchResults = [];
+          _searchFailure = SearchFailure(
+            type: SearchFailureType.unknown,
+            technicalMessage: e.toString(),
+          );
           _isLoading = false;
         });
       }
@@ -204,7 +215,7 @@ class _SearchTabState extends State<SearchTab> {
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  if (!_isLoading)
+                  if (!_isLoading && _searchFailure == null)
                     Text(
                       '${_searchResults.length} items',
                       style: TextStyle(
@@ -239,31 +250,9 @@ class _SearchTabState extends State<SearchTab> {
                 ),
               ),
             )
-          // Error Message
-          else if (_errorMessage != null)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.error_outline_rounded,
-                      size: 48,
-                      color: Colors.redAccent,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _errorMessage!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        color: Colors.redAccent,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
+          // Failure State
+          else if (_searchFailure != null)
+            _buildErrorView(context, _searchFailure!)
           // Empty State
           else if (_searchResults.isEmpty)
             SliverToBoxAdapter(
@@ -315,6 +304,92 @@ class _SearchTabState extends State<SearchTab> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildErrorView(BuildContext context, SearchFailure failure) {
+    final theme = Theme.of(context);
+    String title;
+    String subtitle;
+    IconData icon;
+
+    switch (failure.type) {
+      case SearchFailureType.network:
+        title = 'No Internet Connection';
+        subtitle = 'Please check your connection and try again.';
+        icon = Icons.wifi_off_rounded;
+      case SearchFailureType.timeout:
+        title = 'Request Timed Out';
+        subtitle = 'Taking longer than expected. Please try again.';
+        icon = Icons.timer_off_rounded;
+      case SearchFailureType.rateLimited:
+        title = 'Rate Limit Exceeded';
+        subtitle = 'Too many requests. Please wait a moment and try again.';
+        icon = Icons.speed_rounded;
+      case SearchFailureType.server:
+        title = 'Service Temporarily Unavailable';
+        subtitle =
+            'The search service is temporarily down. Please try again later.';
+        icon = Icons.cloud_off_rounded;
+      case SearchFailureType.invalidResponse:
+        title = 'Unable to Process Results';
+        subtitle = 'Could not read search results. Please try again.';
+        icon = Icons.data_object_rounded;
+      case SearchFailureType.unknown:
+        title = 'Search Failed';
+        subtitle = 'Something went wrong during search. Please try again.';
+        icon = Icons.error_outline_rounded;
+    }
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 52,
+              color: Colors.redAccent,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Plus Jakarta Sans',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Be Vietnam Pro',
+                fontSize: 13,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              key: const Key('search-retry-button'),
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _performSearch(_searchController.text);
+                    },
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Try Again'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.peachAccent,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

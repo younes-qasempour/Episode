@@ -5,10 +5,13 @@ import '../config/app_config.dart';
 import '../models/auth_models.dart';
 import 'api_exceptions.dart';
 import 'auth_token_storage.dart';
+import 'device_identity_service.dart';
 
 class ApiClient {
   final AppConfig config;
   final AuthTokenStorage tokenStorage;
+  final DeviceIdentityService? deviceIdentityService;
+  final Future<String> Function()? getClientDeviceId;
   final http.Client _client;
   final Duration timeout;
 
@@ -17,6 +20,8 @@ class ApiClient {
   ApiClient({
     required this.config,
     required this.tokenStorage,
+    this.deviceIdentityService,
+    this.getClientDeviceId,
     http.Client? httpClient,
     this.timeout = const Duration(seconds: 20),
   }) : _client = httpClient ?? http.Client();
@@ -126,6 +131,13 @@ class ApiClient {
         return null;
       }
 
+      String deviceId = '';
+      if (getClientDeviceId != null) {
+        deviceId = await getClientDeviceId!();
+      } else if (deviceIdentityService != null) {
+        deviceId = await deviceIdentityService!.getOrCreateClientDeviceId();
+      }
+
       // We cannot call request() recursively here to prevent loops
       final baseUrl = config.apiV1BaseUrl;
       final uri = Uri.parse('$baseUrl/auth/refresh');
@@ -135,8 +147,7 @@ class ApiClient {
       };
       final body = jsonEncode({
         'refreshToken': currentTokens.refreshToken,
-        'clientDeviceId':
-            '', // Backend extracts device from refresh session or client device ID if sent
+        'clientDeviceId': deviceId,
       });
 
       final response = await _client

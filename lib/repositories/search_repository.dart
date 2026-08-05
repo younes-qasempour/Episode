@@ -1,4 +1,5 @@
 import '../models/media_item.dart';
+import '../models/search_result.dart';
 import '../services/api_service.dart';
 
 class SearchRepository {
@@ -9,7 +10,7 @@ class SearchRepository {
 
   /// Perform media search across Anime, Manga, and TV Series based on query and category filter.
   /// Category can be 'All', 'Anime', 'Manga', or 'Series'.
-  Future<List<MediaItem>> searchMedia(
+  Future<SearchResult<List<MediaItem>>> searchMedia(
     String query, {
     String category = 'All',
   }) async {

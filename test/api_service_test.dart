@@ -1,5 +1,10 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:otaku_log/models/media_item.dart';
+import 'package:otaku_log/models/search_result.dart';
 import 'package:otaku_log/services/api_service.dart';
 
 void main() {
@@ -118,6 +123,132 @@ void main() {
       expect(unknownAnime.releaseStatus, ReleaseStatus.unknown);
       expect(runningSeries?.releaseStatus, ReleaseStatus.ongoing);
       expect(runningSeries?.totalCount, isNull);
+    });
+  });
+
+  group('ApiService Search Contracts & Error Handling', () {
+    test('returns SearchSuccess with items on valid API response', () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('jikan')) {
+          return http.Response(
+            '{"data":[{"mal_id":1,"title":"Bleach","episodes":366}]}',
+            200,
+          );
+        }
+        return http.Response('[]', 200);
+      });
+
+      final apiService = ApiService(client: mockClient);
+      final result = await apiService.searchMedia('Bleach', category: 'Anime');
+
+      expect(result, isA<SearchSuccess<List<MediaItem>>>());
+      final success = result as SearchSuccess<List<MediaItem>>;
+      expect(success.data.length, equals(1));
+      expect(success.data.first.title, equals('Bleach'));
+    });
+
+    test('returns SearchSuccess with empty list when no matches found',
+        () async {
+      final mockClient = MockClient((request) async {
+        return http.Response('{"data":[]}', 200);
+      });
+
+      final apiService = ApiService(client: mockClient);
+      final result =
+          await apiService.searchMedia('NonexistentQuery', category: 'Anime');
+
+      expect(result, isA<SearchSuccess<List<MediaItem>>>());
+      final success = result as SearchSuccess<List<MediaItem>>;
+      expect(success.data, isEmpty);
+    });
+
+    test('returns SearchFailure(network) on SocketException', () async {
+      final mockClient = MockClient((request) async {
+        throw const SocketException('No Internet');
+      });
+
+      final apiService = ApiService(client: mockClient);
+      final result = await apiService.searchMedia('Test', category: 'Anime');
+
+      expect(result, isA<SearchFailure<List<MediaItem>>>());
+      final failure = result as SearchFailure<List<MediaItem>>;
+      expect(failure.type, equals(SearchFailureType.network));
+    });
+
+    test('returns SearchFailure(timeout) on TimeoutException', () async {
+      final mockClient = MockClient((request) async {
+        throw TimeoutException('Request timed out');
+      });
+
+      final apiService = ApiService(client: mockClient);
+      final result = await apiService.searchMedia('Test', category: 'Anime');
+
+      expect(result, isA<SearchFailure<List<MediaItem>>>());
+      final failure = result as SearchFailure<List<MediaItem>>;
+      expect(failure.type, equals(SearchFailureType.timeout));
+    });
+
+    test('returns SearchFailure(rateLimited) on HTTP 429', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response('Rate limit', 429);
+      });
+
+      final apiService = ApiService(client: mockClient);
+      final result = await apiService.searchMedia('Test', category: 'Anime');
+
+      expect(result, isA<SearchFailure<List<MediaItem>>>());
+      final failure = result as SearchFailure<List<MediaItem>>;
+      expect(failure.type, equals(SearchFailureType.rateLimited));
+    });
+
+    test('returns SearchFailure(server) on HTTP 503', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response('Server Error', 503);
+      });
+
+      final apiService = ApiService(client: mockClient);
+      final result = await apiService.searchMedia('Test', category: 'Anime');
+
+      expect(result, isA<SearchFailure<List<MediaItem>>>());
+      final failure = result as SearchFailure<List<MediaItem>>;
+      expect(failure.type, equals(SearchFailureType.server));
+    });
+
+    test('returns SearchFailure(invalidResponse) on malformed JSON', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response('{"data": "Not a list"}', 200);
+      });
+
+      final apiService = ApiService(client: mockClient);
+      final result = await apiService.searchMedia('Test', category: 'Anime');
+
+      expect(result, isA<SearchFailure<List<MediaItem>>>());
+      final failure = result as SearchFailure<List<MediaItem>>;
+      expect(failure.type, equals(SearchFailureType.invalidResponse));
+    });
+
+    test('falls back to Kitsu when Jikan fails and returns SearchSuccess',
+        () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('jikan')) {
+          return http.Response('Rate limit', 429);
+        }
+        if (request.url.toString().contains('kitsu')) {
+          return http.Response(
+            '{"data":[{"id":"10","attributes":{"canonicalTitle":"Kitsu Anime","episodeCount":24}}]}',
+            200,
+          );
+        }
+        return http.Response('[]', 200);
+      });
+
+      final apiService = ApiService(client: mockClient);
+      final result = await apiService.searchMedia('Test', category: 'Anime');
+
+      expect(result, isA<SearchSuccess<List<MediaItem>>>());
+      final success = result as SearchSuccess<List<MediaItem>>;
+      expect(success.data.length, equals(1));
+      expect(success.data.first.title, equals('Kitsu Anime'));
     });
   });
 }

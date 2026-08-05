@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:otaku_log/models/media_item.dart';
+import 'package:otaku_log/models/search_result.dart';
 import 'package:otaku_log/repositories/search_repository.dart';
 import 'package:otaku_log/services/api_service.dart';
 
@@ -7,22 +8,22 @@ class MockApiService extends ApiService {
   final List<MediaItem> mockAnime;
   final List<MediaItem> mockManga;
   final List<MediaItem> mockSeries;
-  final bool shouldThrow;
+  final SearchFailure<List<MediaItem>>? mockFailure;
 
   MockApiService({
     this.mockAnime = const [],
     this.mockManga = const [],
     this.mockSeries = const [],
-    this.shouldThrow = false,
+    this.mockFailure,
   });
 
   @override
-  Future<List<MediaItem>> searchMedia(
+  Future<SearchResult<List<MediaItem>>> searchMedia(
     String query, {
     String category = 'All',
   }) async {
-    if (shouldThrow) {
-      throw Exception('Network error');
+    if (mockFailure != null) {
+      return mockFailure!;
     }
 
     final catLower = category.toLowerCase();
@@ -38,7 +39,7 @@ class MockApiService extends ApiService {
       results.addAll(mockSeries);
     }
 
-    return results;
+    return SearchSuccess(results);
   }
 }
 
@@ -82,12 +83,14 @@ void main() {
       );
       final repository = SearchRepository(apiService: mockService);
 
-      final results = await repository.searchMedia('test', category: 'All');
+      final result = await repository.searchMedia('test', category: 'All');
 
-      expect(results.length, equals(3));
-      expect(results, contains(animeItem));
-      expect(results, contains(mangaItem));
-      expect(results, contains(seriesItem));
+      expect(result, isA<SearchSuccess<List<MediaItem>>>());
+      final success = result as SearchSuccess<List<MediaItem>>;
+      expect(success.data.length, equals(3));
+      expect(success.data, contains(animeItem));
+      expect(success.data, contains(mangaItem));
+      expect(success.data, contains(seriesItem));
     });
 
     test('searchMedia returns only Anime when category is Anime', () async {
@@ -98,10 +101,12 @@ void main() {
       );
       final repository = SearchRepository(apiService: mockService);
 
-      final results = await repository.searchMedia('test', category: 'Anime');
+      final result = await repository.searchMedia('test', category: 'Anime');
 
-      expect(results.length, equals(1));
-      expect(results.first.mediaType, equals('anime'));
+      expect(result, isA<SearchSuccess<List<MediaItem>>>());
+      final success = result as SearchSuccess<List<MediaItem>>;
+      expect(success.data.length, equals(1));
+      expect(success.data.first.mediaType, equals('anime'));
     });
 
     test('searchMedia returns only Manga when category is Manga', () async {
@@ -112,10 +117,12 @@ void main() {
       );
       final repository = SearchRepository(apiService: mockService);
 
-      final results = await repository.searchMedia('test', category: 'Manga');
+      final result = await repository.searchMedia('test', category: 'Manga');
 
-      expect(results.length, equals(1));
-      expect(results.first.mediaType, equals('manga'));
+      expect(result, isA<SearchSuccess<List<MediaItem>>>());
+      final success = result as SearchSuccess<List<MediaItem>>;
+      expect(success.data.length, equals(1));
+      expect(success.data.first.mediaType, equals('manga'));
     });
 
     test('searchMedia returns only Series when category is Series', () async {
@@ -126,17 +133,26 @@ void main() {
       );
       final repository = SearchRepository(apiService: mockService);
 
-      final results = await repository.searchMedia('test', category: 'Series');
+      final result = await repository.searchMedia('test', category: 'Series');
 
-      expect(results.length, equals(1));
-      expect(results.first.mediaType, equals('series'));
+      expect(result, isA<SearchSuccess<List<MediaItem>>>());
+      final success = result as SearchSuccess<List<MediaItem>>;
+      expect(success.data.length, equals(1));
+      expect(success.data.first.mediaType, equals('series'));
     });
 
-    test('searchMedia throws exception on network failure', () async {
-      final mockService = MockApiService(shouldThrow: true);
+    test('searchMedia returns SearchFailure on network failure', () async {
+      final mockService = MockApiService(
+        mockFailure: const SearchFailure<List<MediaItem>>(
+            type: SearchFailureType.network),
+      );
       final repository = SearchRepository(apiService: mockService);
 
-      expect(() => repository.searchMedia('test'), throwsA(isA<Exception>()));
+      final result = await repository.searchMedia('test');
+
+      expect(result, isA<SearchFailure<List<MediaItem>>>());
+      final failure = result as SearchFailure<List<MediaItem>>;
+      expect(failure.type, equals(SearchFailureType.network));
     });
   });
 }
