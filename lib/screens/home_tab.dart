@@ -36,6 +36,7 @@ class HomeTab extends StatefulWidget {
 class _HomeTabState extends State<HomeTab> {
   String _selectedCategory = 'All';
   String _selectedStatus = 'All';
+  String _selectedCollection = 'All';
   String _searchQuery = '';
   LibrarySortOption _sortOption = LibrarySortOption.recentlyUpdated;
   late final TextEditingController _searchController;
@@ -58,6 +59,7 @@ class _HomeTabState extends State<HomeTab> {
       _searchQuery = '';
       _selectedCategory = 'All';
       _selectedStatus = 'All';
+      _selectedCollection = 'All';
       _sortOption = LibrarySortOption.recentlyUpdated;
     });
   }
@@ -83,7 +85,21 @@ class _HomeTabState extends State<HomeTab> {
 
       final matchesSearch = _searchQuery.isEmpty ||
           item.title.toLowerCase().contains(_searchQuery.toLowerCase());
-      return matchesCategory && matchesStatus && matchesSearch;
+
+      bool matchesCollection = true;
+      if (_selectedCollection == '🌟 Favorites') {
+        matchesCollection = item.isFavorite;
+      } else if (_selectedCollection == '⭐ Top Rated') {
+        matchesCollection = item.rating >= 8.0;
+      } else if (_selectedCollection == '⚡ Binge Worthy') {
+        matchesCollection = item.tags.contains('Binge Worthy') || item.currentProgress > 10;
+      } else if (_selectedCollection == '📡 On-Going') {
+        matchesCollection = item.releaseStatus == ReleaseStatus.ongoing;
+      } else if (_selectedCollection == '🏆 Classics') {
+        matchesCollection = item.tags.contains('Classic');
+      }
+
+      return matchesCategory && matchesStatus && matchesSearch && matchesCollection;
     }).toList();
 
     filteredItems.sort((a, b) {

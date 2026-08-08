@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../models/activity_log_entry.dart';
 import '../models/library_stats.dart';
 import '../models/media_item.dart';
 import '../models/user_profile_data.dart';
 import '../theme/app_theme.dart';
 import 'donut_chart.dart';
+import 'streak_heatmap.dart';
 
 /// Comprehensive Personal Analytics & Viewing Stats Dashboard.
 class ProfileStatsDashboard extends StatefulWidget {
   final List<MediaItem> mediaItems;
   final UserProfileData userProfile;
+  final List<ActivityLogEntry> activityLogs;
   final ValueChanged<UserProfileData>? onProfileUpdated;
   final ValueChanged<MediaItem>? onItemTap;
   final ValueChanged<String>? onIncrementProgress;
@@ -19,6 +22,7 @@ class ProfileStatsDashboard extends StatefulWidget {
     super.key,
     required this.mediaItems,
     required this.userProfile,
+    this.activityLogs = const [],
     this.onProfileUpdated,
     this.onItemTap,
     this.onIncrementProgress,
@@ -443,6 +447,10 @@ class _ProfileStatsDashboardState extends State<ProfileStatsDashboard> {
             ),
           ],
         ),
+        const SizedBox(height: 20),
+
+        // 3. 30-Day Activity Streak Heatmap
+        StreakHeatmap(activityLogs: widget.activityLogs),
         const SizedBox(height: 20),
 
         // 3. Donut Chart Card (Media Types vs Statuses)

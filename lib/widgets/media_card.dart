@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 class MediaCard extends StatelessWidget {
   final MediaItem item;
   final VoidCallback? onIncrementProgress;
+  final ValueChanged<int>? onBatchIncrementProgress;
   final VoidCallback? onTap;
   final VoidCallback? onToggleFavorite;
 
@@ -12,6 +13,7 @@ class MediaCard extends StatelessWidget {
     super.key,
     required this.item,
     this.onIncrementProgress,
+    this.onBatchIncrementProgress,
     this.onTap,
     this.onToggleFavorite,
   });
@@ -120,11 +122,13 @@ class MediaCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Media Cover Image
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: 84,
-                    height: 116,
+                Hero(
+                  tag: 'media_cover_${item.id}',
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 84,
+                      height: 116,
                     child: item.coverUrl.trim().isEmpty
                         ? Container(
                             color: isDark
@@ -170,6 +174,7 @@ class MediaCard extends StatelessWidget {
                               );
                             },
                           ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),

@@ -30,6 +30,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   late List<MediaSeason> _seasons;
   late double _rating;
   late bool _isFavorite;
+  late List<String> _tags;
   late final TextEditingController _progressController;
   late final TextEditingController _totalController;
   late final TextEditingController _synopsisController;
@@ -49,6 +50,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     _seasons = List<MediaSeason>.from(widget.item.seasons);
     _rating = widget.item.rating;
     _isFavorite = widget.item.isFavorite;
+    _tags = List<String>.from(widget.item.tags);
     _progressController = TextEditingController(text: '$_flatCurrentProgress');
     _totalController = TextEditingController(
       text: _flatTotalCount?.toString() ?? '',
@@ -95,6 +97,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       synopsis: synopsis,
       clearSynopsis: synopsis.isEmpty,
       isFavorite: _isFavorite,
+      tags: _tags,
     );
   }
 
@@ -463,19 +466,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
           borderRadius: BorderRadius.circular(12),
           child: Stack(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 110,
-                  height: 160,
-                  child: currentCoverUrl.isEmpty
-                      ? _coverFallback(theme, isDark)
-                      : Image.network(
-                          currentCoverUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _coverFallback(theme, isDark),
-                        ),
+              Hero(
+                tag: 'media_cover_${widget.item.id}',
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 110,
+                    height: 160,
+                    child: currentCoverUrl.isEmpty
+                        ? _coverFallback(theme, isDark)
+                        : Image.network(
+                            currentCoverUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                _coverFallback(theme, isDark),
+                          ),
+                  ),
                 ),
               ),
               Positioned(
@@ -647,6 +653,47 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 tooltip: 'Increase progress',
                 onPressed: () => _setFlatProgress(_flatCurrentProgress + 1),
                 icon: const Icon(Icons.add_circle_outline_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                '⚡ Binge Mode: ',
+                style: TextStyle(
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 6),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: () => _setFlatProgress(_flatCurrentProgress + 1),
+                child: const Text('+1'),
+              ),
+              const SizedBox(width: 6),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: () => _setFlatProgress(_flatCurrentProgress + 5),
+                child: const Text('+5'),
+              ),
+              const SizedBox(width: 6),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: () => _setFlatProgress(_flatCurrentProgress + 10),
+                child: const Text('+10'),
               ),
             ],
           ),

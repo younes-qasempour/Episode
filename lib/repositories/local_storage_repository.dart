@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import '../models/activity_log_entry.dart';
 import '../models/data_transfer.dart';
 import '../models/local_library_document.dart';
 import '../models/media_item.dart';
@@ -15,6 +16,7 @@ class LocalStorageRepository {
   static const String _transferHistoryKey = 'episode_transfer_history_v1';
   static const String _legacyTransferHistoryKey = 'otaku_log_transfer_history_v1';
   static const String _userProfileKey = 'episode_user_profile_v1';
+  static const String _activityLogKey = 'episode_activity_log_v1';
   static const int automaticBackupRetention = 5;
   static const int historyRetention = 25;
 
@@ -201,6 +203,45 @@ class LocalStorageRepository {
         localRevision: existing.localRevision + 1,
       );
       await saveAllMediaItems(currentItems);
+    }
+
+    return loadActiveMediaItems();
+  }
+
+  /// Increment progress by custom batch delta (e.g. +5 or +10) for Binge Mode.
+  Future<List<MediaItem>> batchIncrementProgress(String id, int delta) async {
+    if (delta <= 0) return loadActiveMediaItems();
+    final currentItems = await loadAllMediaItemsIncludingDeleted();
+    final now = clock.nowUtc();
+    final index = currentItems.indexWhere((item) => item.id == id);
+
+    if (index >= 0) {
+      final existing = currentItems[index];
+      final newProgress = existing.currentProgress + delta;
+      final statusAutoUpdated = (existing.totalCount != null &&
+              newProgress >= existing.totalCount!)
+          ? TrackingStatus.completed.label
+          : existing.status;
+
+      currentItems[index] = existing.copyWith(
+        currentProgress: newProgress,
+        status: statusAutoUpdated,
+        updatedAt: now,
+        localRevision: existing.localRevision + 1,
+      );
+      await saveAllMediaItems(currentItems);
+
+      // Record activity log entry
+      await recordActivityLogEntry(
+        ActivityLogEntry(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          itemId: existing.id,
+          itemTitle: existing.title,
+          mediaType: existing.mediaType,
+          progressDelta: delta,
+          timestamp: now,
+        ),
+      );
     }
 
     return loadActiveMediaItems();
@@ -666,6 +707,24 @@ class LocalStorageRepository {
   Future<void> saveUserProfileData(UserProfileData profile) async {
     final prefs = await _getPrefs();
     await prefs.setString(_userProfileKey, profile.encode());
+  }
+
+  /// Load activity logs history.
+  Future<List<ActivityLogEntry>> loadActivityLogs() async {
+    final prefs = await _getPrefs();
+    final rawList = prefs.getStringList(_activityLogKey) ?? [];
+    return rawList
+        .map((raw) => ActivityLogEntry.decode(raw))
+        .toList();
+  }
+
+  /// Record a new activity log entry (retains last 100 entries).
+  Future<void> recordActivityLogEntry(ActivityLogEntry entry) async {
+    final prefs = await _getPrefs();
+    final current = await loadActivityLogs();
+    current.insert(0, entry);
+    final retained = current.take(100).map((e) => e.encode()).toList();
+    await prefs.setStringList(_activityLogKey, retained);
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
+import '../models/activity_log_entry.dart';
 import '../models/media_item.dart';
 import '../models/user_profile_data.dart';
 import '../services/sync_service.dart';
@@ -18,6 +19,7 @@ class ProfileTab extends StatelessWidget {
   final VoidCallback? onClearLibrary;
   final List<MediaItem> mediaItems;
   final UserProfileData userProfile;
+  final List<ActivityLogEntry> activityLogs;
   final ValueChanged<UserProfileData>? onProfileUpdated;
   final ValueChanged<MediaItem>? onItemTap;
   final ValueChanged<String>? onIncrementProgress;
@@ -35,6 +37,7 @@ class ProfileTab extends StatelessWidget {
     this.onClearLibrary,
     this.mediaItems = const [],
     this.userProfile = const UserProfileData(),
+    this.activityLogs = const [],
     this.onProfileUpdated,
     this.onItemTap,
     this.onIncrementProgress,
@@ -158,6 +161,7 @@ class ProfileTab extends StatelessWidget {
           ProfileStatsDashboard(
             mediaItems: mediaItems,
             userProfile: userProfile,
+            activityLogs: activityLogs,
             onProfileUpdated: onProfileUpdated,
             onItemTap: onItemTap,
             onIncrementProgress: onIncrementProgress,

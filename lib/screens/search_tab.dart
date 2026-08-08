@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+
 import '../models/media_item.dart';
 import '../repositories/search_repository.dart';
 import '../theme/app_theme.dart';
+import '../widgets/shimmer_skeleton.dart';
 
 class SearchTab extends StatefulWidget {
   final Function(MediaItem item)? onAddToLibrary;
@@ -221,23 +223,7 @@ class _SearchTabState extends State<SearchTab> {
           // Loading Indicator
           if (_isLoading)
             const SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 12),
-                    Text(
-                      'Searching Jikan & TVMaze APIs...',
-                      style: TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: ShimmerSkeletonGrid(itemCount: 6),
             )
           // Error Message
           else if (_errorMessage != null)

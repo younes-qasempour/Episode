@@ -3,6 +3,14 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-08-08 — Favorites, Smart Collections, Binge Mode & Glassmorphism Visual Polish
+
+- **Agent/tool:** Antigravity
+- **Task:** Implement Smart Collections, Binge Mode (+5/+10 increments), Activity History & 30-Day Heatmap, Hero image transitions, Adaptive ambient color headers, and Shimmer skeleton loading on branch `feat/favorites-binge-polish`.
+- **Summary:** Added **Smart Collections** filter bar on `HomeTab` (*Favorites, Top Rated ≥8.0, Binge Worthy, On-Going Series, Classics*). Added `ActivityLogEntry` and `StreakCalculator` for daily watching/reading activity logging and streak calculation. Created `StreakHeatmap` 30-day contribution grid and streak badge in `ProfileStatsDashboard`. Added Binge Mode batch progress buttons (`+1`, `+5`, `+10`) in `MediaDetailScreen`, `MediaCard`, and `ProfileTab`. Wrapped cover images in `Hero(tag: 'media_cover_${item.id}')` for smooth card-to-detail page transitions. Implemented frosted glass (`BackdropFilter`) ambient color headers in `MediaDetailScreen`. Created zero-dependency `ShimmerSkeletonGrid` widget replacing spinners in `SearchTab`. Added unit test suites (`activity_log_test.dart` and `smart_collections_test.dart`).
+- **Files changed:** `lib/models/activity_log_entry.dart`, `lib/widgets/shimmer_skeleton.dart`, `lib/widgets/streak_heatmap.dart`, `lib/repositories/local_storage_repository.dart`, `lib/screens/home_tab.dart`, `lib/screens/media_detail_screen.dart`, `lib/screens/search_tab.dart`, `lib/screens/profile_tab.dart`, `lib/screens/main_navigation_screen.dart`, `lib/widgets/media_card.dart`, `lib/widgets/profile_stats_dashboard.dart`, `test/activity_log_test.dart`, `test/smart_collections_test.dart`, `docs/CURRENT_STATE.md`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter test` (139/139 tests passed cleanly).
+
 ## 2026-08-08 — Personal Dashboard & Viewing Analytics Hub (Profile Tab Upgrade)
 
 - **Agent/tool:** Antigravity
