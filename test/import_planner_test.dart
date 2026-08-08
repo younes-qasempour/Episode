@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:otaku_log/models/data_transfer.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/services/import_planner.dart';
+import 'package:episode/models/data_transfer.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/services/import_planner.dart';
 
 void main() {
   const planner = ImportPlanner();

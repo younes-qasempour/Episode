@@ -34,7 +34,7 @@ class DeviceIdentityService {
 
   Future<Map<String, String>> getDeviceInfo() async {
     String platformName = 'unknown';
-    String deviceName = 'OtakuLog Device';
+    String deviceName = 'Episode Device';
     String appVersion = '1.0.0';
 
     try {

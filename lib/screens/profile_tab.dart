@@ -391,7 +391,7 @@ class ProfileTab extends StatelessWidget {
                 _buildSettingTile(
                   context,
                   icon: Icons.info_outline_rounded,
-                  title: 'About OtakuLog',
+                  title: 'About Episode',
                   subtitle: 'v1.0.0 (Offline & Cloud Sync)',
                 ),
               ],

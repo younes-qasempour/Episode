@@ -1,7 +1,7 @@
-# OtakuLog Sync & FastAPI Backend Discovery Report
+# Episode Sync & FastAPI Backend Discovery Report
 
 > **Document Status:** Authoritative Discovery & Architectural Blueprint  
-> **Target Project:** OtakuLog Flutter Application  
+> **Target Project:** Episode Flutter Application  
 > **Output Specification:** Technical discovery report for offline-first data sync & FastAPI backend design  
 > **Verification Date:** 2026-08-02  
 
@@ -10,15 +10,15 @@
 ## 1. Project Overview
 
 ### 1.1 Executive Summary
-OtakuLog is a cross-platform Flutter application designed to track anime, manga, TV series, and movies in a local media collection. The application is strictly offline-first, operating without cloud servers or required user accounts. All user data is currently stored on-device via `SharedPreferences` in plaintext JSON arrays. The app integrates with external REST APIs (Jikan for Anime/Manga, TVMaze for TV Series) for media discovery and provides local file backup/restore capabilities (Native JSON, MyAnimeList XML, CSV).
+Episode is a cross-platform Flutter application designed to track anime, manga, TV series, and movies in a local media collection. The application is strictly offline-first, operating without cloud servers or required user accounts. All user data is currently stored on-device via `SharedPreferences` in plaintext JSON arrays. The app integrates with external REST APIs (Jikan for Anime/Manga, TVMaze for TV Series) for media discovery and provides local file backup/restore capabilities (Native JSON, MyAnimeList XML, CSV).
 
 ### 1.2 Core Stack & Versions
-* **Application Name:** OtakuLog (`pubspec.yaml` `name: otaku_log`, version `1.0.0+1`)
+* **Application Name:** Episode (`pubspec.yaml` `name: episode`, version `1.0.0+1`)
 * **Application Purpose:** Local media collection tracking, remote media search, metadata editing, flat and multi-season progress management, and file-based data transfer.
 * **Flutter Version:** `3.44.8` (stable)
 * **Dart Version:** `3.12.2` (SDK constraint: `>=3.0.0 <4.0.0`)
 * **Supported Platforms:** 
-  * **Android:** Configured directory and native Storage Access Framework (SAF) MethodChannel adapter (`android/app/src/main/kotlin/com/example/otaku_log/MainActivity.kt`).
+  * **Android:** Configured directory and native Storage Access Framework (SAF) MethodChannel adapter (`android/app/src/main/kotlin/com/example/episode/MainActivity.kt`).
   * **Web:** Production browser build validated (`web/index.html`, `lib/services/file_transfer_web.dart`).
   * **iOS, macOS, Windows, Linux:** Unsupported (No platform runner directories in repository).
 * **State Management:** Widget-local state (`StatefulWidget`, `setState`, and explicit constructor callbacks). No external state package (Bloc, Riverpod, Provider, GetX, etc.).
@@ -47,7 +47,7 @@ OtakuLog is a cross-platform Flutter application designed to track anime, manga,
 
 ### 1.4 Directory Structure (Data & Architecture Relevant)
 ```text
-OtakuLog/
+Episode/
 ├── lib/
 │   ├── main.dart                          # Application entry point & ThemeMode ownership
 │   ├── data/
@@ -68,7 +68,7 @@ OtakuLog/
 │   │   ├── file_transfer_stub.dart        # Unsupported platform fallback
 │   │   ├── import_planner.dart            # Matching (ID/title/fuzzy), merge rules, conflict policy
 │   │   ├── mal_xml_service.dart           # MyAnimeList XML/GZ import & export provider
-│   │   └── native_backup_service.dart     # OtakuLog native JSON codec, SHA-256 integrity, & v0->v1 migration
+│   │   └── native_backup_service.dart     # Episode native JSON codec, SHA-256 integrity, & v0->v1 migration
 │   ├── screens/
 │   │   ├── main_navigation_screen.dart    # Tab shell & in-memory library state container
 │   │   ├── home_tab.dart                  # Home library view, search/type filters, quick increment
@@ -99,19 +99,19 @@ OtakuLog/
 ## 2. Current Local Storage Architecture
 
 ### 2.1 Storage Technology Breakdown
-All persistence in OtakuLog relies on `SharedPreferences` (`shared_preferences: ^2.5.5`), instantiated lazily via `SharedPreferences.getInstance()`.
+All persistence in Episode relies on `SharedPreferences` (`shared_preferences: ^2.5.5`), instantiated lazily via `SharedPreferences.getInstance()`.
 
 | Storage Key | Storage Technology | Format | Encryption | Retention / Limit | Role |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `otaku_log_media_items` | `SharedPreferences` | Plaintext JSON Array | None | Unbounded | Authoritative active media library store |
-| `otaku_log_automatic_backups_v1` | `SharedPreferences` | Plaintext JSON Array | None | Max 5 records (FIFO) | Automatic pre-import safety snapshots |
-| `otaku_log_transfer_history_v1` | `SharedPreferences` | Plaintext JSON Array | None | Max 25 records (FIFO) | Transfer audit log summaries |
+| `episode_media_items` | `SharedPreferences` | Plaintext JSON Array | None | Unbounded | Authoritative active media library store |
+| `episode_automatic_backups_v1` | `SharedPreferences` | Plaintext JSON Array | None | Max 5 records (FIFO) | Automatic pre-import safety snapshots |
+| `episode_transfer_history_v1` | `SharedPreferences` | Plaintext JSON Array | None | Max 25 records (FIFO) | Transfer audit log summaries |
 
 ### 2.2 Detailed Storage Mechanics (`lib/repositories/local_storage_repository.dart`)
 
 * **Initialization:** `LocalStorageRepository._getPrefs()` retrieves the singleton `SharedPreferences` instance asynchronously.
 * **Read Flow (`loadMediaItems`):**
-  1. Requests string from `_storageKey` (`otaku_log_media_items`).
+  1. Requests string from `_storageKey` (`episode_media_items`).
   2. If null (first run), seeds `sampleMediaItems` from `lib/data/mock_data.dart`, writes them to storage, and returns them.
   3. If present, decodes JSON string into `List<dynamic>`.
   4. Maps each element via `MediaItem.fromMap(Map<String, dynamic>.from(entry))`.
@@ -146,7 +146,7 @@ All persistence in OtakuLog relies on `SharedPreferences` (`shared_preferences: 
 
 | Data Category | Model / Entity | Storage Location | User-Created | Must Sync | Device-Only | Cache-Only | Sensitive | Relevant Files |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Media Library Items** | `MediaItem` | `SharedPreferences` (`otaku_log_media_items`) | Yes | **Yes** | No | No | No | `lib/models/media_item.dart`, `lib/repositories/local_storage_repository.dart` |
+| **Media Library Items** | `MediaItem` | `SharedPreferences` (`episode_media_items`) | Yes | **Yes** | No | No | No | `lib/models/media_item.dart`, `lib/repositories/local_storage_repository.dart` |
 | **Media Seasons** | `MediaSeason` | Embedded in `MediaItem.seasons` | Yes | **Yes** | No | No | No | `lib/models/media_item.dart` |
 | **Tracking Progress** | `MediaItem.currentProgress`, `_flatCurrentProgress`, `seasons[].currentProgress` | Embedded in `MediaItem` | Yes | **Yes** | No | No | No | `lib/models/media_item.dart` |
 | **Tracking Status** | `MediaItem.status` (`TrackingStatus`) | Embedded in `MediaItem` | Yes | **Yes** | No | No | No | `lib/models/media_item.dart` |
@@ -159,9 +159,9 @@ All persistence in OtakuLog relies on `SharedPreferences` (`shared_preferences: 
 | **Manual Flag** | `MediaItem.isManual` | Embedded in `MediaItem` | System | **Yes** | No | No | No | `lib/models/media_item.dart` |
 | **Synopsis** | `MediaItem.synopsis` | Embedded in `MediaItem` | System/User | **Yes** | No | Yes | No | `lib/models/media_item.dart`, `lib/services/api_service.dart` |
 | **Cover Image URL** | `MediaItem.coverUrl` | Embedded in `MediaItem` | System/User | Optional | No | Yes | No | `lib/models/media_item.dart` |
-| **UI Theme Mode** | `_themeMode` (`ThemeMode`) | In-memory state (`_OtakuLogAppState`) | Yes | No | **Yes** | No | No | `lib/main.dart` |
-| **Safety Backups** | `AutomaticBackupRecord` | `SharedPreferences` (`otaku_log_automatic_backups_v1`) | System | No | **Yes** | No | No | `lib/models/data_transfer.dart`, `lib/repositories/local_storage_repository.dart` |
-| **Transfer History** | `TransferHistoryEntry` | `SharedPreferences` (`otaku_log_transfer_history_v1`) | System | No | **Yes** | No | No | `lib/models/data_transfer.dart`, `lib/repositories/local_storage_repository.dart` |
+| **UI Theme Mode** | `_themeMode` (`ThemeMode`) | In-memory state (`_EpisodeAppState`) | Yes | No | **Yes** | No | No | `lib/main.dart` |
+| **Safety Backups** | `AutomaticBackupRecord` | `SharedPreferences` (`episode_automatic_backups_v1`) | System | No | **Yes** | No | No | `lib/models/data_transfer.dart`, `lib/repositories/local_storage_repository.dart` |
+| **Transfer History** | `TransferHistoryEntry` | `SharedPreferences` (`episode_transfer_history_v1`) | System | No | **Yes** | No | No | `lib/models/data_transfer.dart`, `lib/repositories/local_storage_repository.dart` |
 | **Remote Search Results**| `List<MediaItem>` | In-memory state (`SearchTab._searchResults`) | System | No | No | **Yes** | No | `lib/screens/search_tab.dart`, `lib/services/api_service.dart` |
 | **First-Run Seed Items**| `sampleMediaItems` | Code constant (`lib/data/mock_data.dart`) | Hardcoded | **Yes*** | No | No | No | `lib/data/mock_data.dart` (*If retained by user) |
 
@@ -170,7 +170,7 @@ All persistence in OtakuLog relies on `SharedPreferences` (`shared_preferences: 
 ## 4. Entity and Model Catalog
 
 ### 4.1 `MediaItem`
-* **Source File:** `file:///d:/Coding/OtakuLog/lib/models/media_item.dart` (Line 252)
+* **Source File:** `file:///d:/Coding/Episode/lib/models/media_item.dart` (Line 252)
 * **Purpose:** Primary domain entity representing a media entry (Anime, Manga, TV Series, or Movie) in the user's local collection.
 
 | Field Name | Dart Type | Nullable | Default Value | Local JSON Key | Primary / Foreign Key | Serialized Format | Notes |
@@ -236,7 +236,7 @@ All persistence in OtakuLog relies on `SharedPreferences` (`shared_preferences: 
 ---
 
 ### 4.2 `MediaSeason`
-* **Source File:** `file:///d:/Coding/OtakuLog/lib/models/media_item.dart` (Line 168)
+* **Source File:** `file:///d:/Coding/Episode/lib/models/media_item.dart` (Line 168)
 * **Purpose:** Represents an individual season inside a multi-season media item (Anime or TV Series).
 
 | Field Name | Dart Type | Nullable | Default Value | Local JSON Key | Primary / Foreign Key | Serialized Format | Notes |
@@ -263,13 +263,13 @@ All persistence in OtakuLog relies on `SharedPreferences` (`shared_preferences: 
 ---
 
 ### 4.3 `AutomaticBackupRecord`
-* **Source File:** `file:///d:/Coding/OtakuLog/lib/models/data_transfer.dart` (Line 396)
+* **Source File:** `file:///d:/Coding/Episode/lib/models/data_transfer.dart` (Line 396)
 * **Purpose:** Represents an automatic safety backup created prior to executing an import or full restore.
 
 | Field Name | Dart Type | Nullable | Default Value | Local JSON Key | Primary Key | Serialized Format |
 | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
 | `id` | `String` | No | Required | `'id'` | Primary Key | String |
-| `fileName` | `String` | No | `'otakulog-backup.json'` | `'fileName'` | None | String |
+| `fileName` | `String` | No | `'Episode-backup.json'` | `'fileName'` | None | String |
 | `createdAt` | `DateTime` | No | Required | `'createdAt'` | None | ISO-8601 UTC String |
 | `backupJson` | `String` | No | Required | `'backupJson'` | None | String (Full native backup document) |
 | `itemCount` | `int` | No | Required | `'itemCount'` | None | int |
@@ -277,14 +277,14 @@ All persistence in OtakuLog relies on `SharedPreferences` (`shared_preferences: 
 ---
 
 ### 4.4 `TransferHistoryEntry`
-* **Source File:** `file:///d:/Coding/OtakuLog/lib/models/data_transfer.dart` (Line 431)
+* **Source File:** `file:///d:/Coding/Episode/lib/models/data_transfer.dart` (Line 431)
 * **Purpose:** Audit log record summarizing a completed or failed import, export, backup, or restore operation.
 
 | Field Name | Dart Type | Nullable | Default Value | Local JSON Key | Primary Key | Serialized Format |
 | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
 | `id` | `String` | No | Required | `'id'` | Primary Key | String |
 | `operationType` | `TransferOperationType` | No | Required | `'operationType'` | None | Enum name string (`'importFile'`, `'restore'`, etc.) |
-| `providerId` | `String` | No | Required | `'providerId'` | None | String (`'otakulog-native'`, `'myanimelist-xml'`, `'csv'`) |
+| `providerId` | `String` | No | Required | `'providerId'` | None | String (`'Episode-native'`, `'myanimelist-xml'`, `'csv'`) |
 | `fileName` | `String?` | Yes | `null` | `'fileName'` | None | String or `null` |
 | `occurredAt` | `DateTime` | No | Required | `'occurredAt'` | None | ISO-8601 UTC String |
 | `durationMilliseconds`| `int` | No | Required | `'durationMilliseconds'`| None | int |
@@ -441,7 +441,7 @@ If Device A deletes Item X while offline:
 
 | Format | Codec Class | Supported Operations | File Extension | Max Size Limit | Safety Measures |
 | :--- | :--- | :--- | :---: | :---: | :--- |
-| **OtakuLog Native Backup** | `NativeBackupCodec` (`lib/services/native_backup_service.dart`) | Import, Export, Full Restore | `.json` | 20 MB | SHA-256 integrity checksum, schema v1 validation, v0 migration |
+| **Episode Native Backup** | `NativeBackupCodec` (`lib/services/native_backup_service.dart`) | Import, Export, Full Restore | `.json` | 20 MB | SHA-256 integrity checksum, schema v1 validation, v0 migration |
 | **MyAnimeList XML** | `MalXmlImportProvider`, `MalXmlExportProvider` (`lib/services/mal_xml_service.dart`) | Import (Anime/Manga), Export (Anime/Manga) | `.xml`, `.xml.gz` | 10 MB compressed / 25 MB expanded | Reject DOCTYPE/ENTITY declarations, GZip verification, ISO-8859-1 fallback |
 | **CSV Export** | `CsvExportProvider` (`lib/services/csv_export_service.dart`) | Export Only | `.csv` | Unbounded | UTF-8 BOM (`\uFEFF`), field escaping, Unicode support |
 
@@ -452,7 +452,7 @@ When importing a backup or external file, `ImportPlanner.buildPreview()` indexes
 3. **Uncertain / Fuzzy Title Match:** Uses Levenshtein distance algorithm on 4-character title prefixes (`score >= 0.88`). Flags entry as `ImportAction.conflict` requiring user review.
 
 ### 9.3 Snapshot Rollback Contract
-Before applying any import or full restore, `MediaTransferRepository` creates an `AutomaticBackupRecord` stored under `otaku_log_automatic_backups_v1`. If writing or round-trip decoding fails, `LocalStorageRepository.replaceAllMediaItemsAtomically()` automatically rolls back `SharedPreferences` to the pre-import snapshot.
+Before applying any import or full restore, `MediaTransferRepository` creates an `AutomaticBackupRecord` stored under `episode_automatic_backups_v1`. If writing or round-trip decoding fails, `LocalStorageRepository.replaceAllMediaItemsAtomically()` automatically rolls back `SharedPreferences` to the pre-import snapshot.
 
 ---
 
@@ -488,7 +488,7 @@ Before applying any import or full restore, `MediaTransferRepository` creates an
                  └─ [LocalStorageRepository.saveAllMediaItems()]
                       └─ _validateLibrary()
                       └─ jsonEncode()
-                      └─ SharedPreferences.setString('otaku_log_media_items', json)
+                      └─ SharedPreferences.setString('episode_media_items', json)
 ```
 
 ### 11.2 Flow: Increment Progress (Home Tab Card)
@@ -562,11 +562,11 @@ Before applying any import or full restore, `MediaTransferRepository` creates an
 | **Flutter Code Changes** | **Minimal** (Reuses `NativeBackupCodec` & snapshot pipeline) | Moderate (Requires entity-level tracking) | High (Requires command pattern for all mutations) |
 | **Conflict Handling** | Deterministic Document Merge / Revision Compare | Field-level per entity | Operation log ordering & re-base |
 | **Data Transfer Size** | Moderate (~50 KB - 500 KB per sync) | Small (~1 KB - 10 KB per changed item) | Minimal (<1 KB per change) |
-| **Suitability for OtakuLog** | **Ideal for v1** | Good for v2 expansion | Overkill for single-user library size |
+| **Suitability for Episode** | **Ideal for v1** | Good for v2 expansion | Overkill for single-user library size |
 
 ### 13.2 Selected Strategy for Version 1: Hybrid Snapshot & Revision Sync
 * **Recommendation:** Use **Option 1 (Full Snapshot Sync with Client/Server Revisions)** for Version 1.
-* **Rationale:** An average OtakuLog library contains 100 to 1,000 items (approx. 50 KB to 300 KB uncompressed JSON). Uploading/downloading the full versioned library snapshot during sync requires minimal server complexity and directly leverages OtakuLog's existing, well-tested `NativeBackupCodec` and `ImportPlanner` pipeline.
+* **Rationale:** An average Episode library contains 100 to 1,000 items (approx. 50 KB to 300 KB uncompressed JSON). Uploading/downloading the full versioned library snapshot during sync requires minimal server complexity and directly leverages Episode's existing, well-tested `NativeBackupCodec` and `ImportPlanner` pipeline.
 
 ---
 
@@ -811,16 +811,16 @@ class UserSnapshot(BaseModel):
 ## 26. Files Required for the Next Step
 
 ### Essential Files
-1. `file:///d:/Coding/OtakuLog/lib/models/media_item.dart` — Core domain entity and serialization logic.
-2. `file:///d:/Coding/OtakuLog/lib/repositories/local_storage_repository.dart` — Active `SharedPreferences` local storage boundary.
-3. `file:///d:/Coding/OtakuLog/lib/models/data_transfer.dart` — Transfer contracts, backup records, and history models.
-4. `file:///d:/Coding/OtakuLog/lib/services/native_backup_service.dart` — Versioned JSON backup codec and integrity check.
-5. `file:///d:/Coding/OtakuLog/lib/services/import_planner.dart` — Deduplication, matching algorithms, and merge policies.
+1. `file:///d:/Coding/Episode/lib/models/media_item.dart` — Core domain entity and serialization logic.
+2. `file:///d:/Coding/Episode/lib/repositories/local_storage_repository.dart` — Active `SharedPreferences` local storage boundary.
+3. `file:///d:/Coding/Episode/lib/models/data_transfer.dart` — Transfer contracts, backup records, and history models.
+4. `file:///d:/Coding/Episode/lib/services/native_backup_service.dart` — Versioned JSON backup codec and integrity check.
+5. `file:///d:/Coding/Episode/lib/services/import_planner.dart` — Deduplication, matching algorithms, and merge policies.
 
 ### Useful Files
-1. `file:///d:/Coding/OtakuLog/lib/services/api_service.dart` — External API provider mapping rules.
-2. `file:///d:/Coding/OtakuLog/lib/screens/main_navigation_screen.dart` — In-memory library state container.
-3. `file:///d:/Coding/OtakuLog/pubspec.yaml` — Package dependencies and platform config.
+1. `file:///d:/Coding/Episode/lib/services/api_service.dart` — External API provider mapping rules.
+2. `file:///d:/Coding/Episode/lib/screens/main_navigation_screen.dart` — In-memory library state container.
+3. `file:///d:/Coding/Episode/pubspec.yaml` — Package dependencies and platform config.
 
 ---
 
@@ -829,7 +829,7 @@ class UserSnapshot(BaseModel):
 ```json
 {
   "project": {
-    "name": "OtakuLog",
+    "name": "Episode",
     "version": "1.0.0+1",
     "flutter_version": "3.44.8",
     "dart_version": "3.12.2",
@@ -837,9 +837,9 @@ class UserSnapshot(BaseModel):
     "persistence": "SharedPreferences"
   },
   "storage": {
-    "active_store_key": "otaku_log_media_items",
-    "backups_store_key": "otaku_log_automatic_backups_v1",
-    "history_store_key": "otaku_log_transfer_history_v1",
+    "active_store_key": "episode_media_items",
+    "backups_store_key": "episode_automatic_backups_v1",
+    "history_store_key": "episode_transfer_history_v1",
     "encryption": false
   },
   "entities": [

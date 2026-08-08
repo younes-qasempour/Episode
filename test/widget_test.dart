@@ -1,16 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:otaku_log/main.dart';
+import 'package:episode/main.dart';
 
 void main() {
-  testWidgets('OtakuLog app starts at the library shell', (
+  testWidgets('Episode app starts at the library shell', (
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({
-      'otaku_log_media_items': '[]',
+      'episode_media_items': '[]',
     });
-    await tester.pumpWidget(const OtakuLogApp());
+    await tester.pumpWidget(const EpisodeApp());
     await tester.pumpAndSettle();
 
     expect(find.text('Home'), findsOneWidget);

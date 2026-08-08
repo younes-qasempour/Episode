@@ -3,17 +3,17 @@ import 'theme/app_theme.dart';
 import 'screens/main_navigation_screen.dart';
 
 void main() {
-  runApp(const OtakuLogApp());
+  runApp(const EpisodeApp());
 }
 
-class OtakuLogApp extends StatefulWidget {
-  const OtakuLogApp({super.key});
+class EpisodeApp extends StatefulWidget {
+  const EpisodeApp({super.key});
 
   @override
-  State<OtakuLogApp> createState() => _OtakuLogAppState();
+  State<EpisodeApp> createState() => _EpisodeAppState();
 }
 
-class _OtakuLogAppState extends State<OtakuLogApp> {
+class _EpisodeAppState extends State<EpisodeApp> {
   ThemeMode _themeMode = ThemeMode.system;
 
   void _handleThemeModeChanged(ThemeMode mode) {
@@ -25,7 +25,7 @@ class _OtakuLogAppState extends State<OtakuLogApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'OtakuLog',
+      title: 'Episode',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

@@ -2,7 +2,7 @@
 
 ## Product
 
-OtakuLog is a Flutter media-tracking prototype for a person who follows anime,
+Episode is a Flutter media-tracking prototype for a person who follows anime,
 manga, TV series, and movies. The current application lets a user maintain an
 on-device library, discover supported media from public APIs, manually create
 missing media, and edit flat or seasonal progress and metadata. It can also

@@ -1,4 +1,4 @@
-package com.example.otaku_log
+package com.example.episode
 
 import android.app.Activity
 import android.content.Intent

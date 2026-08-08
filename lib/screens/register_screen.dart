@@ -72,7 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           padding: const EdgeInsets.all(24),
           children: [
             Text(
-              'Create your OtakuLog Account',
+              'Create your Episode Account',
               style: TextStyle(
                 fontFamily: 'Plus Jakarta Sans',
                 fontSize: 22,

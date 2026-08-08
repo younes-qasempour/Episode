@@ -1,6 +1,6 @@
-# OtakuLog 🌸
+# Episode 🎬
 
-OtakuLog is a Flutter media-tracking prototype for anime, manga, and TV series.
+Episode is a Flutter media-tracking prototype for anime, manga, and TV series.
 It provides an on-device library, progress/status/rating editing, remote
 discovery through Jikan and TVMaze, light/dark themes, and local native/MAL/CSV
 data transfer with previewed backup and restore.

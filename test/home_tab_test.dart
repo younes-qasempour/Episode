@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/screens/home_tab.dart';
-import 'package:otaku_log/widgets/media_card.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/screens/home_tab.dart';
+import 'package:episode/widgets/media_card.dart';
 
 void main() {
   final sampleItems = [

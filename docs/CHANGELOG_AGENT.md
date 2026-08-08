@@ -3,6 +3,22 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-08-08 — Renamed Application and Project from OtakuLog to Episode
+
+- **Agent/tool:** Antigravity
+- **Task:** Rename the application, project branding, package name, class names, UI titles, storage keys, and documentation to Episode.
+- **Summary:** Updated `pubspec.yaml` to `name: episode`. Migrated all package imports from `package:otaku_log/...` to `package:episode/...`. Renamed root app widget `OtakuLogApp` to `EpisodeApp`. Updated storage keys in `LocalStorageRepository` to `episode_media_items`, `episode_automatic_backups_v1`, and `episode_transfer_history_v1` with automatic migration fallbacks to preserve existing user library data seamlessly. Updated web metadata, app headers, dialogs, user-agent headers, and unit/widget tests.
+- **Files changed:** `pubspec.yaml`, `web/index.html`, `lib/main.dart`, `lib/config/app_config.dart`, `lib/repositories/local_storage_repository.dart`, `lib/repositories/media_transfer_repository.dart`, `lib/services/api_service.dart`, `lib/services/native_backup_service.dart`, `lib/services/mal_xml_service.dart`, `lib/services/device_identity_service.dart`, `lib/models/data_transfer.dart`, UI screens (`home_tab.dart`, `profile_tab.dart`, `login_screen.dart`, `register_screen.dart`, `data_management_screen.dart`, `import_preview_screen.dart`), test files under `test/`, `README.md`, `AGENTS.md`, `docs/PROJECT_OVERVIEW.md`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter test` (127/127 tests passed cleanly).
+
+## 2026-08-08 — Fixed Explore Search Image & Web CORS Rendering Bug
+
+- **Agent/tool:** Antigravity
+- **Task:** Diagnose and resolve missing cover images when searching media items in Explore tab and when adding searched items to the local library.
+- **Summary:** Added client `User-Agent: OtakuLog/1.0` header in `_getWithRetry` in `ApiService` to prevent Jikan search API gateway timeouts/blocks (504/403). Added `sanitizeCoverUrl` helper to sanitize and proxy non-CORS image hosts (like Kitsu API's `media.kitsu.app`) via `https://images.weserv.nl/?url=...` for Flutter Web cross-origin compatibility. Applied `sanitizeCoverUrl` across all provider mappers (`mapJikanAnimeToMediaItem`, `mapJikanMangaToMediaItem`, `mapKitsuAnimeToMediaItem`, `mapKitsuMangaToMediaItem`, `mapTvMazeToShowItem`). Added 2 unit tests in `test/api_service_test.dart`.
+- **Files changed:** `lib/services/api_service.dart`, `test/api_service_test.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter test` (127/127 tests passed cleanly).
+
 ## 2026-08-04 — Automatic Completion Progress & Status Synchronization
 
 - **Agent/tool:** Antigravity

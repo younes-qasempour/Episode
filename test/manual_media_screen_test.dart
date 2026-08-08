@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/screens/manual_media_screen.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/screens/manual_media_screen.dart';
 
 void main() {
   testWidgets('valid manual media can be submitted', (tester) async {

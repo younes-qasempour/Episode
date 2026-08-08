@@ -45,7 +45,7 @@ class MediaTransferRepository {
     }
     if (provider == null) {
       throw const DataTransferException(
-        'The selected file is not a supported OtakuLog JSON or MAL XML export.',
+        'The selected file is not a supported Episode JSON or MAL XML export.',
         code: 'unsupported_file',
       );
     }

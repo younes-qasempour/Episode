@@ -1,11 +1,11 @@
-# OtakuLog Agent Guide
+# Episode Agent Guide
 
 This file is the first source of repository guidance for humans and coding
 agents. Read it before editing.
 
 ## Project identity
 
-- **Project:** OtakuLog
+- **Project:** Episode
 - **Type:** Flutter application
 - **Current stage:** Stage-one functional prototype. Library tracking, remote
   search, item editing, local persistence, and theme switching exist; several

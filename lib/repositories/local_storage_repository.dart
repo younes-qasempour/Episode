@@ -7,9 +7,12 @@ import '../models/media_item.dart';
 import '../utils/clock.dart';
 
 class LocalStorageRepository {
-  static const String _storageKey = 'otaku_log_media_items';
-  static const String _automaticBackupsKey = 'otaku_log_automatic_backups_v1';
-  static const String _transferHistoryKey = 'otaku_log_transfer_history_v1';
+  static const String _storageKey = 'episode_media_items';
+  static const String _legacyStorageKey = 'otaku_log_media_items';
+  static const String _automaticBackupsKey = 'episode_automatic_backups_v1';
+  static const String _legacyAutomaticBackupsKey = 'otaku_log_automatic_backups_v1';
+  static const String _transferHistoryKey = 'episode_transfer_history_v1';
+  static const String _legacyTransferHistoryKey = 'otaku_log_transfer_history_v1';
   static const int automaticBackupRetention = 5;
   static const int historyRetention = 25;
 
@@ -46,10 +49,17 @@ class LocalStorageRepository {
   /// Handles schema v1 bare-array data and schema v2 envelopes with rollback protection.
   Future<List<MediaItem>> loadAllMediaItemsIncludingDeleted() async {
     final prefs = await _getPrefs();
-    final jsonString = prefs.getString(_storageKey);
+    String? jsonString = prefs.getString(_storageKey);
 
     if (jsonString == null) {
-      return [];
+      // Check legacy storage key for backward compatibility
+      jsonString = prefs.getString(_legacyStorageKey);
+      if (jsonString != null) {
+        await prefs.setString(_storageKey, jsonString);
+        await prefs.remove(_legacyStorageKey);
+      } else {
+        return [];
+      }
     }
 
     return await _decodeAndMigrateLibrary(jsonString, prefs);
@@ -374,7 +384,14 @@ class LocalStorageRepository {
 
   Future<List<AutomaticBackupRecord>> loadAutomaticBackups() async {
     final prefs = await _getPrefs();
-    final raw = prefs.getString(_automaticBackupsKey);
+    var raw = prefs.getString(_automaticBackupsKey);
+    if (raw == null || raw.isEmpty) {
+      raw = prefs.getString(_legacyAutomaticBackupsKey);
+      if (raw != null && raw.isNotEmpty) {
+        await prefs.setString(_automaticBackupsKey, raw);
+        await prefs.remove(_legacyAutomaticBackupsKey);
+      }
+    }
     if (raw == null || raw.isEmpty) {
       return [];
     }
@@ -417,7 +434,14 @@ class LocalStorageRepository {
 
   Future<List<TransferHistoryEntry>> loadTransferHistory() async {
     final prefs = await _getPrefs();
-    final raw = prefs.getString(_transferHistoryKey);
+    var raw = prefs.getString(_transferHistoryKey);
+    if (raw == null || raw.isEmpty) {
+      raw = prefs.getString(_legacyTransferHistoryKey);
+      if (raw != null && raw.isNotEmpty) {
+        await prefs.setString(_transferHistoryKey, raw);
+        await prefs.remove(_legacyTransferHistoryKey);
+      }
+    }
     if (raw == null || raw.isEmpty) {
       return [];
     }

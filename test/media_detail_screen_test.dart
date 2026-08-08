@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/screens/media_detail_screen.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/screens/media_detail_screen.dart';
 
 void main() {
   testWidgets(

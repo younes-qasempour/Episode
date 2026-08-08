@@ -142,7 +142,7 @@ class _HomeTabState extends State<HomeTab> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'OtakuLog',
+                      'Episode',
                       style: TextStyle(
                         fontFamily: 'Plus Jakarta Sans',
                         fontSize: 26,
