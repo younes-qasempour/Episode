@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
+import '../models/media_item.dart';
+import '../models/user_profile_data.dart';
 import '../services/sync_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/profile_stats_dashboard.dart';
 
 class ProfileTab extends StatelessWidget {
   final ThemeMode currentThemeMode;
@@ -13,6 +16,11 @@ class ProfileTab extends StatelessWidget {
   final VoidCallback? onOpenRegister;
   final VoidCallback? onOpenDeviceManagement;
   final VoidCallback? onClearLibrary;
+  final List<MediaItem> mediaItems;
+  final UserProfileData userProfile;
+  final ValueChanged<UserProfileData>? onProfileUpdated;
+  final ValueChanged<MediaItem>? onItemTap;
+  final ValueChanged<String>? onIncrementProgress;
 
   const ProfileTab({
     super.key,
@@ -25,6 +33,11 @@ class ProfileTab extends StatelessWidget {
     this.onOpenRegister,
     this.onOpenDeviceManagement,
     this.onClearLibrary,
+    this.mediaItems = const [],
+    this.userProfile = const UserProfileData(),
+    this.onProfileUpdated,
+    this.onItemTap,
+    this.onIncrementProgress,
   });
 
   void _showClearConfirmation(BuildContext context) {
@@ -141,7 +154,16 @@ class ProfileTab extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         children: [
-          // Profile Header Card / Account Status Card
+          // Personal Analytics Hub & Viewing Stats
+          ProfileStatsDashboard(
+            mediaItems: mediaItems,
+            userProfile: userProfile,
+            onProfileUpdated: onProfileUpdated,
+            onItemTap: onItemTap,
+            onIncrementProgress: onIncrementProgress,
+          ),
+
+          // Account Status Card
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(

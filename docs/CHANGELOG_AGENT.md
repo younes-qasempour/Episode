@@ -3,6 +3,14 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-08-08 — Personal Dashboard & Viewing Analytics Hub (Profile Tab Upgrade)
+
+- **Agent/tool:** Antigravity
+- **Task:** Transform Profile tab into a visual analytics hub on branch `feat/profile-stats-dashboard` with milestone counters, estimated watch/read time, mean score indicator, custom animated Donut Chart (Type & Status modes), top genres, favorites showcase shelf, quick progress strip, personal bio customization, and shareable stats card.
+- **Summary:** Created `LibraryStats` domain calculator for episodes watched, chapters read, movies watched, estimated watch/read hours, mean score, and type/status segment percentages. Created `UserProfileData` customization model with avatar accent color tint and quote. Implemented zero-dependency `DonutChart` widget powered by `CustomPainter` with smooth animated sweep angles and interactive legend. Integrated `ProfileStatsDashboard` into `ProfileTab` and `MainNavigationScreen`. Added `saveUserProfileData` and `loadUserProfileData` in `LocalStorageRepository`. Added unit and widget test suites (`library_stats_test.dart` and `profile_stats_dashboard_test.dart`).
+- **Files changed:** `lib/models/library_stats.dart`, `lib/models/user_profile_data.dart`, `lib/widgets/donut_chart.dart`, `lib/widgets/profile_stats_dashboard.dart`, `lib/repositories/local_storage_repository.dart`, `lib/screens/profile_tab.dart`, `lib/screens/main_navigation_screen.dart`, `test/library_stats_test.dart`, `test/profile_stats_dashboard_test.dart`, `docs/CURRENT_STATE.md`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter test` (129/129 tests passed cleanly).
+
 ## 2026-08-08 — Renamed Application and Project from OtakuLog to Episode
 
 - **Agent/tool:** Antigravity

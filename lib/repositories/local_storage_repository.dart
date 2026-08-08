@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/data_transfer.dart';
 import '../models/local_library_document.dart';
 import '../models/media_item.dart';
+import '../models/user_profile_data.dart';
 import '../utils/clock.dart';
 
 class LocalStorageRepository {
@@ -13,6 +14,7 @@ class LocalStorageRepository {
   static const String _legacyAutomaticBackupsKey = 'otaku_log_automatic_backups_v1';
   static const String _transferHistoryKey = 'episode_transfer_history_v1';
   static const String _legacyTransferHistoryKey = 'otaku_log_transfer_history_v1';
+  static const String _userProfileKey = 'episode_user_profile_v1';
   static const int automaticBackupRetention = 5;
   static const int historyRetention = 25;
 
@@ -648,6 +650,22 @@ class LocalStorageRepository {
         }
       }
     }
+  }
+
+  /// Load custom user profile metadata.
+  Future<UserProfileData> loadUserProfileData() async {
+    final prefs = await _getPrefs();
+    final raw = prefs.getString(_userProfileKey);
+    if (raw == null || raw.trim().isEmpty) {
+      return const UserProfileData();
+    }
+    return UserProfileData.decode(raw);
+  }
+
+  /// Save custom user profile metadata.
+  Future<void> saveUserProfileData(UserProfileData profile) async {
+    final prefs = await _getPrefs();
+    await prefs.setString(_userProfileKey, profile.encode());
   }
 }
 

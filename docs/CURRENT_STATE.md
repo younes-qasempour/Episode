@@ -15,7 +15,7 @@ Snapshot verified on **2026-08-01** on branch
 | Native backup/restore | Functional on Android/web | Schema v1 JSON, SHA-256, v0 migration, preview, full restore, safety backup, rollback | transfer repository, native codec, data screens | Portable files and local snapshots are unencrypted. |
 | MAL file transfer | Functional | Anime/manga XML and XML.GZ import, XML export for known MAL IDs, warnings and limits | `lib/services/mal_xml_service.dart`, fixtures/tests | Local XML parsing and export supported. |
 | CSV export | Functional | UTF-8 BOM, stable headers, escaping, Unicode and metadata coverage | `lib/services/csv_export_service.dart` | CSV re-import is not implemented. |
-| Profile & Auth | Functional | User authentication, cloud sync status badge, token storage, device management, dark/light theme switch, clear library | `lib/screens/profile_tab.dart`, auth/sync controllers | Supports both guest offline mode and full cloud account sync. |
+| Profile & Personal Analytics | Complete | Milestone counters, estimated watch/read time, mean score indicator, interactive Donut Chart (Type/Status), top genres, favorites shelf, quick progress strip, personal bio customization, shareable stats flex card, auth/cloud sync, dark/light theme | `lib/screens/profile_tab.dart`, `lib/widgets/profile_stats_dashboard.dart`, `lib/widgets/donut_chart.dart`, `lib/models/library_stats.dart`, `lib/models/user_profile_data.dart` | Complete visual analytics hub with zero-dependency CustomPainter donut chart and profile customization persistence. |
 
 ## Data-transfer behavior
 
