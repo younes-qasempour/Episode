@@ -2,7 +2,7 @@
 
 ## Summary
 
-OtakuLog uses a lightweight layered structure with Flutter widgets at the top,
+Episode uses a lightweight layered structure with Flutter widgets at the top,
 repository classes as access boundaries, one HTTP service, one persistence
 repository, and one shared model. State is held in `StatefulWidget` objects and
 passed through constructor callbacks. There is no separate domain layer,
@@ -10,7 +10,7 @@ state-management package, router, or dependency-injection container.
 
 ```mermaid
 flowchart LR
-    App["OtakuLogApp<br/>theme state"] --> Shell["MainNavigationScreen<br/>library state"]
+    App["EpisodeApp<br/>theme state"] --> Shell["MainNavigationScreen<br/>library state"]
     Shell --> Home["HomeTab"]
     Shell --> Explore["SearchTab"]
     Explore --> Manual["ManualMediaScreen"]
@@ -43,7 +43,7 @@ flowchart LR
 
 ### Current approach
 
-- `OtakuLogApp` owns `ThemeMode`.
+- `EpisodeApp` owns `ThemeMode`.
 - `MainNavigationScreen` owns the current tab, loading state, and in-memory
   library list.
 - `HomeTab` owns its local filter and search text.
@@ -130,18 +130,22 @@ sequenceDiagram
     and selected series call
         S->>T: GET /search/shows
     end
-    S-->>R: combined List<MediaItem>
-    R-->>UI: results
+    S-->>R: SearchResult<List<MediaItem>>
+    R-->>UI: success or typed failure
 ```
 
-All service exceptions and non-200 responses become an empty list. There are
-no custom error types, authentication, headers, interceptors, retry, timeout,
-pagination, or response cache.
+Requests use an Episode user-agent, a ten-second timeout, and one retry for
+transport failures and rate limiting. Provider errors map to typed network,
+timeout, rate-limit, server, invalid-response, or unknown failures. Successful
+results from any selected provider win over failures from the others. There is
+no authentication, interceptor layer, pagination, request cancellation, or
+response cache.
 
 ### Local
 
 `LocalStorageRepository` stores the entire library as one JSON string under
-`otaku_log_media_items`. Only a missing key is treated as first run and seeded
+`episode_media_items`, with migration fallback from the legacy OtakuLog key.
+Only a missing key is treated as first run and seeded
 with `sampleMediaItems`. A valid empty list remains empty. Invalid/corrupt data
 throws a visible storage error without overwriting the raw value.
 

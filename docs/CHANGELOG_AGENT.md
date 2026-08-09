@@ -3,6 +3,46 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-08-09 — Resolved Episode mobile integration conflicts
+
+- **Agent/tool:** Codex
+- **Task:** Resolve the diverged `main` branch conflicts, validate the combined mobile changes, commit, and push.
+- **Summary:** Preserved the typed `SearchResult` failure contract and ten-second request timeout from the local search-hardening commit while integrating the incoming Episode package rename, required API user-agent header, and cover URL sanitization. Updated conflicted tests to use the renamed `episode` package without losing error, fallback, retry, and stale-request coverage. Fixed analyzer issues in the incoming profile dashboard by using typed `MediaItem` getters, removing unused values, and making constant declarations explicit; made the chart-mode widget test scroll its target onscreen before tapping.
+- **Files changed:** Conflict resolutions in `lib/services/api_service.dart`, `test/api_service_test.dart`, `test/search_repository_test.dart`, and `test/search_tab_test.dart`; integration fixes in `lib/screens/main_navigation_screen.dart`, `lib/widgets/donut_chart.dart`, `lib/widgets/profile_stats_dashboard.dart`, and `test/profile_stats_dashboard_test.dart`; formatting normalized across incoming Dart files.
+- **Validation:** `flutter pub get` succeeded; focused API/search tests passed 30/30; formatting completed; `flutter analyze --no-pub` found no issues; the full Flutter suite passed 154/154; `flutter build web --no-pub --no-wasm-dry-run` succeeded after refreshing stale pre-rename build metadata; `flutter build apk --debug --no-pub` produced the debug APK successfully.
+
+## 2026-08-08 — Favorites, Smart Collections, Binge Mode & Glassmorphism Visual Polish
+
+- **Agent/tool:** Antigravity
+- **Task:** Implement Smart Collections, Binge Mode (+5/+10 increments), Activity History & 30-Day Heatmap, Hero image transitions, Adaptive ambient color headers, and Shimmer skeleton loading on branch `feat/favorites-binge-polish`.
+- **Summary:** Added **Smart Collections** filter bar on `HomeTab` (*Favorites, Top Rated ≥8.0, Binge Worthy, On-Going Series, Classics*). Added `ActivityLogEntry` and `StreakCalculator` for daily watching/reading activity logging and streak calculation. Created `StreakHeatmap` 30-day contribution grid and streak badge in `ProfileStatsDashboard`. Added Binge Mode batch progress buttons (`+1`, `+5`, `+10`) in `MediaDetailScreen`, `MediaCard`, and `ProfileTab`. Wrapped cover images in `Hero(tag: 'media_cover_${item.id}')` for smooth card-to-detail page transitions. Implemented frosted glass (`BackdropFilter`) ambient color headers in `MediaDetailScreen`. Created zero-dependency `ShimmerSkeletonGrid` widget replacing spinners in `SearchTab`. Added unit test suites (`activity_log_test.dart` and `smart_collections_test.dart`).
+- **Files changed:** `lib/models/activity_log_entry.dart`, `lib/widgets/shimmer_skeleton.dart`, `lib/widgets/streak_heatmap.dart`, `lib/repositories/local_storage_repository.dart`, `lib/screens/home_tab.dart`, `lib/screens/media_detail_screen.dart`, `lib/screens/search_tab.dart`, `lib/screens/profile_tab.dart`, `lib/screens/main_navigation_screen.dart`, `lib/widgets/media_card.dart`, `lib/widgets/profile_stats_dashboard.dart`, `test/activity_log_test.dart`, `test/smart_collections_test.dart`, `docs/CURRENT_STATE.md`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter test` (139/139 tests passed cleanly).
+
+## 2026-08-08 — Personal Dashboard & Viewing Analytics Hub (Profile Tab Upgrade)
+
+- **Agent/tool:** Antigravity
+- **Task:** Transform Profile tab into a visual analytics hub on branch `feat/profile-stats-dashboard` with milestone counters, estimated watch/read time, mean score indicator, custom animated Donut Chart (Type & Status modes), top genres, favorites showcase shelf, quick progress strip, personal bio customization, and shareable stats card.
+- **Summary:** Created `LibraryStats` domain calculator for episodes watched, chapters read, movies watched, estimated watch/read hours, mean score, and type/status segment percentages. Created `UserProfileData` customization model with avatar accent color tint and quote. Implemented zero-dependency `DonutChart` widget powered by `CustomPainter` with smooth animated sweep angles and interactive legend. Integrated `ProfileStatsDashboard` into `ProfileTab` and `MainNavigationScreen`. Added `saveUserProfileData` and `loadUserProfileData` in `LocalStorageRepository`. Added unit and widget test suites (`library_stats_test.dart` and `profile_stats_dashboard_test.dart`).
+- **Files changed:** `lib/models/library_stats.dart`, `lib/models/user_profile_data.dart`, `lib/widgets/donut_chart.dart`, `lib/widgets/profile_stats_dashboard.dart`, `lib/repositories/local_storage_repository.dart`, `lib/screens/profile_tab.dart`, `lib/screens/main_navigation_screen.dart`, `test/library_stats_test.dart`, `test/profile_stats_dashboard_test.dart`, `docs/CURRENT_STATE.md`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter test` (129/129 tests passed cleanly).
+
+## 2026-08-08 — Renamed Application and Project from OtakuLog to Episode
+
+- **Agent/tool:** Antigravity
+- **Task:** Rename the application, project branding, package name, class names, UI titles, storage keys, and documentation to Episode.
+- **Summary:** Updated `pubspec.yaml` to `name: episode`. Migrated all package imports from `package:otaku_log/...` to `package:episode/...`. Renamed root app widget `OtakuLogApp` to `EpisodeApp`. Updated storage keys in `LocalStorageRepository` to `episode_media_items`, `episode_automatic_backups_v1`, and `episode_transfer_history_v1` with automatic migration fallbacks to preserve existing user library data seamlessly. Updated web metadata, app headers, dialogs, user-agent headers, and unit/widget tests.
+- **Files changed:** `pubspec.yaml`, `web/index.html`, `lib/main.dart`, `lib/config/app_config.dart`, `lib/repositories/local_storage_repository.dart`, `lib/repositories/media_transfer_repository.dart`, `lib/services/api_service.dart`, `lib/services/native_backup_service.dart`, `lib/services/mal_xml_service.dart`, `lib/services/device_identity_service.dart`, `lib/models/data_transfer.dart`, UI screens (`home_tab.dart`, `profile_tab.dart`, `login_screen.dart`, `register_screen.dart`, `data_management_screen.dart`, `import_preview_screen.dart`), test files under `test/`, `README.md`, `AGENTS.md`, `docs/PROJECT_OVERVIEW.md`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter test` (127/127 tests passed cleanly).
+
+## 2026-08-08 — Fixed Explore Search Image & Web CORS Rendering Bug
+
+- **Agent/tool:** Antigravity
+- **Task:** Diagnose and resolve missing cover images when searching media items in Explore tab and when adding searched items to the local library.
+- **Summary:** Added client `User-Agent: OtakuLog/1.0` header in `_getWithRetry` in `ApiService` to prevent Jikan search API gateway timeouts/blocks (504/403). Added `sanitizeCoverUrl` helper to sanitize and proxy non-CORS image hosts (like Kitsu API's `media.kitsu.app`) via `https://images.weserv.nl/?url=...` for Flutter Web cross-origin compatibility. Applied `sanitizeCoverUrl` across all provider mappers (`mapJikanAnimeToMediaItem`, `mapJikanMangaToMediaItem`, `mapKitsuAnimeToMediaItem`, `mapKitsuMangaToMediaItem`, `mapTvMazeToShowItem`). Added 2 unit tests in `test/api_service_test.dart`.
+- **Files changed:** `lib/services/api_service.dart`, `test/api_service_test.dart`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `flutter test` (127/127 tests passed cleanly).
+
 ## 2026-08-04 — Automatic Completion Progress & Status Synchronization
 
 - **Agent/tool:** Antigravity

@@ -8,7 +8,7 @@ extension ImportSourceTypeDetails on ImportSourceType {
   String get label {
     switch (this) {
       case ImportSourceType.nativeBackup:
-        return 'OtakuLog backup';
+        return 'Episode backup';
       case ImportSourceType.malAnime:
         return 'MyAnimeList anime';
       case ImportSourceType.malManga:

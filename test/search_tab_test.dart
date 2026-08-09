@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/models/search_result.dart';
-import 'package:otaku_log/repositories/search_repository.dart';
-import 'package:otaku_log/screens/search_tab.dart';
-import 'package:otaku_log/services/api_service.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/models/search_result.dart';
+import 'package:episode/repositories/search_repository.dart';
+import 'package:episode/screens/search_tab.dart';
+import 'package:episode/services/api_service.dart';
 
 class TestApiService extends ApiService {
   final List<MediaItem> items;

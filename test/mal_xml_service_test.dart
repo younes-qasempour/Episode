@@ -4,9 +4,9 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:otaku_log/models/data_transfer.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/services/mal_xml_service.dart';
+import 'package:episode/models/data_transfer.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/services/mal_xml_service.dart';
 import 'package:xml/xml.dart';
 
 void main() {

@@ -1,15 +1,24 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import '../models/activity_log_entry.dart';
 import '../models/data_transfer.dart';
 import '../models/local_library_document.dart';
 import '../models/media_item.dart';
+import '../models/user_profile_data.dart';
 import '../utils/clock.dart';
 
 class LocalStorageRepository {
-  static const String _storageKey = 'otaku_log_media_items';
-  static const String _automaticBackupsKey = 'otaku_log_automatic_backups_v1';
-  static const String _transferHistoryKey = 'otaku_log_transfer_history_v1';
+  static const String _storageKey = 'episode_media_items';
+  static const String _legacyStorageKey = 'otaku_log_media_items';
+  static const String _automaticBackupsKey = 'episode_automatic_backups_v1';
+  static const String _legacyAutomaticBackupsKey =
+      'otaku_log_automatic_backups_v1';
+  static const String _transferHistoryKey = 'episode_transfer_history_v1';
+  static const String _legacyTransferHistoryKey =
+      'otaku_log_transfer_history_v1';
+  static const String _userProfileKey = 'episode_user_profile_v1';
+  static const String _activityLogKey = 'episode_activity_log_v1';
   static const int automaticBackupRetention = 5;
   static const int historyRetention = 25;
 
@@ -46,10 +55,17 @@ class LocalStorageRepository {
   /// Handles schema v1 bare-array data and schema v2 envelopes with rollback protection.
   Future<List<MediaItem>> loadAllMediaItemsIncludingDeleted() async {
     final prefs = await _getPrefs();
-    final jsonString = prefs.getString(_storageKey);
+    String? jsonString = prefs.getString(_storageKey);
 
     if (jsonString == null) {
-      return [];
+      // Check legacy storage key for backward compatibility
+      jsonString = prefs.getString(_legacyStorageKey);
+      if (jsonString != null) {
+        await prefs.setString(_storageKey, jsonString);
+        await prefs.remove(_legacyStorageKey);
+      } else {
+        return [];
+      }
     }
 
     return await _decodeAndMigrateLibrary(jsonString, prefs);
@@ -189,6 +205,45 @@ class LocalStorageRepository {
         localRevision: existing.localRevision + 1,
       );
       await saveAllMediaItems(currentItems);
+    }
+
+    return loadActiveMediaItems();
+  }
+
+  /// Increment progress by custom batch delta (e.g. +5 or +10) for Binge Mode.
+  Future<List<MediaItem>> batchIncrementProgress(String id, int delta) async {
+    if (delta <= 0) return loadActiveMediaItems();
+    final currentItems = await loadAllMediaItemsIncludingDeleted();
+    final now = clock.nowUtc();
+    final index = currentItems.indexWhere((item) => item.id == id);
+
+    if (index >= 0) {
+      final existing = currentItems[index];
+      final newProgress = existing.currentProgress + delta;
+      final statusAutoUpdated =
+          (existing.totalCount != null && newProgress >= existing.totalCount!)
+              ? TrackingStatus.completed.label
+              : existing.status;
+
+      currentItems[index] = existing.copyWith(
+        currentProgress: newProgress,
+        status: statusAutoUpdated,
+        updatedAt: now,
+        localRevision: existing.localRevision + 1,
+      );
+      await saveAllMediaItems(currentItems);
+
+      // Record activity log entry
+      await recordActivityLogEntry(
+        ActivityLogEntry(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          itemId: existing.id,
+          itemTitle: existing.title,
+          mediaType: existing.mediaType,
+          progressDelta: delta,
+          timestamp: now,
+        ),
+      );
     }
 
     return loadActiveMediaItems();
@@ -374,7 +429,14 @@ class LocalStorageRepository {
 
   Future<List<AutomaticBackupRecord>> loadAutomaticBackups() async {
     final prefs = await _getPrefs();
-    final raw = prefs.getString(_automaticBackupsKey);
+    var raw = prefs.getString(_automaticBackupsKey);
+    if (raw == null || raw.isEmpty) {
+      raw = prefs.getString(_legacyAutomaticBackupsKey);
+      if (raw != null && raw.isNotEmpty) {
+        await prefs.setString(_automaticBackupsKey, raw);
+        await prefs.remove(_legacyAutomaticBackupsKey);
+      }
+    }
     if (raw == null || raw.isEmpty) {
       return [];
     }
@@ -417,7 +479,14 @@ class LocalStorageRepository {
 
   Future<List<TransferHistoryEntry>> loadTransferHistory() async {
     final prefs = await _getPrefs();
-    final raw = prefs.getString(_transferHistoryKey);
+    var raw = prefs.getString(_transferHistoryKey);
+    if (raw == null || raw.isEmpty) {
+      raw = prefs.getString(_legacyTransferHistoryKey);
+      if (raw != null && raw.isNotEmpty) {
+        await prefs.setString(_transferHistoryKey, raw);
+        await prefs.remove(_legacyTransferHistoryKey);
+      }
+    }
     if (raw == null || raw.isEmpty) {
       return [];
     }
@@ -624,6 +693,38 @@ class LocalStorageRepository {
         }
       }
     }
+  }
+
+  /// Load custom user profile metadata.
+  Future<UserProfileData> loadUserProfileData() async {
+    final prefs = await _getPrefs();
+    final raw = prefs.getString(_userProfileKey);
+    if (raw == null || raw.trim().isEmpty) {
+      return const UserProfileData();
+    }
+    return UserProfileData.decode(raw);
+  }
+
+  /// Save custom user profile metadata.
+  Future<void> saveUserProfileData(UserProfileData profile) async {
+    final prefs = await _getPrefs();
+    await prefs.setString(_userProfileKey, profile.encode());
+  }
+
+  /// Load activity logs history.
+  Future<List<ActivityLogEntry>> loadActivityLogs() async {
+    final prefs = await _getPrefs();
+    final rawList = prefs.getStringList(_activityLogKey) ?? [];
+    return rawList.map((raw) => ActivityLogEntry.decode(raw)).toList();
+  }
+
+  /// Record a new activity log entry (retains last 100 entries).
+  Future<void> recordActivityLogEntry(ActivityLogEntry entry) async {
+    final prefs = await _getPrefs();
+    final current = await loadActivityLogs();
+    current.insert(0, entry);
+    final retained = current.take(100).map((e) => e.encode()).toList();
+    await prefs.setStringList(_activityLogKey, retained);
   }
 }
 

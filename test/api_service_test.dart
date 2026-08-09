@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/models/search_result.dart';
-import 'package:otaku_log/services/api_service.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/models/search_result.dart';
+import 'package:episode/services/api_service.dart';
 
 void main() {
   group('ApiService Data Mapping Tests', () {
@@ -123,6 +123,44 @@ void main() {
       expect(unknownAnime.releaseStatus, ReleaseStatus.unknown);
       expect(runningSeries?.releaseStatus, ReleaseStatus.ongoing);
       expect(runningSeries?.totalCount, isNull);
+    });
+
+    test(
+        'sanitizeCoverUrl handles null, empty, standard, and Kitsu URLs correctly',
+        () {
+      expect(ApiService.sanitizeCoverUrl(null), equals(''));
+      expect(ApiService.sanitizeCoverUrl('   '), equals(''));
+      expect(
+        ApiService.sanitizeCoverUrl('https://cdn.myanimelist.net/image.jpg'),
+        equals('https://cdn.myanimelist.net/image.jpg'),
+      );
+
+      const kitsuUrl =
+          'https://media.kitsu.app/anime/poster_images/1555/large.jpg';
+      final sanitized = ApiService.sanitizeCoverUrl(kitsuUrl);
+      expect(sanitized, startsWith('https://images.weserv.nl/?url='));
+      expect(sanitized, contains(Uri.encodeComponent(kitsuUrl)));
+    });
+
+    test('mapKitsuAnimeToMediaItem applies sanitizeCoverUrl', () {
+      final kitsuItem = ApiService.mapKitsuAnimeToMediaItem({
+        'id': '1555',
+        'attributes': {
+          'canonicalTitle': 'Naruto',
+          'posterImage': {
+            'large':
+                'https://media.kitsu.app/anime/poster_images/1555/large.jpg',
+          },
+          'episodeCount': 220,
+          'status': 'finished',
+        },
+      });
+
+      expect(kitsuItem.id, equals('kitsu_anime_1555'));
+      expect(kitsuItem.title, equals('Naruto'));
+      expect(kitsuItem.coverUrl, startsWith('https://images.weserv.nl/?url='));
+      expect(kitsuItem.totalCount, equals(220));
+      expect(kitsuItem.releaseStatus, ReleaseStatus.finished);
     });
   });
 

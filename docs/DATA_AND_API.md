@@ -146,7 +146,7 @@ Android Storage Access Framework or browser selection/download APIs.
 ## Caching, offline, and migrations
 
 - Remote response cache: not implemented
-- Offline remote behavior: empty results, indistinguishable from errors
+- Offline remote behavior: typed network failure with a retry action
 - Active library schema/migration: no explicit envelope version; tolerant
   additive decoding preserves older records
 - Portable backup schema/migration: explicit schema v1 plus v0-to-v1 migration
@@ -154,7 +154,8 @@ Android Storage Access Framework or browser selection/download APIs.
 - Hive usage: not implemented, despite declared packages
 - Secure storage: not implemented
 - Encryption: not implemented
-- Shared-preference migrations: not implemented
+- Shared-preference migrations: legacy OtakuLog library/backup/history keys
+  migrate to Episode keys on first access
 
 Do not introduce Hive or another database beside the active store. A
 persistence change must define data migration, rollback/recovery, and ownership

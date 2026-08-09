@@ -1,7 +1,7 @@
 # Current State
 
-Snapshot verified on **2026-08-01** on branch
-`feature/media-import-export-v2` with Flutter 3.44.8 and Dart 3.12.2.
+Snapshot verified on **2026-08-09** on branch `main` with Flutter 3.44.8 and
+Dart 3.12.2.
 
 ## Feature status
 
@@ -15,7 +15,8 @@ Snapshot verified on **2026-08-01** on branch
 | Native backup/restore | Functional on Android/web | Schema v1 JSON, SHA-256, v0 migration, preview, full restore, safety backup, rollback | transfer repository, native codec, data screens | Portable files and local snapshots are unencrypted. |
 | MAL file transfer | Functional | Anime/manga XML and XML.GZ import, XML export for known MAL IDs, warnings and limits | `lib/services/mal_xml_service.dart`, fixtures/tests | Local XML parsing and export supported. |
 | CSV export | Functional | UTF-8 BOM, stable headers, escaping, Unicode and metadata coverage | `lib/services/csv_export_service.dart` | CSV re-import is not implemented. |
-| Profile & Auth | Functional | User authentication, cloud sync status badge, token storage, device management, dark/light theme switch, clear library | `lib/screens/profile_tab.dart`, auth/sync controllers | Supports both guest offline mode and full cloud account sync. |
+| Profile & Personal Analytics | Complete | Milestone counters, estimated watch/read time, mean score indicator, interactive Donut Chart (Type/Status), top genres, favorites shelf, quick progress strip, 30-day activity heatmap & streak counter, personal bio customization, shareable stats flex card, auth/cloud sync, dark/light theme | `lib/screens/profile_tab.dart`, `lib/widgets/profile_stats_dashboard.dart`, `lib/widgets/streak_heatmap.dart`, `lib/widgets/donut_chart.dart` | Complete visual analytics hub with zero-dependency CustomPainter donut chart, contribution heatmap grid, and profile customization persistence. |
+| Smart Collections & Binge Mode | Complete | Smart Collections filter bar (Favorites, Top Rated ≥8.0, Binge Worthy, On-Going, Classics), Binge Mode quick batch progress (+1, +5, +10), activity history logging, Hero cover animations, Adaptive ambient color headers, Shimmer Skeleton loading | `lib/screens/home_tab.dart`, `lib/screens/media_detail_screen.dart`, `lib/widgets/media_card.dart`, `lib/widgets/shimmer_skeleton.dart`, `lib/models/activity_log_entry.dart` | Full Smart Collections filtering, binge batch increments, hero cover transitions, and shimmer skeleton loading states. |
 
 ## Data-transfer behavior
 
@@ -53,14 +54,14 @@ and [BACKUP_SCHEMA.md](BACKUP_SCHEMA.md).
 | `flutter pub get --offline` | Exit 0 using the approved local cache; generated `pubspec.lock`/package configuration. |
 | Transfer-focused tests | Six new files declare 33 tests; all are included in the passing full suite. The initial targeted command passed 30/30 before three final regression cases were added. |
 | `flutter analyze --no-pub` | Exit 0. No issues found. |
-| `flutter test --no-pub` | Exit 0. 79/79 tests passed. |
-| `flutter build apk --debug --no-pub` | Exit 1 after 185.9 s because Gradle could not resolve `com.android.application` 9.0.1 from configured repositories. |
+| `flutter test --no-pub` | Exit 0. 154/154 tests passed. |
+| `flutter build apk --debug --no-pub` | Exit 0 after 101.8 s; `build/app/outputs/flutter-apk/app-debug.apk` produced successfully. |
 | `flutter build web --no-pub` | Exit 0 after 34.8 s on the final run; `build/web` produced successfully and Wasm dry run succeeded. |
 
 | `dart format .` | Exit 0. 44 files formatted; zero changes required. |
 | `dart format --output=none --set-exit-if-changed .` | Exit 0. 44 files checked; zero changes required. |
 | `flutter analyze` | Exit 0. No issues found. |
-| `flutter test` | Exit 0. 79/79 tests passed. |
+| `flutter test` | Exit 0. 154/154 tests passed. |
 
 Manual browser smoke validation opened the release web artifact, navigated
 Home -> Profile -> Data, Backup & Transfer, verified the responsive dashboard,
@@ -69,8 +70,10 @@ then displayed the completed full-backup record with eight processed items.
 
 ## Existing technical debt
 
-- Remote API errors remain indistinguishable from valid empty results.
-- Debounced searches do not cancel/order in-flight requests.
+- Provider failures are typed and visible when every selected provider fails;
+  partial provider failures remain hidden when another provider returns data.
+- Debounced searches discard stale responses but do not cancel in-flight HTTP
+  requests.
 - The active library JSON has tolerant additive decoding but no explicit
   versioned envelope; portable native backups do have a schema/migration chain.
 - SharedPreferences, automatic snapshots, and exported files are unencrypted.
@@ -78,16 +81,16 @@ then displayed the completed full-backup record with eight processed items.
 - MAL OAuth/account import is not implemented.
 - Typography names are referenced but fonts are not bundled.
 - Hive, Hive Flutter, and path provider remain unused dependencies.
-- Android release identity/signing/network-permission work remains.
+- Android production identity and release signing work remains.
 
 ## Recommended next implementation areas
 
 These are recommendations, not confirmed product requirements:
 
 1. Verify MAL import/export with fresh real anime and manga account exports.
-2. Restore Android Gradle plugin resolution and run an emulator/device manual
-   backup-import-restore cycle.
+2. Run an emulator/device manual backup-import-restore cycle.
 3. Add per-entry resolution for uncertain import matches if product scope
    requires manual conflict editing.
-4. Define API failure semantics and request-order protection.
+4. Decide whether provider-partial failures, pagination, request cancellation,
+   and remote response caching are required.
 5. Decide encryption/cloud/account requirements before storing account data.

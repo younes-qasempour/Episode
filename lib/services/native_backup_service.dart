@@ -107,7 +107,7 @@ class NativeBackupCodec {
 
     if (document['format'] != format) {
       throw const DataTransferException(
-        'This file is not an OtakuLog backup.',
+        'This file is not an Episode backup.',
         code: 'wrong_format',
       );
     }
@@ -309,10 +309,10 @@ class NativeBackupImportProvider implements ImportProvider {
   const NativeBackupImportProvider({this.codec = const NativeBackupCodec()});
 
   @override
-  String get id => 'otakulog-native';
+  String get id => 'episode-native';
 
   @override
-  String get displayName => 'OtakuLog backup';
+  String get displayName => 'Episode backup';
 
   @override
   List<String> get supportedExtensions => const ['json'];
@@ -373,10 +373,10 @@ class NativeBackupExportProvider implements ExportProvider {
   });
 
   @override
-  String get id => 'otakulog-native';
+  String get id => 'episode-native';
 
   @override
-  String get displayName => 'OtakuLog backup';
+  String get displayName => 'Episode backup';
 
   @override
   Future<ExportArtifact> export(

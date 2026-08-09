@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/repositories/local_storage_repository.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/repositories/local_storage_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

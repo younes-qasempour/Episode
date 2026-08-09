@@ -476,7 +476,7 @@ class MalXmlExportProvider implements ExportProvider {
   void _buildMyInfo(XmlBuilder builder, MediaType type, int count) {
     builder.element('myinfo', nest: () {
       _element(builder, 'user_id', 0);
-      _element(builder, 'user_name', 'OtakuLog');
+      _element(builder, 'user_name', 'Episode');
       _element(builder, 'user_export_type', type == MediaType.anime ? 1 : 2);
       _element(
           builder,

@@ -1,7 +1,7 @@
 # Task Board
 
 Only verified repository work is listed. Recommendations are not product
-commitments. Last reviewed: **2026-08-01**.
+commitments. Last reviewed: **2026-08-09**.
 
 ## Active
 
@@ -11,14 +11,11 @@ None.
 
 | ID | Title | Objective | Related feature | Dependencies | Important files | Acceptance criteria | Updated |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| OTAKU-003 | Define API failure semantics | Distinguish transport/parse failures from valid empty results | Explore | Product copy/error behavior confirmation | `api_service.dart`, `search_repository.dart`, `search_tab.dart`, tests | One result/error contract is documented and tested; loading, empty, and error states are reachable | 2026-07-25 |
-| OTAKU-004 | Protect search result ordering | Prevent an older request from replacing a newer query result | Explore | OTAKU-001 | `search_tab.dart`, `search_tab_test.dart` | Regression test proves latest query/category wins | 2026-07-25 |
 
 ## Blocked
 
 | ID | Title | Objective | Related feature | Dependencies | Important files | Acceptance criteria | Updated |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| OTAKU-001 | Restore Android build resolution | Packages, analyzer, tests, and web build work; restore Android Gradle plugin resolution | Tooling | Valid Google Maven/Gradle artifact access | Android Gradle configuration/cache | Android debug build completes on the documented SDK | 2026-08-01 |
 | OTAKU-005 | Complete Android release setup | Replace template identity/signing and confirm release network access | Android release | Owner application ID and signing process | `android/app/build.gradle.kts`, `android/app/src/main/AndroidManifest.xml` | Non-secret release configuration is documented and a release build is validated | 2026-07-25 |
 
 ## Needs clarification
@@ -34,9 +31,12 @@ None.
 | ID | Title | Objective | Related feature | Dependencies | Important files | Acceptance criteria | Updated |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | OTAKU-000 | Agent documentation bootstrap | Establish evidence-based shared memory and workflow | Repository-wide | None | `AGENTS.md`, `docs/` | Architecture/state/maps/workflow/templates exist, links validate, and production code is unchanged | 2026-07-25 |
+| OTAKU-001 | Restore Android build resolution | Produce an Android debug APK on the documented SDK | Tooling | None | Android Gradle configuration/cache | `flutter build apk --debug --no-pub` succeeds | 2026-08-09 |
+| OTAKU-003 | Define API failure semantics | Distinguish transport/parse failures from valid empty results | Explore | None | `api_service.dart`, `search_repository.dart`, `search_tab.dart`, tests | Typed result contract is documented and tested; loading, empty, error, and retry states are reachable | 2026-08-09 |
+| OTAKU-004 | Protect search result ordering | Prevent an older request from replacing a newer query result | Explore | None | `search_tab.dart`, `search_tab_test.dart` | Regression tests prove latest query/category wins | 2026-08-09 |
 | OTAKU-012 | Flexible manual media and progress tracking | Add manual anime/manga/series/movie creation, nullable totals, explicit release status, uncapped flat progress, and multi-season tracking | Library, Explore, media details | None | `media_item.dart`, local repository, API mappings, manual/detail/card screens, tests/docs | Existing JSON remains readable; unknown totals stay unknown; progress is uncapped; manual/movie/season flows persist and render consistently | 2026-07-25 |
 | OTAKU-013 | Professional local data transfer | Add native backup/restore, MAL XML import/export, CSV, preview/conflicts, safety rollback, history, and Android/web file UX | Data backup and transfer | None | transfer models/repository/services/screens, Android runner, tests/docs | Preview precedes mutation; malformed data fails safe; restore rolls back; supported exports round-trip; analyzer/tests/web build pass | 2026-08-01 |
-| OTAKU-002 | Replace stale counter test | Target the real app shell and pass with the full suite | App shell/testing | None | `test/widget_test.dart`, `lib/main.dart` | Test constructs `OtakuLogApp`, asserts navigation, and passes | 2026-08-01 |
+| OTAKU-002 | Replace stale counter test | Target the real app shell and pass with the full suite | App shell/testing | None | `test/widget_test.dart`, `lib/main.dart` | Test constructs `EpisodeApp`, asserts navigation, and passes | 2026-08-01 |
 | OTAKU-011 | Establish formatting baseline | Apply and verify repository formatting | Tooling | None | `lib/`, `test/`, docs unaffected | `dart format .` and no-change check exit 0 | 2026-08-01 |
 
 ## Technical debt

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:otaku_log/models/data_transfer.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/repositories/local_storage_repository.dart';
-import 'package:otaku_log/screens/data_management_screen.dart';
-import 'package:otaku_log/screens/import_preview_screen.dart';
-import 'package:otaku_log/services/file_transfer_platform.dart';
-import 'package:otaku_log/services/file_transfer_service.dart';
+import 'package:episode/models/data_transfer.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/repositories/local_storage_repository.dart';
+import 'package:episode/screens/data_management_screen.dart';
+import 'package:episode/screens/import_preview_screen.dart';
+import 'package:episode/services/file_transfer_platform.dart';
+import 'package:episode/services/file_transfer_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeFileTransfer implements PlatformFileTransfer {
@@ -129,8 +129,8 @@ void main() {
     tester,
   ) async {
     const inspection = ImportInspectionResult(
-      providerId: 'otakulog-native',
-      providerName: 'OtakuLog backup',
+      providerId: 'episode-native',
+      providerName: 'Episode backup',
       sourceType: ImportSourceType.nativeBackup,
       fileName: 'empty.json',
       entries: [],

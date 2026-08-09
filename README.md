@@ -1,6 +1,6 @@
-# OtakuLog 🌸
+# Episode 🎬
 
-OtakuLog is a Flutter media-tracking prototype for anime, manga, and TV series.
+Episode is a Flutter media-tracking prototype for anime, manga, and TV series.
 It provides an on-device library, progress/status/rating editing, remote
 discovery through Jikan and TVMaze, light/dark themes, and local native/MAL/CSV
 data transfer with previewed backup and restore.
@@ -48,9 +48,8 @@ flutter analyze
 flutter test
 ```
 
-The 2026-08-01 snapshot resolves packages online or from the local cache;
-analyzer, 79 tests, and the web build pass. Android Gradle plugin resolution
-remains an environment blocker. Consult
+The 2026-08-09 snapshot resolves packages online, passes static analysis and
+154 tests, and produces an Android debug APK. Consult
 [DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) for exact results.
 
 ## Source layout

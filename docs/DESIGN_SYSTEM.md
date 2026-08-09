@@ -8,7 +8,7 @@ This document records what is verifiably implemented. Where they disagree,
 
 `AppTheme` exposes `lightTheme`, `darkTheme`, shared brand colors, surface
 colors, radii, padding, and status-color mapping. Both themes use Material 3.
-`OtakuLogApp` selects a `ThemeMode`; the Profile switch changes it for the
+`EpisodeApp` selects a `ThemeMode`; the Profile switch changes it for the
 current app process.
 
 ### Implemented tokens

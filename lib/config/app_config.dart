@@ -1,6 +1,6 @@
 class AppConfig {
   static const String _envBaseUrl = String.fromEnvironment(
-    'OTAKULOG_API_BASE_URL',
+    'EPISODE_API_BASE_URL',
     defaultValue: '',
   );
 
@@ -26,8 +26,8 @@ class AppConfig {
   String get apiV1BaseUrl {
     if (!isApiConfigured) {
       throw StateError(
-        'OTAKULOG_API_BASE_URL is not configured. Account and sync features require '
-        '--dart-define=OTAKULOG_API_BASE_URL=http://<host>:<port>',
+        'EPISODE_API_BASE_URL is not configured. Account and sync features require '
+        '--dart-define=EPISODE_API_BASE_URL=http://<host>:<port>',
       );
     }
     final base = baseUrl;

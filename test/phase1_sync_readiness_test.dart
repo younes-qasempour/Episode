@@ -2,14 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:otaku_log/models/data_transfer.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/repositories/local_storage_repository.dart';
-import 'package:otaku_log/services/csv_export_service.dart';
-import 'package:otaku_log/services/import_planner.dart';
-import 'package:otaku_log/services/mal_xml_service.dart';
-import 'package:otaku_log/services/native_backup_service.dart';
-import 'package:otaku_log/utils/clock.dart';
+import 'package:episode/models/data_transfer.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/repositories/local_storage_repository.dart';
+import 'package:episode/services/csv_export_service.dart';
+import 'package:episode/services/import_planner.dart';
+import 'package:episode/services/mal_xml_service.dart';
+import 'package:episode/services/native_backup_service.dart';
+import 'package:episode/utils/clock.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -113,7 +113,8 @@ void main() {
       await repo.loadMediaItems();
 
       final prefs = await SharedPreferences.getInstance();
-      final storedRaw = prefs.getString('otaku_log_media_items')!;
+      final storedRaw = (prefs.getString('episode_media_items') ??
+          prefs.getString('otaku_log_media_items'))!;
 
       expect(storedRaw.startsWith('{'), isTrue);
       final decodedMap = jsonDecode(storedRaw) as Map<String, dynamic>;

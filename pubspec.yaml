@@ -1,5 +1,5 @@
-name: otaku_log
-description: "A modern Otaku media tracker application."
+name: episode
+description: "A modern Episode media tracker application."
 publish_to: 'none'
 version: 1.0.0+1
 

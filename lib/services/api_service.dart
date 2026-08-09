@@ -29,8 +29,10 @@ class ApiService {
   Future<http.Response> _getWithRetry(Uri uri) async {
     for (int attempt = 0; attempt < 2; attempt++) {
       try {
-        final response =
-            await _client.get(uri).timeout(const Duration(seconds: 10));
+        final response = await _client.get(
+          uri,
+          headers: const {'User-Agent': 'Episode/1.0'},
+        ).timeout(const Duration(seconds: 10));
         if (response.statusCode == 429 && attempt == 0) {
           await Future.delayed(const Duration(milliseconds: 500));
           continue;
@@ -78,6 +80,16 @@ class ApiService {
       type: SearchFailureType.unknown,
       technicalMessage: 'Max retries reached',
     );
+  }
+
+  /// Sanitizes and wraps cover URLs to ensure cross-origin (CORS) image loading on Web.
+  static String sanitizeCoverUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return '';
+    final trimmed = url.trim();
+    if (trimmed.contains('kitsu.app') || trimmed.contains('kitsu.io')) {
+      return 'https://images.weserv.nl/?url=${Uri.encodeComponent(trimmed)}';
+    }
+    return trimmed;
   }
 
   /// Search across Anime, Manga, and TV Series based on query and type filter.
@@ -485,8 +497,9 @@ class ApiService {
     final String title =
         json['title_english'] ?? json['title'] ?? 'Untitled Anime';
     final images = json['images']?['jpg'];
-    final String coverUrl =
-        images?['large_image_url'] ?? images?['image_url'] ?? '';
+    final String coverUrl = sanitizeCoverUrl(
+      images?['large_image_url'] ?? images?['image_url'],
+    );
     final int? episodes = _validProviderTotal(json['episodes']);
     final String? synopsis = json['synopsis'];
 
@@ -509,8 +522,9 @@ class ApiService {
     final String title =
         json['title_english'] ?? json['title'] ?? 'Untitled Manga';
     final images = json['images']?['jpg'];
-    final String coverUrl =
-        images?['large_image_url'] ?? images?['image_url'] ?? '';
+    final String coverUrl = sanitizeCoverUrl(
+      images?['large_image_url'] ?? images?['image_url'],
+    );
     final int? chapters = _validProviderTotal(json['chapters']);
     final String? synopsis = json['synopsis'];
 
@@ -536,8 +550,9 @@ class ApiService {
     if (show == null) return null;
     final int id = show['id'] ?? 0;
     final String title = show['name'] ?? 'Untitled Series';
-    final String coverUrl =
-        show['image']?['original'] ?? show['image']?['medium'] ?? '';
+    final String coverUrl = sanitizeCoverUrl(
+      show['image']?['original'] ?? show['image']?['medium'],
+    );
     final String rawSummary = show['summary'] ?? '';
     final String synopsis = rawSummary.replaceAll(RegExp(r'<[^>]*>'), '');
     final bool hasSeasons = seasons.isNotEmpty;
@@ -574,8 +589,9 @@ class ApiService {
         attr['titles']?['en_jp'] ??
         'Untitled Manga';
     final poster = attr['posterImage'];
-    final String coverUrl =
-        poster?['large'] ?? poster?['original'] ?? poster?['medium'] ?? '';
+    final String coverUrl = sanitizeCoverUrl(
+      poster?['large'] ?? poster?['original'] ?? poster?['medium'],
+    );
     final int? chapters = _validProviderTotal(attr['chapterCount']);
     final String? synopsis = attr['synopsis'];
 
@@ -600,8 +616,9 @@ class ApiService {
         attr['titles']?['en_jp'] ??
         'Untitled Anime';
     final poster = attr['posterImage'];
-    final String coverUrl =
-        poster?['large'] ?? poster?['original'] ?? poster?['medium'] ?? '';
+    final String coverUrl = sanitizeCoverUrl(
+      poster?['large'] ?? poster?['original'] ?? poster?['medium'],
+    );
     final int? episodes = _validProviderTotal(attr['episodeCount']);
     final String? synopsis = attr['synopsis'];
 

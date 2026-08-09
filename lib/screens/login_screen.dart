@@ -118,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.all(24),
           children: [
             Text(
-              'Welcome back to OtakuLog',
+              'Welcome back to Episode',
               style: TextStyle(
                 fontFamily: 'Plus Jakarta Sans',
                 fontSize: 22,

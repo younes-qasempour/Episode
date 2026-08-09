@@ -62,7 +62,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
         builder: (context) => AlertDialog(
           title: const Text('Replace the current library?'),
           content: const Text(
-            'OtakuLog will create a safety backup first. The selected backup '
+            'Episode will create a safety backup first. The selected backup '
             'will then replace the active library.',
           ),
           actions: [

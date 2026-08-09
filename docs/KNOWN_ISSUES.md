@@ -38,20 +38,29 @@ Verified on **2026-08-01** unless marked otherwise.
 | --- | --- | --- | --- |
 | Active library has no envelope schema | Medium | `otaku_log_media_items` remains an additive JSON array; portable backups are separately versioned. | Define a library migration only before an incompatible field change. |
 | Unused persistence dependencies | Low | Hive, Hive Flutter, and path provider remain declared but unused. | Remove through normal package resolution or document one migration plan. |
-| No API timeout/retry/rate-limit/pagination | Medium | Plain `client.get`, fixed limits, response metadata ignored. | Confirm provider constraints and desired feedback. |
+| No API pagination/cancellation/cache | Medium | Requests use fixed limits; stale responses are discarded but the underlying requests continue, and results are not cached. | Confirm provider constraints and desired pagination/cache behavior. |
 
 ## Build and tooling
 
 | Issue | Severity | Evidence / reproduction | Suggested next investigation |
 | --- | --- | --- | --- |
-| Android plugin cannot resolve | High for Android validation | `flutter build apk --debug --no-pub` cannot obtain `com.android.application` 9.0.1 from configured repositories. | Restore approved Gradle artifact access/cache and rebuild before device testing. |
-| Android release setup is template-grade | High | Example application ID, debug release signing, TODOs, and release INTERNET permission concern remain. | Obtain owner identity/signing requirements and verify release manifest/build. |
+| Android release setup is template-grade | High | Example application ID, debug release signing, and TODOs remain. | Obtain owner identity/signing requirements and verify a release build. |
+| Flutter plugins still apply the Kotlin Gradle Plugin | Medium/future | Android debug build succeeds but warns that `device_info_plus` and `package_info_plus` must migrate to Built-in Kotlin for future Flutter versions. | Upgrade to compatible plugin releases when dependency constraints allow. |
 
 ## Security
 
 No committed secrets were found. The local library, safety backups, and
 exported files are unencrypted and may include notes/tags. Checksums detect
 accidental corruption but are not signatures or encryption.
+
+## Resolved on 2026-08-09
+
+- Search now exposes typed failures, retries transport/rate-limit requests with
+  a ten-second timeout, protects UI state from stale responses, and applies the
+  required provider header and cover URL sanitization.
+- Android Gradle resolution succeeded; the debug APK builds successfully.
+- The smoke test targets `EpisodeApp`, static analysis is clean, and the full
+  154-test suite passes.
 
 ## Resolved on 2026-08-01
 
@@ -60,8 +69,7 @@ accidental corruption but are not signatures or encryption.
 - Whole-library import/restore has validated snapshot rollback.
 - Native backup, MAL transfer, CSV export, recovery history, and Android/web
   file adapters are implemented with focused coverage.
-- The stale `MyApp` smoke test now targets `OtakuLogApp` and the 79-test suite
-  passes.
+- The stale `MyApp` smoke test was replaced with an application-shell test.
 - Online/offline package resolution, analyzer, all tests, and the web release
   build pass.
 

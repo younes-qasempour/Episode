@@ -2,7 +2,7 @@
 
 ## Product
 
-OtakuLog is a Flutter media-tracking prototype for a person who follows anime,
+Episode is a Flutter media-tracking prototype for a person who follows anime,
 manga, TV series, and movies. The current application lets a user maintain an
 on-device library, discover supported media from public APIs, manually create
 missing media, and edit flat or seasonal progress and metadata. It can also
@@ -62,9 +62,8 @@ The code is organized by technical responsibility rather than feature:
 ## Platform targets
 
 - **Android:** native project and Storage Access Framework file adapter exist.
-  Release application identity, signing, and network permission require
-  attention. The debug build remains blocked by unavailable Android Gradle
-  Plugin 9.0.1 resolution in the current environment.
+  The debug APK builds successfully. Production application identity and
+  release signing still require attention.
 - **Web:** browser pick/download adapter exists and `flutter build web --no-pub`
   succeeds.
 - **iOS, macOS, Windows, Linux:** not present. Support is **Unknown** and must

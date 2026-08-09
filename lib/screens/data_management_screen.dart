@@ -85,7 +85,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       if (restoreFlow &&
           inspection.sourceType != ImportSourceType.nativeBackup) {
         throw const DataTransferException(
-          'Restore accepts only a native OtakuLog JSON backup.',
+          'Restore accepts only a native Episode JSON backup.',
           code: 'restore_format_required',
         );
       }
@@ -384,13 +384,13 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                           key: const Key('import-file-action'),
                           icon: Icons.file_open_outlined,
                           title: 'Import compatible file',
-                          subtitle: 'OtakuLog JSON or MyAnimeList XML',
+                          subtitle: 'Episode JSON or MyAnimeList XML',
                           onTap: () => _pickAndPreview(restoreFlow: false),
                         ),
                         _ActionTile(
                           key: const Key('restore-backup-action'),
                           icon: Icons.restore_rounded,
-                          title: 'Restore an OtakuLog backup',
+                          title: 'Restore an Episode backup',
                           subtitle: 'Validate, preview, snapshot, then replace',
                           onTap: () => _pickAndPreview(restoreFlow: true),
                         ),

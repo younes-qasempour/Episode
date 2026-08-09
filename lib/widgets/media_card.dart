@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 class MediaCard extends StatelessWidget {
   final MediaItem item;
   final VoidCallback? onIncrementProgress;
+  final ValueChanged<int>? onBatchIncrementProgress;
   final VoidCallback? onTap;
   final VoidCallback? onToggleFavorite;
 
@@ -12,6 +13,7 @@ class MediaCard extends StatelessWidget {
     super.key,
     required this.item,
     this.onIncrementProgress,
+    this.onBatchIncrementProgress,
     this.onTap,
     this.onToggleFavorite,
   });
@@ -120,56 +122,60 @@ class MediaCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Media Cover Image
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: 84,
-                    height: 116,
-                    child: item.coverUrl.trim().isEmpty
-                        ? Container(
-                            color: isDark
-                                ? const Color(0xFF1E2E44)
-                                : const Color(0xFFE0E7FF),
-                            child: Icon(
-                              typeIcon,
-                              size: 32,
-                              color: theme.colorScheme.primary,
-                            ),
-                          )
-                        : Image.network(
-                            item.coverUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: isDark
-                                    ? const Color(0xFF1E2E44)
-                                    : const Color(0xFFE0E7FF),
-                                child: Icon(
-                                  typeIcon,
-                                  size: 32,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) {
-                                return child;
-                              }
-                              return Container(
-                                color: isDark
-                                    ? const Color(0xFF1E2E44)
-                                    : const Color(0xFFE0E7FF),
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      theme.colorScheme.primary,
+                Hero(
+                  tag: 'media_cover_${item.id}',
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 84,
+                      height: 116,
+                      child: item.coverUrl.trim().isEmpty
+                          ? Container(
+                              color: isDark
+                                  ? const Color(0xFF1E2E44)
+                                  : const Color(0xFFE0E7FF),
+                              child: Icon(
+                                typeIcon,
+                                size: 32,
+                                color: theme.colorScheme.primary,
+                              ),
+                            )
+                          : Image.network(
+                              item.coverUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: isDark
+                                      ? const Color(0xFF1E2E44)
+                                      : const Color(0xFFE0E7FF),
+                                  child: Icon(
+                                    typeIcon,
+                                    size: 32,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                );
+                              },
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) {
+                                  return child;
+                                }
+                                return Container(
+                                  color: isDark
+                                      ? const Color(0xFF1E2E44)
+                                      : const Color(0xFFE0E7FF),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        theme.colorScheme.primary,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              );
-                            },
-                          ),
+                                );
+                              },
+                            ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),

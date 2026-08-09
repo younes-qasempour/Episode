@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../config/app_config.dart';
 import '../controllers/auth_controller.dart';
+import '../models/activity_log_entry.dart';
 import '../models/media_item.dart';
+import '../models/user_profile_data.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/local_storage_repository.dart';
 import '../services/api_client.dart';
@@ -54,6 +56,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   ConnectivityService? _connectivityService;
 
   List<MediaItem> _items = [];
+  UserProfileData _userProfile = const UserProfileData();
+  List<ActivityLogEntry> _activityLogs = [];
   bool _isLoading = true;
   String? _loadError;
 
@@ -137,9 +141,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Future<void> _loadItems() async {
     try {
       final loaded = await _storageRepository.loadMediaItems();
+      final profile = await _storageRepository.loadUserProfileData();
+      final logs = await _storageRepository.loadActivityLogs();
       if (mounted) {
         setState(() {
           _items = loaded;
+          _userProfile = profile;
+          _activityLogs = logs;
           _isLoading = false;
           _loadError = null;
         });
@@ -152,6 +160,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               'backup or retry without clearing the existing data.';
         });
       }
+    }
+  }
+
+  Future<void> _saveProfileData(UserProfileData profile) async {
+    await _storageRepository.saveUserProfileData(profile);
+    if (mounted) {
+      setState(() {
+        _userProfile = profile;
+      });
     }
   }
 
@@ -363,6 +380,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onOpenRegister: _openRegisterScreen,
         onOpenDeviceManagement: _openDeviceManagementScreen,
         onClearLibrary: _clearLibrary,
+        mediaItems: _items,
+        userProfile: _userProfile,
+        activityLogs: _activityLogs,
+        onProfileUpdated: _saveProfileData,
+        onItemTap: _openDetailScreen,
+        onIncrementProgress: _incrementProgress,
       ),
     ];
 

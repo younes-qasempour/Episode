@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/services/csv_export_service.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/services/csv_export_service.dart';
 
 void main() {
   test('CSV export follows RFC-style escaping and preserves Unicode', () async {

@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:otaku_log/models/data_transfer.dart';
-import 'package:otaku_log/models/media_item.dart';
-import 'package:otaku_log/services/native_backup_service.dart';
+import 'package:episode/models/data_transfer.dart';
+import 'package:episode/models/media_item.dart';
+import 'package:episode/services/native_backup_service.dart';
 
 void main() {
   const codec = NativeBackupCodec(applicationVersion: 'test+1');
