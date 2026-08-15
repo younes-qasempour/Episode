@@ -3,6 +3,74 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-08-12 - Indigo navigation rail selection
+
+- **Agent/tool:** Codex
+- **Task:** Replace the muddy red-brown selected navigation-rail color shown in
+  the dark desktop sidebar.
+- **Summary:** Scoped the active rail state to the existing Episode indigo
+  token with a high-contrast white icon in both light and dark themes, without
+  changing the secondary palette used by other components. Added focused theme
+  coverage for the adaptive rail.
+- **Files changed:** `lib/theme/app_theme.dart`,
+  `test/responsive_layout_test.dart`, `docs/features/profile-and-theme.md`, and
+  `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `dart format --output=none --set-exit-if-changed lib test`
+  checked 81 files with zero changes; `flutter analyze --no-pub` reported no
+  issues; the focused responsive suite passed 6/6; and
+  `flutter test --no-pub` passed 163/163.
+
+## 2026-08-12 - Episode brand and logo integration
+
+- **Agent/tool:** Codex
+- **Task:** Complete the product rename to Episode and apply the approved logo
+  consistently across Flutter, Android, web, and Windows surfaces.
+- **Summary:** Added a canonical accessible `EpisodeBrand` widget and declared
+  runtime mark; integrated it into app chrome, authentication, and loading
+  states; generated Android legacy/round/adaptive launcher icons and pre-/post-
+  Android-12 splash artwork; updated web title/metadata, favicon, Apple touch
+  icon, PWA regular/maskable icons, and pre-first-frame loading splash; updated
+  Windows executable identity/icon; and added high-resolution masters plus
+  `tool/generate_brand_assets.py` for reproducible outputs. Updated active
+  product documentation to Episode while preserving and explicitly labeling
+  stable legacy storage, backup-format, repository-folder, and backend
+  deployment identifiers, and synchronized the internal file-transfer channel
+  to the Episode name across all native implementations. Unified sync safety
+  snapshots with the restorable native Episode backup codec, added download-
+  time conversion for retained legacy local snapshots, and made the web splash
+  cleanup reliable when reduced motion disables CSS transitions.
+- **Compatibility:** Active library, automatic-backup, and transfer-history
+  preferences use `episode_media_items`, `episode_automatic_backups_v1`, and
+  `episode_transfer_history_v1` with one-time `otaku_log_*` fallbacks. The
+  `otakulog-backup` payload discriminator remains stable to avoid breaking
+  existing files; the non-persistent native channel is now
+  `episode/file_transfer` across Dart, Android, and Windows.
+- **Validation:** Asset generator completed with 29 deterministic outputs;
+  `flutter analyze --no-pub` reported no issues; the focused brand/shell tests
+  passed, and the full suite (including transfer/backup coverage) passed
+  162/162 with `flutter test --no-pub`; Android debug, web release, and Windows
+  release builds succeeded. Browser
+  smoke checks at 390x844 and 1440x900 verified the loading splash, app chrome,
+  manifest/favicon assets, responsive brand placement, and zero console errors.
+
+## 2026-08-12 — Responsive Web and Windows platform support
+
+- **Agent/tool:** Codex
+- **Task:** Evolve Episode's mobile-first Flutter UI into a responsive Android,
+  web, and Windows application without changing its business architecture.
+- **Summary:** Added centralized intent breakpoints, max-width/page/grid helpers,
+  adaptive bottom/rail navigation, responsive Home and Explore grids, two-pane
+  media details, constrained forms and transfer screens, denser analytics,
+  desktop dialog constraints, and pointer scrolling. Generated the official
+  Windows runner, reused the transfer MethodChannel for native Win32 open/save
+  dialogs, and preserved secure token storage with an ATL-free compatibility
+  include for the existing plugin. Added live-resize and representative
+  viewport widget tests.
+- **Files changed:** `lib/layout/responsive_layout.dart`, root shell and major
+  screens/widgets, `lib/services/file_transfer_io.dart`, `windows/`,
+  `test/responsive_layout_test.dart`, and affected project documentation.
+- **Validation:** See the 2026-08-12 command matrix in `CURRENT_STATE.md`.
+
 ## 2026-08-09 — Resolved Episode mobile integration conflicts
 
 - **Agent/tool:** Codex

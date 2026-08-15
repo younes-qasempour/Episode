@@ -63,8 +63,10 @@ Confirmed rules:
   enums
 - Repository: `LocalStorageRepository` (with `toggleFavorite`)
 - Store: one JSON string in SharedPreferences
-- Key: `otaku_log_media_items`
-- Seed: `sampleMediaItems`
+- Active key: `episode_media_items`
+- Legacy fallback: `otaku_log_media_items` is copied once and removed after a
+  successful migration
+- First run: empty when neither key exists
 - Recovery: validated whole-library snapshot/write/round-trip/rollback
 - Remote API: none in this feature
 
@@ -85,7 +87,9 @@ repository.
 
 ## Tests
 
-- `local_storage_repository_test.dart` covers seed, manual/reload, legacy decode, uncapped progress, seasonal persistence/targeting, favorite toggling, update, and delete.
+- `local_storage_repository_test.dart` covers empty first run,
+  manual/reload, legacy decode, uncapped progress, seasonal
+  persistence/targeting, favorite toggling, update, and delete.
 - `home_tab_test.dart` covers in-library title search, clear button, Media Type chips, Status/Favorites chips, sorting options, card favorite toggles, and empty reset action.
 - `media_item_test.dart`, `media_card_test.dart`, `media_detail_screen_test.dart`, and `manual_media_screen_test.dart` cover models and visible states. All tests pass cleanly.
 

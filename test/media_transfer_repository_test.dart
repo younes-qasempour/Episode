@@ -5,6 +5,7 @@ import 'package:episode/models/data_transfer.dart';
 import 'package:episode/models/media_item.dart';
 import 'package:episode/repositories/local_storage_repository.dart';
 import 'package:episode/repositories/media_transfer_repository.dart';
+import 'package:episode/services/native_backup_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -154,6 +155,38 @@ void main() {
     expect(backups.last.id, 'backup-2');
   });
 
+  test('legacy local safety snapshot downloads as a restorable backup',
+      () async {
+    const storage = LocalStorageRepository();
+    final createdAt = DateTime.utc(2026, 8, 1, 9, 30);
+    await storage.saveAutomaticBackup(
+      AutomaticBackupRecord(
+        id: 'legacy-local-snapshot',
+        fileName: 'safety-backup-sync.json',
+        createdAt: createdAt,
+        backupJson: jsonEncode({
+          'schemaVersion': 2,
+          'migratedAt': createdAt.toIso8601String(),
+          'mediaItems': [local.toMap()],
+        }),
+        itemCount: 1,
+      ),
+    );
+    final repository = MediaTransferRepository(
+      storageRepository: storage,
+      platform: 'test',
+    );
+
+    final artifact =
+        await repository.automaticBackupArtifact('legacy-local-snapshot');
+    final decoded = const NativeBackupCodec().decode(
+      ImportSource(fileName: artifact.fileName, bytes: artifact.bytes),
+    );
+
+    expect(artifact.fileName, startsWith('episode-safety-backup-'));
+    expect(decoded.items.single.id, local.id);
+  });
+
   test('valid stored empty list is not replaced with sample content', () async {
     SharedPreferences.setMockInitialValues({'otaku_log_media_items': '[]'});
 
@@ -187,7 +220,7 @@ void main() {
     expect(await storage.loadTransferHistory(), isEmpty);
 
     await repository.recordCompletedExport(
-      providerId: 'otakulog-native',
+      providerId: 'episode-native',
       artifact: artifact,
       operationType: TransferOperationType.backup,
     );

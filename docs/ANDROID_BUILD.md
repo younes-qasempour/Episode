@@ -1,7 +1,10 @@
 # Android Build & Environment Documentation
 
 ## Overview
-This document outlines the environment configuration, build procedures, and security policies for building Android artifacts in `OtakuLog-mobile`.
+This document outlines the environment configuration, build procedures, and
+security policies for building Episode Android artifacts. The checked-out
+folder may still be named `OtakuLog-mobile`; that repository-folder name is a
+legacy stable path, not current product copy.
 
 ## Toolchain & Versions
 - **Flutter**: 3.44.8 (Channel stable)
@@ -17,6 +20,18 @@ This document outlines the environment configuration, build procedures, and secu
 - **Debug Builds**: `android:usesCleartextTraffic="true"` is enabled strictly in `android/app/src/debug/AndroidManifest.xml` to allow developer communication with local FastAPI backend servers (`http://10.0.2.2:8000` or local HTTP endpoints).
 - **Main / Release Builds**: `android:usesCleartextTraffic` is **disabled** by default in `android/app/src/main/AndroidManifest.xml`. All production network traffic must enforce HTTPS/TLS connections.
 - **Permissions**: `android.permission.INTERNET` is configured in `android/app/src/main/AndroidManifest.xml`.
+
+## Episode identity and launcher assets
+
+- The application label is `Episode`, and `MainActivity` is located at
+  `android/app/src/main/kotlin/com/example/episode/MainActivity.kt`.
+- Android launcher coverage includes legacy square icons, round icons, and
+  adaptive foreground/background resources. Pre-Android-12 launch backgrounds
+  and Android 12+ splash styles use the same Episode mark and brand navy.
+- These raster resources are generated from `tool/brand_sources/` with
+  `python tool/generate_brand_assets.py`; regenerate them as a set.
+- `com.example.episode` remains a template-grade application ID. A production
+  ID and release signing configuration still require owner input.
 
 ## Build Artifacts & Output Paths
 - **Debug APK**: `build/app/outputs/flutter-apk/app-debug.apk` (Signed with Flutter default debug key).

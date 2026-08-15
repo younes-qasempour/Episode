@@ -185,11 +185,67 @@ class MediaTransferRepository {
         code: 'backup_not_found',
       );
     }
-    return ExportArtifact(
+    final storedBytes = Uint8List.fromList(utf8.encode(record.backupJson));
+    final storedSource = ImportSource(
       fileName: record.fileName,
+      bytes: storedBytes,
+    );
+    try {
+      backupCodec.decode(storedSource);
+      return ExportArtifact(
+        fileName: record.fileName,
+        mimeType: 'application/json',
+        bytes: storedBytes,
+        exportedCount: record.itemCount,
+      );
+    } on DataTransferException {
+      // Safety snapshots created before Episode's native-backup unification
+      // used the local schema envelope. Upgrade only that known shape when a
+      // retained snapshot is downloaded, so existing user backups stay useful.
+    }
+
+    final Object? legacyDocument;
+    try {
+      legacyDocument = jsonDecode(record.backupJson);
+    } on FormatException {
+      throw const DataTransferException(
+        'The retained safety backup contains malformed JSON.',
+        code: 'invalid_retained_backup',
+      );
+    }
+    if (legacyDocument is! Map || legacyDocument['mediaItems'] is! List) {
+      throw const DataTransferException(
+        'The retained safety backup is not a supported Episode backup.',
+        code: 'invalid_retained_backup',
+      );
+    }
+    final legacyItems = <MediaItem>[];
+    try {
+      for (final item in legacyDocument['mediaItems'] as List) {
+        if (item is! Map) {
+          throw const FormatException('Safety backup entry is not an object.');
+        }
+        legacyItems.add(MediaItem.fromMap(Map<String, dynamic>.from(item)));
+      }
+    } on Object {
+      throw const DataTransferException(
+        'The retained safety backup contains an invalid media entry.',
+        code: 'invalid_retained_backup',
+      );
+    }
+    final upgraded = backupCodec.createArtifact(
+      legacyItems,
+      platform: platform,
+      now: record.createdAt,
+    );
+    return ExportArtifact(
+      fileName: upgraded.fileName.replaceFirst(
+        'episode-backup-',
+        'episode-safety-backup-',
+      ),
       mimeType: 'application/json',
-      bytes: Uint8List.fromList(utf8.encode(record.backupJson)),
-      exportedCount: record.itemCount,
+      bytes: upgraded.bytes,
+      exportedCount: legacyItems.length,
     );
   }
 
@@ -205,8 +261,8 @@ class MediaTransferRepository {
     final record = AutomaticBackupRecord(
       id: 'safety_${now.microsecondsSinceEpoch}',
       fileName: artifact.fileName.replaceFirst(
-        'otakulog-backup-',
-        'otakulog-safety-backup-',
+        'episode-backup-',
+        'episode-safety-backup-',
       ),
       createdAt: now,
       backupJson: utf8.decode(artifact.bytes),

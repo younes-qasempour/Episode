@@ -1,11 +1,14 @@
-# OtakuLog Account Data Flows & User Choices
+# Episode Account Data Flows & User Choices
 
 This document explains user account transitions, anonymous-to-account migrations, and device switching flows.
 
 ## Anonymous App Startup
 
 - New installations start in `anonymous` mode.
-- Local items are created with client-generated UUID v4 IDs and stored under `otaku_log_media_items` (schema v2 envelope).
+- Local items are created with client-generated UUID v4 IDs and stored under
+  `episode_media_items` (schema v2 envelope). On first access, Episode migrates
+  the legacy `otaku_log_media_items` key and removes that legacy key after a
+  successful copy.
 
 ## Anonymous-to-Account Migration
 

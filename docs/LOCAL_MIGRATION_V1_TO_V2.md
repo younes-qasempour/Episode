@@ -1,11 +1,12 @@
-# OtakuLog Local Storage Migration Guide (v1 to v2)
+# Episode Local Storage Migration Guide (v1 to v2)
 
 This document details the automated, atomic migration process used by `LocalStorageRepository` to upgrade legacy local data (schema v1 bare JSON arrays) to the versioned schema v2 envelope format.
 
 ## Overview
 
 - **Source Formats**:
-  1. **Missing Storage**: First-run initialization seeds sample items assigned UUID v4 IDs and UTC metadata under a schema v2 envelope.
+  1. **Missing Storage**: When neither the active nor legacy key exists, the
+     library starts empty.
   2. **Bare Legacy Array (v1)**: `[...]` array containing legacy records with deterministic provider IDs (`jikan_anime_123`, `tvmaze_series_456`), timestamp IDs (`manual_...`), or seed IDs (`1`..`8`).
   3. **Versioned Envelope (v2)**: `{"schemaVersion": 2, ...}` JSON envelope parsed directly.
 
@@ -14,9 +15,11 @@ This document details the automated, atomic migration process used by `LocalStor
 ## Migration Algorithm
 
 ```text
-1. Read raw string from SharedPreferences key `otaku_log_media_items`.
-2. If null -> Seed sample data with UUID v4 & UTC timestamps -> Save envelope v2.
-3. If JSON string starts with '[' -> Bare legacy array:
+1. Read the active SharedPreferences key `episode_media_items`.
+2. If it is absent, read legacy key `otaku_log_media_items`. When present, copy
+   the raw value to `episode_media_items`, then remove the legacy key after the
+   successful copy. If both keys are absent, return an empty library.
+3. If the selected JSON string starts with '[' -> Bare legacy array:
    a. Preserve exact raw string in memory for rollback.
    b. Build in-memory ID conversion map:
       - Valid UUIDs -> Keep unchanged.

@@ -182,11 +182,12 @@ class MediaCard extends StatelessWidget {
 
                 // Card Details Column
                 Expanded(
-                  child: SizedBox(
-                    height: 116,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 116),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         // Title & Type/Status Row
                         Column(
@@ -341,6 +342,8 @@ class MediaCard extends StatelessWidget {
                           ],
                         ),
 
+                        const SizedBox(height: 8),
+
                         // Progress Section Row
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,19 +351,24 @@ class MediaCard extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  progressText,
-                                  style: TextStyle(
-                                    fontFamily: 'Be Vietnam Pro',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: item.isBeyondKnownTotal ||
-                                            isSeasonBeyondTotal
-                                        ? theme.colorScheme.error
-                                        : theme.colorScheme.onSurfaceVariant,
+                                Expanded(
+                                  child: Text(
+                                    progressText,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: 'Be Vietnam Pro',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: item.isBeyondKnownTotal ||
+                                              isSeasonBeyondTotal
+                                          ? theme.colorScheme.error
+                                          : theme.colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
                                 ),
-                                if (canIncrement)
+                                if (canIncrement) ...[
+                                  const SizedBox(width: 8),
                                   _PlusOneButton(
                                     onPressed: onIncrementProgress!,
                                     tooltip: item.progressMode ==
@@ -368,6 +376,7 @@ class MediaCard extends StatelessWidget {
                                         ? 'Add 1 episode to ${incrementSeason!.displayName}'
                                         : 'Add 1 ${item.unitLabel == 'Ch' ? 'chapter' : 'episode'}',
                                   ),
+                                ],
                               ],
                             ),
                             if (item.type != MediaType.movie) ...[

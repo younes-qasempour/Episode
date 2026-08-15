@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../layout/responsive_layout.dart';
 import '../models/auth_models.dart';
 import '../repositories/auth_repository.dart';
 import '../services/device_identity_service.dart';
@@ -120,96 +121,100 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!),
-                      const SizedBox(height: 16),
-                      FilledButton(
-                        onPressed: _loadDevices,
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _devices.length,
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final device = _devices[index];
-                    final isCurrent =
-                        device.clientDeviceId == _currentClientDeviceId;
+      body: PageContentConstraint(
+        contentWidth: ContentWidth.detail,
+        padding: EdgeInsets.zero,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: _loadDevices,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _devices.length,
+                    separatorBuilder: (context, index) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final device = _devices[index];
+                      final isCurrent =
+                          device.clientDeviceId == _currentClientDeviceId;
 
-                    return ListTile(
-                      leading: Icon(
-                        isCurrent
-                            ? Icons.phone_android_rounded
-                            : Icons.devices_rounded,
-                        color: isCurrent
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              device.name,
-                              style: TextStyle(
-                                fontFamily: 'Plus Jakarta Sans',
-                                fontWeight: FontWeight.w700,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          if (isCurrent)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                      return ListTile(
+                        leading: Icon(
+                          isCurrent
+                              ? Icons.phone_android_rounded
+                              : Icons.devices_rounded,
+                          color: isCurrent
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        title: Row(
+                          children: [
+                            Expanded(
                               child: Text(
-                                'This Device',
+                                device.name,
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.onPrimaryContainer,
+                                  fontFamily: 'Plus Jakarta Sans',
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-                      subtitle: Text(
-                        '${device.platform} ${device.appVersion != null ? "v${device.appVersion}" : ""} • ${device.isActive ? "Active" : "Revoked"}',
-                        style: TextStyle(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
+                            if (isCurrent)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'This Device',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                      trailing: device.isActive
-                          ? IconButton(
-                              icon: const Icon(
-                                  Icons.remove_circle_outline_rounded),
-                              color: theme.colorScheme.error,
-                              tooltip: 'Revoke Device',
-                              onPressed: () => _revokeDevice(device),
-                            )
-                          : const Chip(
-                              label: Text('Revoked'),
-                              visualDensity: VisualDensity.compact,
-                            ),
-                    );
-                  },
-                ),
+                        subtitle: Text(
+                          '${device.platform} ${device.appVersion != null ? "v${device.appVersion}" : ""} • ${device.isActive ? "Active" : "Revoked"}',
+                          style: TextStyle(
+                            fontFamily: 'Be Vietnam Pro',
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        trailing: device.isActive
+                            ? IconButton(
+                                icon: const Icon(
+                                    Icons.remove_circle_outline_rounded),
+                                color: theme.colorScheme.error,
+                                tooltip: 'Revoke Device',
+                                onPressed: () => _revokeDevice(device),
+                              )
+                            : const Chip(
+                                label: Text('Revoked'),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                      );
+                    },
+                  ),
+      ),
     );
   }
 }

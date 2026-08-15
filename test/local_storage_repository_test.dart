@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:episode/models/data_transfer.dart';
 import 'package:episode/models/media_item.dart';
 import 'package:episode/repositories/local_storage_repository.dart';
+import 'package:episode/services/native_backup_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -273,6 +275,31 @@ void main() {
       final result2 = await repository.toggleFavorite('test_fav');
       final unfavItem = result2.firstWhere((i) => i.id == 'test_fav');
       expect(unfavItem.isFavorite, isFalse);
+    });
+
+    test('automatic safety backup is a restorable Episode backup', () async {
+      const repository = LocalStorageRepository(backupPlatform: 'test');
+      const item = MediaItem(
+        id: 'safety-backup-item',
+        title: 'Safety Backup Item',
+        coverUrl: '',
+        currentProgress: 3,
+        totalCount: 12,
+        mediaType: 'anime',
+        status: 'Watching',
+      );
+      await repository.saveMediaItem(item);
+
+      final record = await repository.createAutomaticBackup('sync safety');
+      final decoded = const NativeBackupCodec().decode(
+        ImportSource(
+          fileName: record.fileName,
+          bytes: utf8.encode(record.backupJson),
+        ),
+      );
+
+      expect(record.fileName, startsWith('episode-safety-backup-'));
+      expect(decoded.items.single.id, item.id);
     });
   });
 }

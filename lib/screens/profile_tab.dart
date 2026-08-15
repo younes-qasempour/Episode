@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
+import '../layout/responsive_layout.dart';
 import '../models/activity_log_entry.dart';
 import '../models/media_item.dart';
 import '../models/user_profile_data.dart';
@@ -73,63 +74,27 @@ class ProfileTab extends StatelessWidget {
   }
 
   Future<void> _handleDeleteAccount(BuildContext context) async {
-    final passwordController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    final confirmed = await showDialog<bool>(
+    final password = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Account?'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'This will permanently delete your server account and cloud snapshots. Your local library on this device will remain intact as an offline library.',
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm Password',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (val) =>
-                    (val == null || val.isEmpty) ? 'Password required' : null,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.of(dialogContext).pop(true);
-              }
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Delete Account'),
-          ),
-        ],
-      ),
+      builder: (dialogContext) => const _DeleteAccountDialog(),
     );
 
-    if (confirmed == true && authController != null) {
+    if (password != null && authController != null) {
       final success = await authController!.deleteAccount(
-        password: passwordController.text,
+        password: password,
       );
-      if (context.mounted && !success && authController!.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(authController!.errorMessage!)),
-        );
+      if (context.mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account and cloud data permanently deleted.'),
+            ),
+          );
+        } else if (authController!.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(authController!.errorMessage!)),
+          );
+        }
       }
     }
   }
@@ -154,334 +119,359 @@ class ProfileTab extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        children: [
-          // Personal Analytics Hub & Viewing Stats
-          ProfileStatsDashboard(
-            mediaItems: mediaItems,
-            userProfile: userProfile,
-            activityLogs: activityLogs,
-            onProfileUpdated: onProfileUpdated,
-            onItemTap: onItemTap,
-            onIncrementProgress: onIncrementProgress,
-          ),
-
-          // Account Status Card
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-              border: Border.all(
-                color:
-                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
-                width: 1,
-              ),
+      body: ResponsiveBuilder(
+        builder: (context, layout) => Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: layout.maxWidthFor(ContentWidth.dashboard),
             ),
-            child: Row(
+            child: ListView(
+              padding: EdgeInsets.symmetric(
+                horizontal: layout.horizontalPadding,
+                vertical: 12,
+              ),
               children: [
-                ClipOval(
-                  child: ColoredBox(
-                    color: theme.colorScheme.primaryContainer,
-                    child: SizedBox.square(
-                      dimension: 68,
-                      child: Icon(
-                        isAuthenticated
-                            ? Icons.account_circle_rounded
-                            : Icons.person_outline_rounded,
-                        color: theme.colorScheme.onPrimaryContainer,
-                        size: 38,
-                      ),
+                // Personal Analytics Hub & Viewing Stats
+                ProfileStatsDashboard(
+                  mediaItems: mediaItems,
+                  userProfile: userProfile,
+                  activityLogs: activityLogs,
+                  onProfileUpdated: onProfileUpdated,
+                  onItemTap: onItemTap,
+                  onIncrementProgress: onIncrementProgress,
+                ),
+
+                // Account Status Card
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.cardTheme.color,
+                    borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF263852)
+                          : const Color(0xFFE2E8F0),
+                      width: 1,
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(
-                        isAuthenticated
-                            ? (user?.email ?? 'Logged In User')
-                            : 'Guest User (Offline)',
-                        style: TextStyle(
-                          fontFamily: 'Plus Jakarta Sans',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: theme.colorScheme.onSurface,
+                      ClipOval(
+                        child: ColoredBox(
+                          color: theme.colorScheme.primaryContainer,
+                          child: SizedBox.square(
+                            dimension: 68,
+                            child: Icon(
+                              isAuthenticated
+                                  ? Icons.account_circle_rounded
+                                  : Icons.person_outline_rounded,
+                              color: theme.colorScheme.onPrimaryContainer,
+                              size: 38,
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isAuthenticated
-                            ? 'Multi-device cloud backup active'
-                            : 'Local storage active • Accounts optional',
-                        style: TextStyle(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontSize: 12,
-                          color: theme.colorScheme.secondary,
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isAuthenticated
+                                  ? (user?.email ?? 'Logged In User')
+                                  : 'Guest User (Offline)',
+                              style: TextStyle(
+                                fontFamily: 'Plus Jakarta Sans',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              isAuthenticated
+                                  ? 'Multi-device cloud backup active'
+                                  : 'Local storage active • Accounts optional',
+                              style: TextStyle(
+                                fontFamily: 'Be Vietnam Pro',
+                                fontSize: 12,
+                                color: theme.colorScheme.secondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            if (!isAuthenticated) ...[
+                              Row(
+                                children: [
+                                  FilledButton.tonal(
+                                    onPressed: onOpenLogin,
+                                    style: FilledButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    child: const Text('Sign In'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  OutlinedButton(
+                                    onPressed: onOpenRegister,
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    child: const Text('Create Account'),
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
+                              // Sync Badge
+                              Row(
+                                children: [
+                                  _buildSyncStatusBadge(context, syncStatus),
+                                  const Spacer(),
+                                  if (syncService != null)
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        syncService!
+                                            .syncNow(boundUserId: user?.id);
+                                      },
+                                      icon: const Icon(Icons.sync_rounded,
+                                          size: 16),
+                                      label: const Text('Sync Now'),
+                                      style: TextButton.styleFrom(
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      if (!isAuthenticated) ...[
-                        Row(
-                          children: [
-                            FilledButton.tonal(
-                              onPressed: onOpenLogin,
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                visualDensity: VisualDensity.compact,
-                              ),
-                              child: const Text('Sign In'),
-                            ),
-                            const SizedBox(width: 8),
-                            OutlinedButton(
-                              onPressed: onOpenRegister,
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                visualDensity: VisualDensity.compact,
-                              ),
-                              child: const Text('Create Account'),
-                            ),
-                          ],
-                        ),
-                      ] else ...[
-                        // Sync Badge
-                        Row(
-                          children: [
-                            _buildSyncStatusBadge(context, syncStatus),
-                            const Spacer(),
-                            if (syncService != null)
-                              TextButton.icon(
-                                onPressed: () {
-                                  syncService!.syncNow(boundUserId: user?.id);
-                                },
-                                icon: const Icon(Icons.sync_rounded, size: 16),
-                                label: const Text('Sync Now'),
-                                style: TextButton.styleFrom(
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-          // Theme Switcher Tile
-          Material(
-            color: theme.cardTheme.color,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-              side: BorderSide(
-                color:
-                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: SwitchListTile(
-              secondary: Icon(
-                isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                color: theme.colorScheme.primary,
-              ),
-              title: Text(
-                'Dark Mode',
-                style: TextStyle(
-                  fontFamily: 'Plus Jakarta Sans',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              subtitle: Text(
-                isDark ? 'Deep Navy visual mode' : 'Soft Indigo light mode',
-                style: TextStyle(
-                  fontFamily: 'Be Vietnam Pro',
-                  fontSize: 12,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              value: isDark,
-              onChanged: (bool value) {
-                onThemeModeChanged(value ? ThemeMode.dark : ThemeMode.light);
-              },
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Sync Details Section (If Authenticated)
-          if (isAuthenticated && metadata != null) ...[
-            Text(
-              'Sync Metadata',
-              style: TextStyle(
-                fontFamily: 'Plus Jakarta Sans',
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.cardTheme.color,
-                borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-                border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF263852)
-                      : const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: Column(
-                children: [
-                  _buildMetaRow(
-                      context, 'Cloud Revision', 'v${metadata.serverRevision}'),
-                  const Divider(height: 16),
-                  _buildMetaRow(
-                    context,
-                    'Last Synced',
-                    metadata.lastSuccessfulSyncAt != null
-                        ? metadata.lastSuccessfulSyncAt!
-                            .toLocal()
-                            .toString()
-                            .split('.')[0]
-                        : 'Never',
+                // Theme Switcher Tile
+                Material(
+                  color: theme.cardTheme.color,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                    side: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF263852)
+                          : const Color(0xFFE2E8F0),
+                    ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-
-          // Preferences Group
-          Text(
-            'Preferences',
-            style: TextStyle(
-              fontFamily: 'Plus Jakarta Sans',
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          Material(
-            color: theme.cardTheme.color,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-              side: BorderSide(
-                color:
-                    isDark ? const Color(0xFF263852) : const Color(0xFFE2E8F0),
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: [
-                _buildSettingTile(
-                  context,
-                  icon: Icons.cloud_sync_outlined,
-                  title: 'Data, Backup & Transfer',
-                  subtitle: 'Import, restore, and save local files',
-                  onTap: onOpenDataManagement,
-                ),
-                if (isAuthenticated) ...[
-                  const Divider(height: 1, indent: 56),
-                  _buildSettingTile(
-                    context,
-                    icon: Icons.devices_other_rounded,
-                    title: 'Device Management',
-                    subtitle: 'Manage active sessions & revoke devices',
-                    onTap: onOpenDeviceManagement,
-                  ),
-                ],
-                const Divider(height: 1, indent: 56),
-                _buildSettingTile(
-                  context,
-                  icon: Icons.delete_sweep_rounded,
-                  title: 'Clear All Library Data',
-                  subtitle: 'Remove all saved media items',
-                  iconColor: Colors.redAccent,
-                  textColor: Colors.redAccent,
-                  onTap: () => _showClearConfirmation(context),
-                ),
-                const Divider(height: 1, indent: 56),
-                _buildSettingTile(
-                  context,
-                  icon: Icons.info_outline_rounded,
-                  title: 'About Episode',
-                  subtitle: 'v1.0.0 (Offline & Cloud Sync)',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Auth Account Actions (If Authenticated)
-          if (isAuthenticated) ...[
-            Text(
-              'Account Actions',
-              style: TextStyle(
-                fontFamily: 'Plus Jakarta Sans',
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Material(
-              color: theme.cardTheme.color,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-                side: BorderSide(
-                  color: isDark
-                      ? const Color(0xFF263852)
-                      : const Color(0xFFE2E8F0),
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.logout_rounded),
-                    title: const Text('Log Out'),
-                    subtitle: const Text('Keep local data on this device'),
-                    onTap: () => authController?.logout(),
-                  ),
-                  const Divider(height: 1, indent: 56),
-                  ListTile(
-                    leading: const Icon(Icons.phonelink_erase_rounded),
-                    title: const Text('Log Out All Devices'),
-                    subtitle: const Text('Revoke sessions on all devices'),
-                    onTap: () => authController?.logoutAll(),
-                  ),
-                  const Divider(height: 1, indent: 56),
-                  ListTile(
-                    leading: Icon(
-                      Icons.delete_forever_rounded,
-                      color: theme.colorScheme.error,
+                  clipBehavior: Clip.antiAlias,
+                  child: SwitchListTile(
+                    secondary: Icon(
+                      isDark
+                          ? Icons.dark_mode_rounded
+                          : Icons.light_mode_rounded,
+                      color: theme.colorScheme.primary,
                     ),
                     title: Text(
-                      'Delete Account',
-                      style: TextStyle(color: theme.colorScheme.error),
+                      'Dark Mode',
+                      style: TextStyle(
+                        fontFamily: 'Plus Jakarta Sans',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
-                    subtitle: const Text('Permanently delete cloud account'),
-                    onTap: () => _handleDeleteAccount(context),
+                    subtitle: Text(
+                      isDark
+                          ? 'Deep Navy visual mode'
+                          : 'Soft Indigo light mode',
+                      style: TextStyle(
+                        fontFamily: 'Be Vietnam Pro',
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    value: isDark,
+                    onChanged: (bool value) {
+                      onThemeModeChanged(
+                          value ? ThemeMode.dark : ThemeMode.light);
+                    },
                   ),
+                ),
+                const SizedBox(height: 20),
+
+                // Sync Details Section (If Authenticated)
+                if (isAuthenticated && metadata != null) ...[
+                  Text(
+                    'Sync Metadata',
+                    style: TextStyle(
+                      fontFamily: 'Plus Jakarta Sans',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.cardTheme.color,
+                      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF263852)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildMetaRow(context, 'Cloud Revision',
+                            'v${metadata.serverRevision}'),
+                        const Divider(height: 16),
+                        _buildMetaRow(
+                          context,
+                          'Last Synced',
+                          metadata.lastSuccessfulSyncAt != null
+                              ? metadata.lastSuccessfulSyncAt!
+                                  .toLocal()
+                                  .toString()
+                                  .split('.')[0]
+                              : 'Never',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                 ],
-              ),
+
+                // Preferences Group
+                Text(
+                  'Preferences',
+                  style: TextStyle(
+                    fontFamily: 'Plus Jakarta Sans',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                Material(
+                  color: theme.cardTheme.color,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                    side: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF263852)
+                          : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      _buildSettingTile(
+                        context,
+                        icon: Icons.cloud_sync_outlined,
+                        title: 'Data, Backup & Transfer',
+                        subtitle: 'Import, restore, and save local files',
+                        onTap: onOpenDataManagement,
+                      ),
+                      if (isAuthenticated) ...[
+                        const Divider(height: 1, indent: 56),
+                        _buildSettingTile(
+                          context,
+                          icon: Icons.devices_other_rounded,
+                          title: 'Device Management',
+                          subtitle: 'Manage active sessions & revoke devices',
+                          onTap: onOpenDeviceManagement,
+                        ),
+                      ],
+                      const Divider(height: 1, indent: 56),
+                      _buildSettingTile(
+                        context,
+                        icon: Icons.delete_sweep_rounded,
+                        title: 'Clear All Library Data',
+                        subtitle: 'Remove all saved media items',
+                        iconColor: Colors.redAccent,
+                        textColor: Colors.redAccent,
+                        onTap: () => _showClearConfirmation(context),
+                      ),
+                      const Divider(height: 1, indent: 56),
+                      _buildSettingTile(
+                        context,
+                        icon: Icons.info_outline_rounded,
+                        title: 'About Episode',
+                        subtitle: 'v1.0.0 (Offline & Cloud Sync)',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Auth Account Actions (If Authenticated)
+                if (isAuthenticated) ...[
+                  Text(
+                    'Account Actions',
+                    style: TextStyle(
+                      fontFamily: 'Plus Jakarta Sans',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Material(
+                    color: theme.cardTheme.color,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                      side: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF263852)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.logout_rounded),
+                          title: const Text('Log Out'),
+                          subtitle:
+                              const Text('Keep local data on this device'),
+                          onTap: () => authController?.logout(),
+                        ),
+                        const Divider(height: 1, indent: 56),
+                        ListTile(
+                          leading: const Icon(Icons.phonelink_erase_rounded),
+                          title: const Text('Log Out All Devices'),
+                          subtitle:
+                              const Text('Revoke sessions on all devices'),
+                          onTap: () => authController?.logoutAll(),
+                        ),
+                        const Divider(height: 1, indent: 56),
+                        ListTile(
+                          leading: Icon(
+                            Icons.delete_forever_rounded,
+                            color: theme.colorScheme.error,
+                          ),
+                          title: Text(
+                            'Delete Account',
+                            style: TextStyle(color: theme.colorScheme.error),
+                          ),
+                          subtitle:
+                              const Text('Permanently delete cloud account'),
+                          onTap: () => _handleDeleteAccount(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ],
             ),
-            const SizedBox(height: 24),
-          ],
-        ],
+          ),
+        ),
       ),
     );
   }
@@ -600,3 +590,75 @@ class ProfileTab extends StatelessWidget {
     );
   }
 }
+
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  late final TextEditingController _passwordController;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _passwordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: const Text('Delete Account?'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'This will permanently delete your server account and cloud snapshots. Your local library on this device will remain intact as an offline library.',
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Confirm Password',
+                border: OutlineInputBorder(),
+              ),
+              validator: (val) =>
+                  (val == null || val.isEmpty) ? 'Password required' : null,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              Navigator.of(context).pop(_passwordController.text);
+            }
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: theme.colorScheme.error,
+          ),
+          child: const Text('Delete Account'),
+        ),
+      ],
+    );
+  }
+}
+

@@ -86,15 +86,19 @@ requests. A slower old request can overwrite newer results.
 
 ## Local persistence
 
-`LocalStorageRepository` uses `SharedPreferences` key
-`otaku_log_media_items`. The value is a JSON array of `MediaItem.toMap()`
-objects.
+`LocalStorageRepository` uses the active `SharedPreferences` key
+`episode_media_items`. Its value is a schema-v2 `LocalLibraryDocument` envelope
+containing `schemaVersion`, `migratedAt`, and the complete `mediaItems` list.
 
-On a missing storage key, the repository copies eight `sampleMediaItems`, saves
-them, and returns them. A valid empty JSON list remains empty. Invalid JSON,
-wrong root shapes, invalid required fields, and duplicate IDs throw
-`StorageCorruptionException` without changing the stored raw value. CRUD
-methods load the whole list, mutate it, and save the whole list.
+If the active key is absent, the repository checks the legacy
+`otaku_log_media_items` key, copies its raw value to the Episode key, and
+removes the legacy key after the successful copy. If neither key exists, the
+library starts empty. Legacy bare arrays are migrated to the schema-v2 envelope
+with UUID/timestamp metadata and rollback protection. A valid empty library
+remains empty. Invalid JSON, wrong root shapes, invalid required fields, and
+duplicate IDs throw `StorageCorruptionException` without replacing the stored
+raw value. CRUD methods load the whole document, mutate its list, and save the
+whole envelope.
 
 Existing records without new fields decode as flat progress, unknown release
 status, no seasons, and non-manual origin. Existing positive totals and
@@ -120,14 +124,21 @@ highest-numbered ongoing season. Movies do not increment.
 Whole-library transfer writes use `replaceAllMediaItemsAtomically`: validate
 the candidate list, snapshot the previous single-key JSON value, write the
 candidate, decode/compare the round trip, and restore the snapshot on any
-failure. The newest five automatic native backups and 25 transfer summaries
-are stored in separate versioned SharedPreferences keys.
+failure. The newest five automatic native backups are stored under
+`episode_automatic_backups_v1`; the newest 25 transfer summaries are stored
+under `episode_transfer_history_v1`. Each has a one-time fallback from its
+matching legacy `otaku_log_*` key.
 
 ## Transfer formats
 
-Native OtakuLog backups are UTF-8 JSON schema v1 with application/platform/time
+Native Episode backups are UTF-8 JSON schema v1 with application/platform/time
 metadata and a SHA-256 checksum over the data object. A migration maps legacy
-schema-0 media lists into v1. See [BACKUP_SCHEMA.md](BACKUP_SCHEMA.md).
+schema-0 media lists into v1. The stable format discriminator remains
+`otakulog-backup` for compatibility, while newly exported filenames use the
+`episode-backup-` prefix and retained safety snapshots use
+`episode-safety-backup-`. New pre-import and pre-sync snapshots use the same
+restorable codec; retained snapshots from the former local-envelope shape are
+upgraded when downloaded. See [BACKUP_SCHEMA.md](BACKUP_SCHEMA.md).
 
 MAL imports accept anime or manga XML and gzip-compressed XML. They map provider
 IDs, title, progress/count, status, score, comments, tags, dates, repeat state,
@@ -141,21 +152,23 @@ isolate-capable platforms and the main event loop on web.
 MAL export writes separate anime/manga XML and omits entries without a usable
 MAL/Jikan ID while reporting them. CSV export is UTF-8 with a BOM, fixed column
 order, RFC-style quoting, and full current metadata. Platform adapters use
-Android Storage Access Framework or browser selection/download APIs.
+Android Storage Access Framework, browser selection/download APIs, or Windows
+native open/save dialogs.
 
 ## Caching, offline, and migrations
 
 - Remote response cache: not implemented
 - Offline remote behavior: typed network failure with a retry action
-- Active library schema/migration: no explicit envelope version; tolerant
-  additive decoding preserves older records
+- Active library schema/migration: explicit schema-v2 envelope; legacy bare
+  arrays and the legacy library key migrate with rollback protection
 - Portable backup schema/migration: explicit schema v1 plus v0-to-v1 migration
 - Database: not implemented
 - Hive usage: not implemented, despite declared packages
-- Secure storage: not implemented
+- Secure storage: implemented for optional account tokens; local library and
+  transfer snapshots remain plaintext
 - Encryption: not implemented
-- Shared-preference migrations: legacy OtakuLog library/backup/history keys
-  migrate to Episode keys on first access
+- Shared-preference migrations: legacy `otaku_log_*` library/backup/history
+  keys migrate to Episode keys on first access
 
 Do not introduce Hive or another database beside the active store. A
 persistence change must define data migration, rollback/recovery, and ownership

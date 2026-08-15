@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../layout/responsive_layout.dart';
 import '../models/data_transfer.dart';
 import '../models/media_item.dart';
 import '../theme/app_theme.dart';
@@ -93,180 +94,212 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Review import')),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                children: [
-                  Text(
-                    widget.inspection.providerName,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
+        child: ResponsiveBuilder(
+          builder: (context, layout) => Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: layout.maxWidthFor(ContentWidth.focused),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${widget.inspection.sourceType.label} · '
-                    '${widget.inspection.fileName}',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _SummaryStrip(preview: _preview),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Import behavior',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<ImportStrategy>(
-                    key: const Key('import-strategy-field'),
-                    initialValue: _options.strategy,
-                    decoration: const InputDecoration(labelText: 'Strategy'),
-                    items: _allowedStrategies()
-                        .map(
-                          (strategy) => DropdownMenuItem(
-                            value: strategy,
-                            child: Text(strategy.label),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: _setStrategy,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<ConflictPolicy>(
-                    key: const Key('conflict-policy-field'),
-                    initialValue: _options.conflictPolicy,
-                    decoration: const InputDecoration(
-                      labelText: 'Existing entry policy',
-                    ),
-                    items: ConflictPolicy.values
-                        .map(
-                          (policy) => DropdownMenuItem(
-                            value: policy,
-                            child: Text(policy.label),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: _options.strategy == ImportStrategy.fullRestore
-                        ? null
-                        : _setConflictPolicy,
-                  ),
-                  const SizedBox(height: 12),
-                  _SafetyNote(
-                    destructive:
-                        _options.strategy == ImportStrategy.fullRestore,
-                    hasConflicts: hasConflicts,
-                  ),
-                  if (_preview.warnings.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    Text(
-                      'Warnings',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        layout.horizontalPadding,
+                        8,
+                        layout.horizontalPadding,
+                        20,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    ..._preview.warnings.take(6).map(
-                          (warning) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.warning_amber_rounded,
-                                  size: 18,
-                                  color: theme.colorScheme.tertiary,
+                      children: [
+                        Text(
+                          widget.inspection.providerName,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${widget.inspection.sourceType.label} · '
+                          '${widget.inspection.fileName}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _SummaryStrip(preview: _preview),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Import behavior',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<ImportStrategy>(
+                          key: const Key('import-strategy-field'),
+                          initialValue: _options.strategy,
+                          decoration:
+                              const InputDecoration(labelText: 'Strategy'),
+                          items: _allowedStrategies()
+                              .map(
+                                (strategy) => DropdownMenuItem(
+                                  value: strategy,
+                                  child: Text(strategy.label),
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    warning.entryTitle == null
-                                        ? warning.message
-                                        : '${warning.entryTitle}: ${warning.message}',
-                                  ),
+                              )
+                              .toList(),
+                          onChanged: _setStrategy,
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<ConflictPolicy>(
+                          key: const Key('conflict-policy-field'),
+                          initialValue: _options.conflictPolicy,
+                          decoration: const InputDecoration(
+                            labelText: 'Existing entry policy',
+                          ),
+                          items: ConflictPolicy.values
+                              .map(
+                                (policy) => DropdownMenuItem(
+                                  value: policy,
+                                  child: Text(policy.label),
                                 ),
-                              ],
+                              )
+                              .toList(),
+                          onChanged:
+                              _options.strategy == ImportStrategy.fullRestore
+                                  ? null
+                                  : _setConflictPolicy,
+                        ),
+                        const SizedBox(height: 12),
+                        _SafetyNote(
+                          destructive:
+                              _options.strategy == ImportStrategy.fullRestore,
+                          hasConflicts: hasConflicts,
+                        ),
+                        if (_preview.warnings.isNotEmpty) ...[
+                          const SizedBox(height: 24),
+                          Text(
+                            'Warnings',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          ..._preview.warnings.take(6).map(
+                                (warning) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.warning_amber_rounded,
+                                        size: 18,
+                                        color: theme.colorScheme.tertiary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          warning.entryTitle == null
+                                              ? warning.message
+                                              : '${warning.entryTitle}: ${warning.message}',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          if (_preview.warnings.length > 6)
+                            Text(
+                              '+ ${_preview.warnings.length - 6} more warnings in the result report',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                        ],
+                        const SizedBox(height: 24),
+                        Text(
+                          'Entry preview',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                    if (_preview.warnings.length > 6)
-                      Text(
-                        '+ ${_preview.warnings.length - 6} more warnings in the result report',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                  ],
-                  const SizedBox(height: 24),
-                  Text(
-                    'Entry preview',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                        const SizedBox(height: 8),
+                        if (_preview.candidates.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Text(
+                              'This file contains no media entries.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        else
+                          ..._preview.candidates.take(100).map(
+                                (candidate) =>
+                                    _CandidateRow(candidate: candidate),
+                              ),
+                        if (_preview.candidates.length > 100)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Text(
+                              'Showing the first 100 of ${_preview.candidates.length} entries. '
+                              'All entries will be processed.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  if (_preview.candidates.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text(
-                        'This file contains no media entries.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  border: Border(
+                    top: BorderSide(color: theme.colorScheme.outlineVariant),
+                  ),
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: layout.maxWidthFor(ContentWidth.focused),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        layout.horizontalPadding,
+                        12,
+                        layout.horizontalPadding,
+                        16,
                       ),
-                    )
-                  else
-                    ..._preview.candidates.take(100).map(
-                          (candidate) => _CandidateRow(candidate: candidate),
-                        ),
-                  if (_preview.candidates.length > 100)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Text(
-                        'Showing the first 100 of ${_preview.candidates.length} entries. '
-                        'All entries will be processed.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          key: const Key('confirm-import-button'),
+                          onPressed: canApply ? _confirm : null,
+                          icon: Icon(
+                            _options.strategy == ImportStrategy.fullRestore
+                                ? Icons.restore_rounded
+                                : Icons.download_done_rounded,
+                          ),
+                          label: Text(
+                            _options.strategy == ImportStrategy.fullRestore
+                                ? 'Create backup & restore'
+                                : 'Create backup & import',
+                          ),
                         ),
                       ),
                     ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                border: Border(
-                  top: BorderSide(color: theme.colorScheme.outlineVariant),
-                ),
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  key: const Key('confirm-import-button'),
-                  onPressed: canApply ? _confirm : null,
-                  icon: Icon(
-                    _options.strategy == ImportStrategy.fullRestore
-                        ? Icons.restore_rounded
-                        : Icons.download_done_rounded,
-                  ),
-                  label: Text(
-                    _options.strategy == ImportStrategy.fullRestore
-                        ? 'Create backup & restore'
-                        : 'Create backup & import',
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

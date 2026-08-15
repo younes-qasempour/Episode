@@ -46,7 +46,7 @@ void main() {
     expect(restored.repeatCount, 2);
     expect(restored.isFavorite, isTrue);
     expect(restored.customMetadata['source'], 'fixture');
-    expect(artifact.fileName, 'otakulog-backup-2026-08-01T093000Z.json');
+    expect(artifact.fileName, 'episode-backup-2026-08-01T093000Z.json');
   });
 
   test('checksum detects accidental backup corruption', () {

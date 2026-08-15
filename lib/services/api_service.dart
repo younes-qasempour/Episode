@@ -392,27 +392,32 @@ class ApiService {
     }
   }
 
-  /// Search TV Series via TVMaze API with season enrichment
+  /// Search TV Series via TVMaze API without eager season fanout
   Future<List<MediaItem>> _searchSeries(String query) async {
-    final String searchQuery = query.isEmpty ? 'drama' : query;
-    final Uri uri = Uri.parse(
-      '$tvmazeBaseUrl/search/shows?q=${Uri.encodeComponent(searchQuery)}',
-    );
+    final bool isEmptyQuery = query.isEmpty;
+    final Uri uri = isEmptyQuery
+        ? Uri.parse('$tvmazeBaseUrl/shows?page=0')
+        : Uri.parse(
+            '$tvmazeBaseUrl/search/shows?q=${Uri.encodeComponent(query)}',
+          );
 
     final response = await _getWithRetry(uri);
     if (response.statusCode == 200) {
       try {
         final List items = jsonDecode(response.body);
-        final List<Future<MediaItem?>> tasks = [];
+        final List<MediaItem> results = [];
 
-        for (var item in items.take(8)) {
-          final show = item['show'] as Map<String, dynamic>?;
-          if (show == null) continue;
-          tasks.add(_enrichTvMazeShow(show));
+        for (var item in items.take(12)) {
+          final Map<String, dynamic>? show = isEmptyQuery
+              ? (item as Map<String, dynamic>?)
+              : (item['show'] as Map<String, dynamic>?);
+          final mapped = mapTvMazeToShowItem(show);
+          if (mapped != null) {
+            results.add(mapped);
+          }
         }
 
-        final enriched = await Future.wait(tasks);
-        return enriched.whereType<MediaItem>().toList();
+        return results;
       } catch (e) {
         throw SearchException(
           type: SearchFailureType.invalidResponse,
@@ -438,7 +443,8 @@ class ApiService {
     }
   }
 
-  Future<MediaItem?> _enrichTvMazeShow(Map<String, dynamic> show) async {
+  /// Fetches on-demand embedded seasons and full episode counts for a TVMaze show
+  Future<MediaItem?> fetchTvMazeShowDetails(Map<String, dynamic> show) async {
     final int id = show['id'] ?? 0;
     List<MediaSeason> seasons = [];
     int? totalEpisodes;

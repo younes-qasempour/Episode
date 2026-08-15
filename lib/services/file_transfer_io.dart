@@ -8,7 +8,7 @@ PlatformFileTransfer createPlatformFileTransfer() =>
     const NativePlatformFileTransfer();
 
 class NativePlatformFileTransfer implements PlatformFileTransfer {
-  static const _channel = MethodChannel('otakulog/file_transfer');
+  static const _channel = MethodChannel('episode/file_transfer');
 
   const NativePlatformFileTransfer();
 
@@ -16,6 +16,7 @@ class NativePlatformFileTransfer implements PlatformFileTransfer {
   String get platformLabel {
     return switch (defaultTargetPlatform) {
       TargetPlatform.android => 'android',
+      TargetPlatform.windows => 'windows',
       TargetPlatform.iOS => 'ios',
       _ => 'other',
     };
@@ -26,11 +27,16 @@ class NativePlatformFileTransfer implements PlatformFileTransfer {
     required List<String> allowedExtensions,
     required int maxBytes,
   }) async {
-    _requireAndroid();
-    final result = await _channel.invokeMapMethod<String, dynamic>('pickFile', {
-      'allowedExtensions': allowedExtensions,
-      'maxBytes': maxBytes,
-    });
+    _requireSupportedNative();
+    final Map<String, dynamic>? result;
+    try {
+      result = await _channel.invokeMapMethod<String, dynamic>('pickFile', {
+        'allowedExtensions': allowedExtensions,
+        'maxBytes': maxBytes,
+      });
+    } on PlatformException catch (error) {
+      throw _dataTransferError(error, operation: 'read');
+    }
     if (result == null) {
       return null;
     }
@@ -56,22 +62,41 @@ class NativePlatformFileTransfer implements PlatformFileTransfer {
 
   @override
   Future<bool> saveArtifact(ExportArtifact artifact) async {
-    _requireAndroid();
-    return await _channel.invokeMethod<bool>('saveFile', {
-          'name': _safeName(artifact.fileName),
-          'mimeType': artifact.mimeType,
-          'bytes': artifact.bytes,
-        }) ??
-        false;
+    _requireSupportedNative();
+    try {
+      return await _channel.invokeMethod<bool>('saveFile', {
+            'name': _safeName(artifact.fileName),
+            'mimeType': artifact.mimeType,
+            'bytes': artifact.bytes,
+          }) ??
+          false;
+    } on PlatformException catch (error) {
+      throw _dataTransferError(error, operation: 'save');
+    }
   }
 
-  void _requireAndroid() {
-    if (defaultTargetPlatform != TargetPlatform.android) {
+  void _requireSupportedNative() {
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.windows) {
       throw const DataTransferException(
-        'File transfer is currently supported on Android and web.',
+        'File transfer is currently supported on Android, web, and Windows.',
         code: 'platform_unsupported',
       );
     }
+  }
+
+  DataTransferException _dataTransferError(
+    PlatformException error, {
+    required String operation,
+  }) {
+    final message = switch (error.code) {
+      'file_too_large' => 'The selected file exceeds the allowed size limit.',
+      'file_read_failed' => 'The selected file could not be read.',
+      'file_write_failed' => 'The selected file could not be saved.',
+      'file_dialog_failed' => 'The Windows file dialog could not be opened.',
+      _ => 'The file could not be $operation on this device.',
+    };
+    return DataTransferException(message, code: error.code);
   }
 
   String _safeName(String input) {

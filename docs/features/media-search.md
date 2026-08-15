@@ -76,8 +76,8 @@ the primary failure and offers retry.
 - Search repository category/failure tests using a fake service
 - Search tab rendering, duplicate, add callback, retry, and stale-response tests
 
-The focused API/repository/widget suite passes 30/30 and the full Flutter suite
-passes 154/154.
+The focused API/repository/widget suite passes 30/30 and the 2026-08-12 full
+Flutter suite passes 162/162.
 
 ## Known limitations
 
@@ -85,7 +85,6 @@ passes 154/154.
 - No pagination or response cache
 - Partial provider failures are not surfaced when another provider returns data
 - Remote movie search is not implemented; movies can be added manually
-- Fixed two-column layout is not adaptive
 - Clear-button visibility does not rebuild directly on controller change; it
   generally updates when search state changes
 

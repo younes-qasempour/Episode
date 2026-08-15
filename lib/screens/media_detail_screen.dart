@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../layout/responsive_layout.dart';
 import '../models/media_item.dart';
 import '../widgets/season_editor_dialog.dart';
 
@@ -321,135 +322,200 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            _buildHeader(theme, isDark, workingItem),
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 16),
-            _buildDropdownSection<TrackingStatus>(
-              context,
-              title: 'Tracking status',
-              value: _trackingStatus,
-              values: TrackingStatus.values,
-              labelFor: (status) => status.label,
-              onChanged: _onTrackingStatusChanged,
-            ),
-            const SizedBox(height: 20),
-            _buildDropdownSection<ReleaseStatus>(
-              context,
-              title: 'Release status',
-              value: _releaseStatus,
-              values: ReleaseStatus.values,
-              labelFor: (status) => status.label,
-              onChanged: (value) => setState(() => _releaseStatus = value),
-            ),
-            if (widget.item.supportsSeasons) ...[
-              const SizedBox(height: 24),
-              Text(
-                'Progress tracking',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
+        child: ResponsiveBuilder(
+          builder: (context, layout) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: layout.maxWidthFor(ContentWidth.detail),
+                ),
+                child: ListView(
+                  padding: EdgeInsets.all(layout.horizontalPadding),
+                  children: [
+                    if (layout.usesTwoPaneLayout)
+                      Row(
+                        key: const Key('expanded-media-detail-layout'),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 320,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildHeader(theme, isDark, workingItem),
+                                const SizedBox(height: 24),
+                                _buildRating(theme, isDark),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 32),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildStatusEditors(context, twoColumns: true),
+                                _buildProgressEditor(theme, isDark),
+                                _buildSynopsisAndSave(theme),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Column(
+                        key: const Key('stacked-media-detail-layout'),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildHeader(theme, isDark, workingItem),
+                          const SizedBox(height: 24),
+                          const Divider(),
+                          const SizedBox(height: 16),
+                          _buildStatusEditors(context),
+                          _buildProgressEditor(theme, isDark),
+                          const SizedBox(height: 24),
+                          _buildRating(theme, isDark),
+                          _buildSynopsisAndSave(theme),
+                        ],
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              SegmentedButton<ProgressMode>(
-                segments: ProgressMode.values
-                    .map(
-                      (mode) =>
-                          ButtonSegment(value: mode, label: Text(mode.label)),
-                    )
-                    .toList(),
-                selected: {_progressMode},
-                onSelectionChanged: (selection) {
-                  _changeProgressMode(selection.first);
-                },
-              ),
-            ],
-            if (widget.item.supportsProgress &&
-                _progressMode == ProgressMode.flat) ...[
-              const SizedBox(height: 24),
-              _buildFlatProgress(theme, isDark),
-            ],
-            if (widget.item.supportsProgress &&
-                _progressMode == ProgressMode.seasonal) ...[
-              const SizedBox(height: 24),
-              _buildSeasonProgress(theme),
-            ],
-            if (widget.item.type == MediaType.movie) ...[
-              const SizedBox(height: 24),
-              _buildInfoPanel(
-                context,
-                icon: Icons.movie_outlined,
-                text:
-                    'Movies use tracking status and rating without an episode counter.',
-              ),
-            ],
-            const SizedBox(height: 24),
-            _buildRating(theme, isDark),
-            const SizedBox(height: 24),
-            Text(
-              'Synopsis or personal description',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _synopsisController,
-              minLines: 3,
-              maxLines: 8,
-              decoration: const InputDecoration(
-                hintText: 'Add notes or a synopsis',
-                alignLabelWithHint: true,
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              key: const Key('save-media-details-button'),
-              onPressed: _saveChanges,
-              child: const Text('Save Changes'),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 
-  void _showEditCoverDialog() {
-    final controller = TextEditingController(text: _coverUrlController.text);
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Edit Cover Image URL'),
-        content: TextField(
-          key: const Key('detail-cover-url-field'),
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Cover image URL',
-            hintText: 'https://example.com/cover.jpg',
+  Widget _buildStatusEditors(
+    BuildContext context, {
+    bool twoColumns = false,
+  }) {
+    final tracking = _buildDropdownSection<TrackingStatus>(
+      context,
+      title: 'Tracking status',
+      value: _trackingStatus,
+      values: TrackingStatus.values,
+      labelFor: (status) => status.label,
+      onChanged: _onTrackingStatusChanged,
+    );
+    final release = _buildDropdownSection<ReleaseStatus>(
+      context,
+      title: 'Release status',
+      value: _releaseStatus,
+      values: ReleaseStatus.values,
+      labelFor: (status) => status.label,
+      onChanged: (value) => setState(() => _releaseStatus = value),
+    );
+    if (twoColumns) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: tracking),
+          const SizedBox(width: 16),
+          Expanded(child: release),
+        ],
+      );
+    }
+    return Column(
+      children: [
+        tracking,
+        const SizedBox(height: 20),
+        release,
+      ],
+    );
+  }
+
+  Widget _buildProgressEditor(ThemeData theme, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.item.supportsSeasons) ...[
+          const SizedBox(height: 24),
+          Text(
+            'Progress tracking',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
-          keyboardType: TextInputType.url,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            key: const Key('detail-save-cover-url-button'),
-            onPressed: () {
-              setState(() {
-                _coverUrlController.text = controller.text.trim();
-              });
-              Navigator.of(dialogContext).pop();
+          const SizedBox(height: 8),
+          SegmentedButton<ProgressMode>(
+            segments: ProgressMode.values
+                .map(
+                  (mode) => ButtonSegment(value: mode, label: Text(mode.label)),
+                )
+                .toList(),
+            selected: {_progressMode},
+            onSelectionChanged: (selection) {
+              _changeProgressMode(selection.first);
             },
-            child: const Text('Apply'),
           ),
         ],
-      ),
+        if (widget.item.supportsProgress &&
+            _progressMode == ProgressMode.flat) ...[
+          const SizedBox(height: 24),
+          _buildFlatProgress(theme, isDark),
+        ],
+        if (widget.item.supportsProgress &&
+            _progressMode == ProgressMode.seasonal) ...[
+          const SizedBox(height: 24),
+          _buildSeasonProgress(theme),
+        ],
+        if (widget.item.type == MediaType.movie) ...[
+          const SizedBox(height: 24),
+          _buildInfoPanel(
+            context,
+            icon: Icons.movie_outlined,
+            text:
+                'Movies use tracking status and rating without an episode counter.',
+          ),
+        ],
+      ],
     );
+  }
+
+  Widget _buildSynopsisAndSave(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 24),
+        Text(
+          'Synopsis or personal description',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _synopsisController,
+          minLines: 3,
+          maxLines: 8,
+          decoration: const InputDecoration(
+            hintText: 'Add notes or a synopsis',
+            alignLabelWithHint: true,
+          ),
+        ),
+        const SizedBox(height: 24),
+        FilledButton(
+          key: const Key('save-media-details-button'),
+          onPressed: _saveChanges,
+          child: const Text('Save Changes'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showEditCoverDialog() async {
+    final newUrl = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) =>
+          _EditCoverUrlDialog(initialUrl: _coverUrlController.text),
+    );
+    if (newUrl != null) {
+      setState(() {
+        _coverUrlController.text = newUrl;
+      });
+    }
   }
 
   Widget _buildHeader(ThemeData theme, bool isDark, MediaItem workingItem) {
@@ -657,8 +723,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
+            runSpacing: 6,
             children: [
               const Text(
                 '⚡ Binge Mode: ',
@@ -668,7 +737,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 6),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   padding:
@@ -678,7 +746,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 onPressed: () => _setFlatProgress(_flatCurrentProgress + 1),
                 child: const Text('+1'),
               ),
-              const SizedBox(width: 6),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   padding:
@@ -688,7 +755,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 onPressed: () => _setFlatProgress(_flatCurrentProgress + 5),
                 child: const Text('+5'),
               ),
-              const SizedBox(width: 6),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   padding:
@@ -751,12 +817,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Seasons',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+            Expanded(
+              child: Text(
+                'Seasons',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
+            const SizedBox(width: 8),
             Text(
               '${aggregate.progressSummary} Ep total',
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -775,123 +844,187 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         ..._seasons.where((s) => s.deletedAt == null).map(
               (season) => Card(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: ListTile(
-                    title: Text(season.displayName),
-                    subtitle: Text(
-                      '${season.progressSummary} Ep · ${season.releaseStatus.label}'
-                      '${season.isBeyondKnownTotal ? ' · Beyond saved total' : ''}',
-                    ),
-                    trailing: Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        IconButton(
-                          tooltip: 'Decrease ${season.displayName}',
-                          onPressed: season.currentProgress > 0
-                              ? () => _changeSeasonProgress(season, -1)
-                              : null,
-                          icon: const Icon(Icons.remove_circle_outline),
-                        ),
-                        IconButton(
-                          tooltip: 'Increase ${season.displayName}',
-                          onPressed: () => _changeSeasonProgress(season, 1),
-                          icon: const Icon(Icons.add_circle_outline),
-                        ),
-                        if (season.isComplete)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Chip(
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              labelPadding:
-                                  const EdgeInsets.symmetric(horizontal: 8),
-                              avatar: const Icon(
-                                Icons.check_rounded,
-                                size: 14,
-                                color: Color(0xFF10B981),
-                              ),
-                              label: const Text(
-                                'Completed ✓',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              backgroundColor: const Color(0xFF10B981)
-                                  .withValues(alpha: 0.12),
-                              side: BorderSide.none,
-                            ),
-                          )
-                        else if (season.hasKnownTotal)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: FilledButton.tonal(
-                              key: Key('complete-season-${season.id}'),
-                              style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isCompact = constraints.maxWidth < 440;
+
+                      final progressControls = Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: [
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: 'Decrease ${season.displayName}',
+                            onPressed: season.currentProgress > 0
+                                ? () => _changeSeasonProgress(season, -1)
+                                : null,
+                            icon: const Icon(Icons.remove_circle_outline),
+                          ),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: 'Increase ${season.displayName}',
+                            onPressed: () => _changeSeasonProgress(season, 1),
+                            icon: const Icon(Icons.add_circle_outline),
+                          ),
+                          if (season.isComplete)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Chip(
                                 visualDensity: VisualDensity.compact,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 0,
+                                padding: EdgeInsets.zero,
+                                labelPadding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                avatar: const Icon(
+                                  Icons.check_rounded,
+                                  size: 14,
+                                  color: Color(0xFF10B981),
                                 ),
-                                minimumSize: const Size(0, 32),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              onPressed: () => _completeSeasonAction(season),
-                              child: const Text(
-                                'Complete',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
+                                label: const Text(
+                                  'Completed ✓',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
+                                backgroundColor: const Color(0xFF10B981)
+                                    .withValues(alpha: 0.12),
+                                side: BorderSide.none,
                               ),
-                            ),
-                          )
-                        else
-                          Tooltip(
-                            message:
-                                'Cannot complete season with unknown total',
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
+                            )
+                          else if (season.hasKnownTotal)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: FilledButton.tonal(
+                                key: Key('complete-season-${season.id}'),
+                                style: FilledButton.styleFrom(
                                   visualDensity: VisualDensity.compact,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
                                     vertical: 0,
                                   ),
                                   minimumSize: const Size(0, 32),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
-                                onPressed: null,
+                                onPressed: () => _completeSeasonAction(season),
                                 child: const Text(
                                   'Complete',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            Tooltip(
+                              message:
+                                  'Cannot complete season with unknown total',
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 0,
+                                    ),
+                                    minimumSize: const Size(0, 32),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  onPressed: null,
+                                  child: const Text(
+                                    'Complete',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        PopupMenuButton<String>(
-                          tooltip: 'Season actions',
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              _editSeason(season);
-                            } else if (value == 'delete') {
-                              _deleteSeason(season);
-                            }
-                          },
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(value: 'edit', child: Text('Edit')),
-                            PopupMenuItem(
-                                value: 'delete', child: Text('Delete')),
+                          if (!isCompact)
+                            PopupMenuButton<String>(
+                              tooltip: 'Season actions',
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  _editSeason(season);
+                                } else if (value == 'delete') {
+                                  _deleteSeason(season);
+                                }
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                PopupMenuItem(
+                                    value: 'delete', child: Text('Delete')),
+                              ],
+                            ),
+                        ],
+                      );
+
+                      if (isCompact) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        season.displayName,
+                                        style: theme.textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${season.progressSummary} Ep · ${season.releaseStatus.label}'
+                                        '${season.isBeyondKnownTotal ? ' · Beyond saved total' : ''}',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuButton<String>(
+                                  tooltip: 'Season actions',
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      _editSeason(season);
+                                    } else if (value == 'delete') {
+                                      _deleteSeason(season);
+                                    }
+                                  },
+                                  itemBuilder: (context) => const [
+                                    PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                    PopupMenuItem(
+                                        value: 'delete', child: Text('Delete')),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            progressControls,
                           ],
+                        );
+                      }
+
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(season.displayName),
+                        subtitle: Text(
+                          '${season.progressSummary} Ep · ${season.releaseStatus.label}'
+                          '${season.isBeyondKnownTotal ? ' · Beyond saved total' : ''}',
                         ),
-                      ],
-                    ),
+                        trailing: progressControls,
+                      );
+                    },
                   ),
                 ),
               ),
@@ -915,12 +1048,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Score rating',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  'Score rating',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 _rating > 0
                     ? '${_rating.toStringAsFixed(1)} / 10 ★'
@@ -981,3 +1117,57 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     );
   }
 }
+
+class _EditCoverUrlDialog extends StatefulWidget {
+  final String initialUrl;
+  const _EditCoverUrlDialog({required this.initialUrl});
+
+  @override
+  State<_EditCoverUrlDialog> createState() => _EditCoverUrlDialogState();
+}
+
+class _EditCoverUrlDialogState extends State<_EditCoverUrlDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialUrl);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Cover Image URL'),
+      content: TextField(
+        key: const Key('detail-cover-url-field'),
+        controller: _controller,
+        decoration: const InputDecoration(
+          labelText: 'Cover image URL',
+          hintText: 'https://example.com/cover.jpg',
+        ),
+        keyboardType: TextInputType.url,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          key: const Key('detail-save-cover-url-button'),
+          onPressed: () {
+            Navigator.of(context).pop(_controller.text.trim());
+          },
+          child: const Text('Apply'),
+        ),
+      ],
+    );
+  }
+}
+

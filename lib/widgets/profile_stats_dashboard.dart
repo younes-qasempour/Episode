@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../layout/responsive_layout.dart';
 import '../models/activity_log_entry.dart';
 import '../models/library_stats.dart';
 import '../models/media_item.dart';
@@ -35,122 +36,15 @@ class ProfileStatsDashboard extends StatefulWidget {
 class _ProfileStatsDashboardState extends State<ProfileStatsDashboard> {
   bool _showMediaTypeChart = true;
 
-  void _openEditProfileDialog() {
-    final nameCtrl =
-        TextEditingController(text: widget.userProfile.displayName);
-    final bioCtrl = TextEditingController(text: widget.userProfile.bio);
-    final quoteCtrl =
-        TextEditingController(text: widget.userProfile.favoriteQuote);
-    int selectedColorIdx = widget.userProfile.avatarColorIndex;
-
-    showDialog<void>(
+  Future<void> _openEditProfileDialog() async {
+    final updated = await showDialog<UserProfileData>(
       context: context,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            final theme = Theme.of(ctx);
-            return AlertDialog(
-              title: const Text('Edit Personal Profile'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: nameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Display Name',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: bioCtrl,
-                      maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'Bio / Status Description',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: quoteCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Favorite Quote / Motto',
-                        border: OutlineInputBorder(),
-                        hintText: 'e.g. "Believe it!"',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Avatar Accent Color',
-                      style: TextStyle(
-                        fontFamily: 'Plus Jakarta Sans',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(
-                        avatarAccentColors.length,
-                        (index) {
-                          final color = avatarAccentColors[index];
-                          final isSelected = selectedColorIdx == index;
-                          return GestureDetector(
-                            onTap: () {
-                              setModalState(() {
-                                selectedColorIdx = index;
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                                border: isSelected
-                                    ? Border.all(
-                                        color: theme.colorScheme.onSurface,
-                                        width: 3,
-                                      )
-                                    : null,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogCtx).pop(),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    final updated = widget.userProfile.copyWith(
-                      displayName: nameCtrl.text.trim(),
-                      bio: bioCtrl.text.trim(),
-                      favoriteQuote: quoteCtrl.text.trim(),
-                      avatarColorIndex: selectedColorIdx,
-                    );
-                    widget.onProfileUpdated?.call(updated);
-                    Navigator.of(dialogCtx).pop();
-                  },
-                  child: const Text('Save Profile'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (dialogCtx) =>
+          _EditProfileDialog(userProfile: widget.userProfile),
     );
+    if (updated != null) {
+      widget.onProfileUpdated?.call(updated);
+    }
   }
 
   void _showShareableStatsCard(LibraryStats stats) {
@@ -288,6 +182,7 @@ class _ProfileStatsDashboardState extends State<ProfileStatsDashboard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final layout = ResponsiveLayoutInfo.of(context);
     final stats = LibraryStats.fromItems(widget.mediaItems);
 
     final favoriteItems = widget.mediaItems.where((i) => i.isFavorite).toList();
@@ -398,55 +293,47 @@ class _ProfileStatsDashboardState extends State<ProfileStatsDashboard> {
         const SizedBox(height: 20),
 
         // 2. Milestone Summary Grid Cards
-        Row(
+        GridView(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: layout.isExpanded ? 4 : 2,
+            mainAxisExtent: 112,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
           children: [
-            Expanded(
-              child: _buildMilestoneCard(
-                context,
-                title: 'Episodes Watched',
-                value: '${stats.totalEpisodesWatched}',
-                subtitle: _formatHours(stats.estimatedWatchTimeHours),
-                icon: Icons.play_circle_fill_rounded,
-                color: const Color(0xFF6366F1),
-              ),
+            _buildMilestoneCard(
+              context,
+              title: 'Episodes Watched',
+              value: '${stats.totalEpisodesWatched}',
+              subtitle: _formatHours(stats.estimatedWatchTimeHours),
+              icon: Icons.play_circle_fill_rounded,
+              color: const Color(0xFF6366F1),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildMilestoneCard(
-                context,
-                title: 'Chapters Read',
-                value: '${stats.totalChaptersRead}',
-                subtitle: _formatHours(stats.estimatedReadTimeHours),
-                icon: Icons.menu_book_rounded,
-                color: const Color(0xFFEC4899),
-              ),
+            _buildMilestoneCard(
+              context,
+              title: 'Chapters Read',
+              value: '${stats.totalChaptersRead}',
+              subtitle: _formatHours(stats.estimatedReadTimeHours),
+              icon: Icons.menu_book_rounded,
+              color: const Color(0xFFEC4899),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-
-        Row(
-          children: [
-            Expanded(
-              child: _buildMilestoneCard(
-                context,
-                title: 'Mean Score',
-                value: stats.meanScore > 0 ? '${stats.meanScore} / 10' : 'N/A',
-                subtitle: '${stats.ratedItemCount} rated items',
-                icon: Icons.star_rounded,
-                color: const Color(0xFFF59E0B),
-              ),
+            _buildMilestoneCard(
+              context,
+              title: 'Mean Score',
+              value: stats.meanScore > 0 ? '${stats.meanScore} / 10' : 'N/A',
+              subtitle: '${stats.ratedItemCount} rated items',
+              icon: Icons.star_rounded,
+              color: const Color(0xFFF59E0B),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildMilestoneCard(
-                context,
-                title: 'Total Library',
-                value: '${stats.totalItems}',
-                subtitle: '${stats.totalMoviesWatched} movies watched',
-                icon: Icons.grid_view_rounded,
-                color: const Color(0xFF10B981),
-              ),
+            _buildMilestoneCard(
+              context,
+              title: 'Total Library',
+              value: '${stats.totalItems}',
+              subtitle: '${stats.totalMoviesWatched} movies watched',
+              icon: Icons.grid_view_rounded,
+              color: const Color(0xFF10B981),
             ),
           ],
         ),
@@ -970,3 +857,138 @@ class _ProfileStatsDashboardState extends State<ProfileStatsDashboard> {
     }
   }
 }
+
+class _EditProfileDialog extends StatefulWidget {
+  final UserProfileData userProfile;
+  const _EditProfileDialog({required this.userProfile});
+
+  @override
+  State<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<_EditProfileDialog> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _bioCtrl;
+  late final TextEditingController _quoteCtrl;
+  late int _selectedColorIdx;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.userProfile.displayName);
+    _bioCtrl = TextEditingController(text: widget.userProfile.bio);
+    _quoteCtrl = TextEditingController(text: widget.userProfile.favoriteQuote);
+    _selectedColorIdx = widget.userProfile.avatarColorIndex;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _bioCtrl.dispose();
+    _quoteCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: const Text('Edit Personal Profile'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Display Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _bioCtrl,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Bio / Status Description',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _quoteCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Favorite Quote / Motto',
+                border: OutlineInputBorder(),
+                hintText: 'e.g. "Believe it!"',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Avatar Accent Color',
+              style: TextStyle(
+                fontFamily: 'Plus Jakarta Sans',
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: List.generate(
+                avatarAccentColors.length,
+                (index) {
+                  final color = avatarAccentColors[index];
+                  final isSelected = _selectedColorIdx == index;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedColorIdx = index;
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(
+                                color: theme.colorScheme.onSurface,
+                                width: 3,
+                              )
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final updated = widget.userProfile.copyWith(
+              displayName: _nameCtrl.text.trim(),
+              bio: _bioCtrl.text.trim(),
+              favoriteQuote: _quoteCtrl.text.trim(),
+              avatarColorIndex: _selectedColorIdx,
+            );
+            Navigator.of(context).pop(updated);
+          },
+          child: const Text('Save Profile'),
+        ),
+      ],
+    );
+  }
+}
+

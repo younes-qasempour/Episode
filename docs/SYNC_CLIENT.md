@@ -1,11 +1,20 @@
-# OtakuLog Multi-Device Snapshot Sync Client
+# Episode Multi-Device Snapshot Sync Client
 
 This document outlines the synchronization algorithm, snapshot assembly, revision conflict handling, and merge policies implemented in `SyncService`.
 
 ## Client Device Identity & Metadata
 
-- **Client Device ID**: Stable UUID v4 generated once per app installation by `DeviceIdentityService` and stored in `SharedPreferences` key `otaku_log_client_device_id_v1`.
-- **Sync Metadata**: Device-local metadata (`boundUserId`, `clientDeviceId`, `serverRevision`, `lastSyncedSnapshotId`, `lastSyncedChecksum`, `lastSuccessfulSyncAt`, `syncPending`, `lastSyncErrorCode`, `lastSyncAttemptAt`) stored under `otaku_log_sync_metadata_v1`.
+- **Client Device ID**: Stable UUID v4 generated once per app installation by
+  `DeviceIdentityService` and stored under
+  `otaku_log_client_device_id_v1`.
+- **Sync Metadata**: Device-local metadata (`boundUserId`, `clientDeviceId`,
+  `serverRevision`, `lastSyncedSnapshotId`, `lastSyncedChecksum`,
+  `lastSuccessfulSyncAt`, `syncPending`, `lastSyncErrorCode`,
+  `lastSyncAttemptAt`) stored under `otaku_log_sync_metadata_v1`.
+
+Both `otaku_log_*` names above are stable legacy compatibility identifiers,
+not current product copy. Renaming them requires an explicit migration so
+existing device identity and sync binding are preserved.
 
 ## Synchronization Protocol (Cases A–I)
 

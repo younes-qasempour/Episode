@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+import '../layout/responsive_layout.dart';
 import '../models/media_item.dart';
 import '../models/search_result.dart';
 import '../repositories/search_repository.dart';
@@ -35,6 +36,7 @@ class _SearchTabState extends State<SearchTab> {
   SearchFailure? _searchFailure;
   Timer? _debounceTimer;
   int _searchRequestId = 0;
+  final Set<String> _pendingAddIds = <String>{};
 
   @override
   void initState() {
@@ -111,185 +113,241 @@ class _SearchTabState extends State<SearchTab> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Live Media Search')),
-      body: CustomScrollView(
-        slivers: [
-          // Search Input Bar
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                decoration: InputDecoration(
-                  hintText: 'Search anime, manga, or TV series...',
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear_rounded),
-                          onPressed: () {
-                            _searchController.clear();
-                            _performSearch('');
-                          },
-                        )
-                      : null,
-                ),
-              ),
-            ),
-          ),
-
-          // Category Chips Row (All, Anime, Manga, Series)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 8),
-              child: SizedBox(
-                height: 44,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: ['All', 'Anime', 'Manga', 'Series'].map((category) {
-                    final isSelected = _selectedCategory == category;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: FilterChip(
-                        label: Text(category),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected) {
-                            _onCategorySelected(category);
-                          }
-                        },
-                        selectedColor: theme.colorScheme.primary,
-                        backgroundColor: isDark
-                            ? const Color(0xFF16253B)
-                            : const Color(0xFFE5EEFF),
-                        labelStyle: TextStyle(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected
-                              ? Colors.white
-                              : theme.colorScheme.onSurfaceVariant,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.chipRadius,
+      body: ResponsiveBuilder(
+        builder: (context, layout) {
+          final maxWidth = layout.maxWidthFor(ContentWidth.dashboard);
+          final contentWidth =
+              layout.width > maxWidth ? maxWidth : layout.width;
+          final gridSpec = layout.mediaGrid(
+            availableWidth: contentWidth,
+            maxContentWidth: maxWidth,
+          );
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: CustomScrollView(
+                slivers: [
+                  // Search Input Bar
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: layout.horizontalPadding,
+                        vertical: 8,
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 720),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: _onSearchChanged,
+                            decoration: InputDecoration(
+                              hintText: 'Search anime, manga, or TV series...',
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear_rounded),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _performSearch('');
+                                      },
+                                    )
+                                  : null,
+                            ),
                           ),
-                          side: BorderSide.none,
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-              child: OutlinedButton.icon(
-                key: const Key('add-media-manually-button'),
-                onPressed: widget.onAddManually,
-                icon: const Icon(Icons.edit_note_rounded),
-                label: const Text("Can't find it? Add manually"),
-              ),
-            ),
-          ),
-
-          // Results Header Title
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _searchController.text.isEmpty
-                        ? '🔥 Top & Popular Results'
-                        : 'Search Results',
-                    style: TextStyle(
-                      fontFamily: 'Plus Jakarta Sans',
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  if (!_isLoading && _searchFailure == null)
-                    Text(
-                      '${_searchResults.length} items',
-                      style: TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurfaceVariant,
+
+                  // Category Chips Row (All, Anime, Manga, Series)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 8),
+                      child: SizedBox(
+                        height: 44,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: layout.horizontalPadding - 4,
+                          ),
+                          children: ['All', 'Anime', 'Manga', 'Series']
+                              .map((category) {
+                            final isSelected = _selectedCategory == category;
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              child: FilterChip(
+                                label: Text(category),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  if (selected) {
+                                    _onCategorySelected(category);
+                                  }
+                                },
+                                selectedColor: theme.colorScheme.primary,
+                                backgroundColor: isDark
+                                    ? const Color(0xFF16253B)
+                                    : const Color(0xFFE5EEFF),
+                                labelStyle: TextStyle(
+                                  fontFamily: 'Be Vietnam Pro',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : theme.colorScheme.onSurfaceVariant,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppTheme.chipRadius,
+                                  ),
+                                  side: BorderSide.none,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ),
+                  ),
+
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        layout.horizontalPadding,
+                        4,
+                        layout.horizontalPadding,
+                        8,
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton.icon(
+                          key: const Key('add-media-manually-button'),
+                          onPressed: widget.onAddManually,
+                          icon: const Icon(Icons.edit_note_rounded),
+                          label: const Text("Can't find it? Add manually"),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Results Header Title
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        layout.horizontalPadding,
+                        12,
+                        layout.horizontalPadding,
+                        12,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _searchController.text.isEmpty
+                                  ? '🔥 Top & Popular Results'
+                                  : 'Search Results',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Plus Jakarta Sans',
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          if (!_isLoading && _searchFailure == null) ...[
+                            const SizedBox(width: 12),
+                            Text(
+                              '${_searchResults.length} items',
+                              style: TextStyle(
+                                fontFamily: 'Be Vietnam Pro',
+                                fontSize: 12,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Loading Indicator
+                  if (_isLoading)
+                    SliverFillRemaining(
+                      child: ShimmerSkeletonGrid(
+                        itemCount: gridSpec.columns * 2,
+                        gridDelegate: gridSpec.delegate,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: layout.horizontalPadding,
+                        ),
+                      ),
+                    )
+                  // Failure State
+                  else if (_searchFailure != null)
+                    _buildErrorView(context, _searchFailure!)
+                  // Empty State
+                  else if (_searchResults.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.manage_search_rounded,
+                              size: 56,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No results found for "${_searchController.text}"',
+                              style: TextStyle(
+                                fontFamily: 'Be Vietnam Pro',
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  // Search Results Grid
+                  else
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: layout.horizontalPadding,
+                      ),
+                      sliver: SliverGrid(
+                        key: const Key('responsive-explore-grid'),
+                        gridDelegate: gridSpec.delegate,
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = _searchResults[index];
+                          final isAlreadyAdded = widget.existingItems.any(
+                                (e) =>
+                                    e.id == item.id ||
+                                    e.title.toLowerCase() ==
+                                        item.title.toLowerCase(),
+                              ) ||
+                              _pendingAddIds.contains(item.id);
+
+                          return _buildSearchResultCard(
+                              context, item, isAlreadyAdded);
+                        }, childCount: _searchResults.length),
+                      ),
+                    ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 ],
               ),
             ),
-          ),
-
-          // Loading Indicator
-          if (_isLoading)
-            const SliverFillRemaining(
-              child: ShimmerSkeletonGrid(itemCount: 6),
-            )
-          // Failure State
-          else if (_searchFailure != null)
-            _buildErrorView(context, _searchFailure!)
-          // Empty State
-          else if (_searchResults.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(40),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.manage_search_rounded,
-                      size: 56,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No results found for "${_searchController.text}"',
-                      style: TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          // Search Results Grid
-          else
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.62,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
-                ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final item = _searchResults[index];
-                  final isAlreadyAdded = widget.existingItems.any(
-                    (e) =>
-                        e.id == item.id ||
-                        e.title.toLowerCase() == item.title.toLowerCase(),
-                  );
-
-                  return _buildSearchResultCard(context, item, isAlreadyAdded);
-                }, childCount: _searchResults.length),
-              ),
-            ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
-        ],
+          );
+        },
       ),
     );
   }
@@ -533,28 +591,33 @@ class _SearchTabState extends State<SearchTab> {
                     onPressed: isAlreadyAdded
                         ? null
                         : () {
-                            if (widget.onAddToLibrary != null) {
-                              widget.onAddToLibrary!(item);
-                            }
+                            if (_pendingAddIds.contains(item.id)) return;
+                            setState(() {
+                              _pendingAddIds.add(item.id);
+                            });
+                            widget.onAddToLibrary?.call(item);
                           },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          isAlreadyAdded
-                              ? Icons.check_circle_rounded
-                              : Icons.bookmark_add_rounded,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isAlreadyAdded ? 'In Library' : 'Add to Library',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            isAlreadyAdded
+                                ? Icons.check_circle_rounded
+                                : Icons.bookmark_add_rounded,
+                            size: 14,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            isAlreadyAdded ? 'In Library' : 'Add to Library',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

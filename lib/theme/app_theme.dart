@@ -32,6 +32,54 @@ class AppTheme {
   static const double chipRadius = 999.0;
   static const double paddingMargin = 20.0;
 
+  /// Typography fallback list supporting Persian, Arabic, and cross-platform native fonts.
+  static const List<String> fontFallbackList = [
+    'Vazirmatn',
+    'Segoe UI',
+    'Tahoma',
+    'Roboto',
+    'Arial',
+    'sans-serif',
+  ];
+
+  static const NavigationRailThemeData _lightNavigationRailTheme =
+      NavigationRailThemeData(
+    backgroundColor: lightSurface,
+    indicatorColor: primaryIndigo,
+    selectedIconTheme: IconThemeData(color: Colors.white),
+    unselectedIconTheme: IconThemeData(color: lightOnSurfaceVariant),
+    selectedLabelTextStyle: TextStyle(
+      fontFamily: 'Plus Jakarta Sans',
+      color: primaryIndigo,
+      fontWeight: FontWeight.w700,
+      fontSize: 12,
+    ),
+    unselectedLabelTextStyle: TextStyle(
+      fontFamily: 'Be Vietnam Pro',
+      color: lightOnSurfaceVariant,
+      fontSize: 12,
+    ),
+  );
+
+  static const NavigationRailThemeData _darkNavigationRailTheme =
+      NavigationRailThemeData(
+    backgroundColor: darkSurface,
+    indicatorColor: primaryIndigo,
+    selectedIconTheme: IconThemeData(color: Colors.white),
+    unselectedIconTheme: IconThemeData(color: darkOnSurfaceVariant),
+    selectedLabelTextStyle: TextStyle(
+      fontFamily: 'Plus Jakarta Sans',
+      color: primaryIndigoDark,
+      fontWeight: FontWeight.w700,
+      fontSize: 12,
+    ),
+    unselectedLabelTextStyle: TextStyle(
+      fontFamily: 'Be Vietnam Pro',
+      color: darkOnSurfaceVariant,
+      fontSize: 12,
+    ),
+  );
+
   // Status Badge Colors
   static Color getStatusColor(String status, bool isDark) {
     switch (status) {
@@ -69,6 +117,7 @@ class AppTheme {
         outline: lightOutline,
       ),
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: fontFallbackList,
       cardTheme: CardThemeData(
         color: lightSurface,
         elevation: 0,
@@ -76,6 +125,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(cardRadius),
           side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
+      ),
+      dialogTheme: const DialogThemeData(
+        constraints: BoxConstraints(maxWidth: 560),
+        insetPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: lightBg,
@@ -107,6 +160,7 @@ class AppTheme {
           fontSize: 12,
         ),
       ),
+      navigationRailTheme: _lightNavigationRailTheme,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: lightSurfaceContainer,
@@ -160,6 +214,7 @@ class AppTheme {
         outline: darkOutline,
       ),
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: fontFallbackList,
       cardTheme: CardThemeData(
         color: darkSurface,
         elevation: 0,
@@ -167,6 +222,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(cardRadius),
           side: const BorderSide(color: Color(0xFF263852), width: 1),
         ),
+      ),
+      dialogTheme: const DialogThemeData(
+        constraints: BoxConstraints(maxWidth: 560),
+        insetPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: darkBg,
@@ -198,6 +257,7 @@ class AppTheme {
           fontSize: 12,
         ),
       ),
+      navigationRailTheme: _darkNavigationRailTheme,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: darkSurfaceContainer,

@@ -73,7 +73,9 @@ release/progress mode, season data, and manual origin.
 
 ## Remaining limitations
 
-- There is no explicit schema version or migration runner.
+- The active library uses a schema-v2 envelope with legacy bare-array
+  migration. Any future incompatible schema still needs an explicit migration
+  step.
 - Card `+1` for seasonal media requires a clearly ongoing season.
 - Remote movie search is not implemented.
 - Save/storage errors are not surfaced in the form or detail screen.

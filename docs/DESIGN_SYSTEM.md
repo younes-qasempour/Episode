@@ -39,6 +39,29 @@ Plan to Watch, and amber for On Hold.
 Spacing is not represented by a complete token scale. Screens still contain
 literal values.
 
+## Brand identity and logo assets
+
+`EpisodeBrand` is the canonical accessible in-app mark/optional wordmark. It
+loads `assets/branding/episode_mark.png`, supplies the semantic label
+`Episode`, and falls back to a Material play icon if the asset cannot load.
+Home, the adaptive navigation rail, app loading, login, and registration reuse
+this widget instead of independently embedding logo files.
+
+Approved masters live in `tool/brand_sources/`. Running
+`python tool/generate_brand_assets.py` reproducibly generates:
+
+- the declared Flutter asset under `assets/branding/`;
+- Android legacy and round launcher icons, adaptive foreground rasters, and
+  splash artwork on the brand navy background; checked-in XML resources wire
+  those generated files into adaptive icons and pre-/post-Android-12 themes;
+- the web favicon, Apple touch icon, regular/maskable PWA icons, manifest-linked
+  assets, and the pre-first-frame loading mark;
+- `windows/runner/resources/app_icon.ico`, consumed by runner metadata.
+
+Generated targets should not be edited independently. Change the approved
+master artwork or generator parameters, rerun the script, and validate the
+platform surfaces together.
+
 ## Typography
 
 Widgets reference `Plus Jakarta Sans` for headings and `Be Vietnam Pro` for
@@ -48,6 +71,8 @@ not installed. Implemented font sizes range roughly from 10 to 26.
 
 ## Reusable components and patterns
 
+- `EpisodeBrand` - canonical logo mark/wordmark for app chrome, loading, and
+  authentication surfaces
 - `MediaCard` — library item cover, type/status/rating badges, title, progress,
   progress bar, and animated `+1` action
 - `AppTheme` — themes and shared presentation tokens
@@ -85,8 +110,8 @@ or editable synopsis field.
 | Mutation success | Floating `SnackBar` |
 | Persistence mutation error | Not implemented |
 
-The real API service swallows failures, so the remote error branch is normally
-not reached.
+Provider failures are mapped to typed errors when every selected provider
+fails; partial failures remain hidden when another provider returns results.
 
 ## Cards, shadows, and motion
 
@@ -97,10 +122,19 @@ reduced-motion behavior exist.
 
 ## Responsive behavior
 
-Home/detail/profile use scrollable layouts and expanded rows. Explore uses a
-fixed two-column grid with a fixed aspect ratio; there are no breakpoints,
-`LayoutBuilder`, or width-dependent column counts. Tablet/desktop layout is
-**Needs confirmation**.
+`lib/layout/responsive_layout.dart` is the presentation-wide source of truth.
+It defines intent-based classes: compact below 600 px, medium from 600 px,
+expanded from 1024 px, and large from 1440 px. It also owns horizontal padding,
+content maximums, grid density, and desktop pointer scrolling.
+
+- Compact uses bottom navigation and stacked mobile compositions.
+- Medium uses a compact navigation rail and selectively denser grids.
+- Expanded/large use an extended rail, two-pane media details, wider library
+  and Explore grids, and multi-column analytics.
+- Forms cap at 640 px; focused transfer content at 900 px; details at 1200 px;
+  standard content at 1320 px; dashboards at 1480 px.
+- Global dialogs cap at 560 px and retain scrolling behavior from their
+  Material content.
 
 ## Dark mode
 
@@ -122,4 +156,4 @@ button, so tap-target and semantics verification is recommended.
 - `DESIGN.md` contains `#FFBFF`, which is not a valid six-digit color value.
 - Font-family intent is not backed by bundled assets.
 - Repeated surface/border colors and dimensions remain literal in screens.
-- The fixed search grid is not responsive.
+- Accessibility and very large text scaling still need a dedicated audit.

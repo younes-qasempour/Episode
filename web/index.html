@@ -4,17 +4,85 @@
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Episode - Modern Media Tracker Application">
+  <meta name="description" content="Track anime, manga, TV series, and movies with Episode.">
+  <meta name="theme-color" content="#050817">
 
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Episode">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="favicon.png">
 
   <title>Episode</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      background: #050817;
+    }
+
+    #episode-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: 18px;
+      color: #f8f7ff;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(124, 58, 237, 0.18), transparent 34%),
+        #050817;
+      font: 700 22px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: -0.02em;
+      opacity: 1;
+      transition: opacity 180ms ease-out;
+    }
+
+    #episode-splash img {
+      width: 112px;
+      height: 112px;
+      animation: episode-pulse 1.4s ease-in-out infinite alternate;
+    }
+
+    #episode-splash.is-hidden {
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    @keyframes episode-pulse {
+      from { transform: scale(0.97); opacity: 0.82; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #episode-splash img { animation: none; }
+      #episode-splash { transition: none; }
+    }
+  </style>
 </head>
 <body>
+  <div id="episode-splash" role="status" aria-label="Episode is loading">
+    <img src="icons/episode-mark.png" alt="">
+    <span>Episode</span>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      const splash = document.getElementById('episode-splash');
+      if (!splash) return;
+      splash.classList.add('is-hidden');
+      const removeSplash = () => splash.remove();
+      splash.addEventListener('transitionend', removeSplash, { once: true });
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        removeSplash();
+      } else {
+        window.setTimeout(removeSplash, 300);
+      }
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

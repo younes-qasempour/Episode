@@ -1,10 +1,12 @@
-# OtakuLog Backup Schema
+# Episode Backup Schema
 
 ## Format identity
 
 Native backups are UTF-8 JSON documents with `format: "otakulog-backup"`.
-The current schema version is **1**. Files are named
-`otakulog-backup-YYYY-MM-DDTHHMMSSZ.json` using a UTC timestamp.
+That discriminator is intentionally retained as a stable legacy compatibility
+identifier so Episode can continue reading existing backups. The current
+schema version is **1**. New files are named
+`episode-backup-YYYY-MM-DDTHHMMSSZ.json` using a UTC timestamp.
 
 ```json
 {
@@ -29,7 +31,7 @@ The current schema version is **1**. Files are named
 
 | Field | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `format` | string | Yes | Stable format discriminator; must equal `otakulog-backup` |
+| `format` | string | Yes | Stable legacy compatibility discriminator; must equal `otakulog-backup` and must not be renamed without a format migration |
 | `schemaVersion` | integer | Yes for v1 | Backup contract version |
 | `applicationVersion` | string | Yes | Exporting application version |
 | `exportedAt` | ISO-8601 UTC string | Yes | Export time |
@@ -95,6 +97,6 @@ OS-level ACID transaction.
 
 Backups are portable plaintext and can include personal notes/tags. Users
 should store exported files appropriately. Automatic safety backups are also
-plaintext inside application preferences. OtakuLog retains the newest five;
+plaintext inside application preferences. Episode retains the newest five;
 operation history retains the newest 25 summaries. History does not duplicate
 source file contents or note text.

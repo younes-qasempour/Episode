@@ -27,13 +27,13 @@ flowchart LR
     DataScreen --> TransferRepo["MediaTransferRepository"]
     TransferRepo --> LocalRepo
     TransferRepo --> Formats["Native JSON / MAL XML / CSV"]
-    DataScreen --> Files["Android SAF / browser files"]
+    DataScreen --> Files["Android SAF / browser / Windows native files"]
     Explore --> SearchRepo["SearchRepository"]
     SearchRepo --> API["ApiService"]
     API --> Jikan["Jikan REST API"]
     API --> TVMaze["TVMaze REST API"]
     LocalRepo --> Prefs["SharedPreferences<br/>JSON list"]
-    LocalRepo --> Seed["sampleMediaItems"]
+    LocalRepo --> Legacy["legacy key / bare-array migration"]
     API --> Model["MediaItem"]
     LocalRepo --> Model
     Shell --> Model
@@ -143,11 +143,11 @@ response cache.
 
 ### Local
 
-`LocalStorageRepository` stores the entire library as one JSON string under
-`episode_media_items`, with migration fallback from the legacy OtakuLog key.
-Only a missing key is treated as first run and seeded
-with `sampleMediaItems`. A valid empty list remains empty. Invalid/corrupt data
-throws a visible storage error without overwriting the raw value.
+`LocalStorageRepository` stores the entire schema-v2 library envelope as one
+JSON string under `episode_media_items`, with one-time fallback migration from
+the legacy `otaku_log_media_items` key. If neither key exists, the library
+starts empty. A valid empty library remains empty. Invalid/corrupt data throws
+a visible storage error without overwriting the raw value.
 
 Whole-library import/restore uses a one-key snapshot transaction: validate the
 candidate, snapshot the previous JSON value, write the complete replacement,
@@ -156,8 +156,16 @@ SharedPreferences is not an ACID database; atomicity here is the repository's
 verified replacement/rollback contract.
 
 The same repository stores the newest five automatic native safety backups
-under `otaku_log_automatic_backups_v1` and the newest 25 operation summaries
-under `otaku_log_transfer_history_v1`.
+under `episode_automatic_backups_v1` and the newest 25 operation summaries
+under `episode_transfer_history_v1`. On first access it migrates values from
+the corresponding legacy `otaku_log_automatic_backups_v1` and
+`otaku_log_transfer_history_v1` keys, then removes the old key after a
+successful copy.
+
+New automatic snapshots, including pre-sync snapshots, are encoded by
+`NativeBackupCodec` and are directly restorable. When a retained snapshot from
+the older local-envelope implementation is downloaded, `MediaTransferRepository`
+converts that known shape to native backup v1 without mutating the stored copy.
 
 Incrementing is never clamped to a known total and never changes tracking
 status. Flat items increment directly. Seasonal card increments use the
@@ -186,19 +194,36 @@ a v0 migration. Details are in [BACKUP_SCHEMA.md](BACKUP_SCHEMA.md).
 
 Platform file I/O is isolated behind conditional adapters. Android uses one
 MethodChannel backed by Storage Access Framework intents; web uses browser file
-input and download APIs. Dart receives/saves byte arrays and does not construct
+input and download APIs; Windows implements the same MethodChannel with native
+open/save dialogs. Dart receives/saves byte arrays and does not construct
 user-selected paths.
+
+The internal MethodChannel identifier is `episode/file_transfer` on Android,
+Windows, and Dart. It is not persisted user data; any future change must still
+be coordinated atomically across all three implementations.
 
 ## Navigation
 
 - Root: `MaterialApp.home`
-- Primary navigation: `BottomNavigationBar` + `IndexedStack`
+- Primary navigation: state-preserving `IndexedStack` with
+  `BottomNavigationBar` below 600 px, compact `NavigationRail` from 600 px, and
+  extended rail from 1024 px
 - Detail/manual/data/preview/history navigation: imperative
   `Navigator.push(MaterialPageRoute(...))`
 - Named routes/deep links: not implemented
 
 Add a screen by following the existing callback and `MaterialPageRoute`
 pattern unless route scale or a task explicitly justifies a router decision.
+
+## Responsive presentation
+
+`ResponsiveLayoutInfo` centralizes the 600/1024/1440 intent breakpoints,
+horizontal padding, max content widths, grid calculation, and two-pane
+eligibility. `ResponsiveBuilder` derives layout from live parent constraints,
+so navigation and screens adapt during window resizing without rebuilding the
+application or losing tab state. Presentation code recomposes existing widgets;
+repositories, auth, sync, storage, and transfer rules do not depend on viewport
+size.
 
 ## Dependency injection
 
@@ -208,7 +233,8 @@ pattern for testability.
 
 ## Error handling
 
-- API errors: swallowed and represented as empty results.
+- API errors: typed and visible when every selected provider fails; partial
+  provider failures remain hidden when another provider succeeds.
 - Persistence decode errors: surfaced without overwriting raw data; the shell
   provides retry/recovery guidance.
 - Transfer errors: typed/redacted user messages, no mutation before preview,
@@ -222,9 +248,10 @@ must be documented as a decision.
 
 ## Configuration and environments
 
-Base URLs are static constants in `ApiService`. There are no flavors,
-`--dart-define` keys, environment files, or secret-bearing configuration.
-Public API URLs are the only remote configuration.
+Discovery URLs are static constants in `ApiService`. There are no flavors,
+environment files, or secret-bearing source configuration. Optional account
+and sync requests use the `EPISODE_API_BASE_URL` compile-time define through
+`AppConfig`.
 
 ## Theme, localization, and accessibility
 
@@ -244,8 +271,8 @@ invent code-generation commands or edit Flutter-generated registrant output.
 
 ## Authentication, background work, and notifications
 
-Not implemented. There are no accounts, tokens, background jobs, push
-services, notification permissions, or scheduled work. MyAnimeList account
-OAuth is not configured; MAL transfer uses local files. The Profile
-notification/cloud wording remains a placeholder apart from the explicit
-local **Data, Backup & Transfer** entry point.
+Optional account authentication, refresh-token rotation, secure token storage,
+device identity, and snapshot sync are implemented. They are additive to the
+offline local library and activate only when `EPISODE_API_BASE_URL` is
+configured. No background scheduler, push notifications, or MyAnimeList OAuth
+flow is implemented.

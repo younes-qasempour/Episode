@@ -222,7 +222,10 @@ class SyncService extends ChangeNotifier {
 
     // Case G: Server revision is newer and local not pending -> Pull & Replace
     if (serverRevision > knownRevision && !isPending) {
-      return await _pullAndReplace(serverRevision);
+      return await _pullAndReplace(
+        serverRevision,
+        platform: platform,
+      );
     }
 
     // Case H: Server revision is newer and local pending -> Pull & Merge & Push
@@ -332,7 +335,10 @@ class SyncService extends ChangeNotifier {
     }
   }
 
-  Future<SyncResult> _pullAndReplace(int serverRevision) async {
+  Future<SyncResult> _pullAndReplace(
+    int serverRevision, {
+    required String platform,
+  }) async {
     try {
       final res = await apiClient.get(
         '/sync/pull',
@@ -346,8 +352,10 @@ class SyncService extends ChangeNotifier {
       snapshotAssembler.validateSnapshotItems(pulledItems);
 
       // Create safety backup
-      await storageRepository
-          .createAutomaticBackup('Pre-sync cloud replace safety backup');
+      await storageRepository.createAutomaticBackup(
+        'Pre-sync cloud replace safety backup',
+        platform: platform,
+      );
 
       // Atomic local replacement
       await storageRepository.replaceAllMediaItemsAtomically(pulledItems);
@@ -403,8 +411,10 @@ class SyncService extends ChangeNotifier {
           await storageRepository.loadAllMediaItemsIncludingDeleted();
 
       // Create safety backup
-      await storageRepository
-          .createAutomaticBackup('Pre-sync merge safety backup');
+      await storageRepository.createAutomaticBackup(
+        'Pre-sync merge safety backup',
+        platform: platform,
+      );
 
       // Deterministic Merge
       final mergedItems =

@@ -30,6 +30,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/graphify-out/cache/
 
 # Security, Environment Variables & API Keys
 *.env

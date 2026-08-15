@@ -1,12 +1,12 @@
 # Data Backup and Transfer
 
-- **Status:** Functional on Android and web
-- **Last verified:** 2026-08-01
+- **Status:** Functional on Android, web, and Windows
+- **Last verified:** 2026-08-12
 
 ## Purpose
 
 Let a user move or protect a local library without an account. The feature
-supports OtakuLog-native backups, MyAnimeList XML import/export, readable CSV
+supports Episode-native backups, MyAnimeList XML import/export, readable CSV
 export, previewed conflict handling, automatic safety snapshots, and an audit
 history.
 
@@ -14,27 +14,27 @@ history.
 
 1. Open **Profile & Settings** and choose **Data, Backup & Transfer** (or use
    the settings icon).
-2. Pick an OtakuLog JSON backup, MAL XML/XML.GZ export, or a dedicated restore
+2. Pick an Episode JSON backup, MAL XML/XML.GZ export, or a dedicated restore
    action.
-3. OtakuLog validates and parses the file before showing any mutation action.
+3. Episode validates and parses the file before showing any mutation action.
 4. Review entry counts, warnings, match reasons, the strategy, and the
    existing-entry policy.
-5. Confirm. OtakuLog retains a native safety backup, computes the candidate
+5. Confirm. Episode retains a native safety backup, computes the candidate
    library, writes the complete library, verifies the round trip, and rolls
    back the saved snapshot on failure.
 6. Review the result counts and save the safety backup if desired.
 7. Open **Transfer history** to inspect the newest 25 operation summaries or
    save one of the five retained safety backups.
 
-Exports use the platform save dialog on Android and a browser download on web.
-The Android importer uses the Storage Access Framework; the web importer uses
-the browser file input.
+Exports use platform save dialogs on Android and Windows and a browser download
+on web. Android uses the Storage Access Framework, Windows uses native Win32
+open/save dialogs, and web uses browser file input/download APIs.
 
 ## Supported formats
 
 | Format | Import | Export | Notes |
 | --- | --- | --- | --- |
-| OtakuLog JSON | Yes | Yes | Versioned schema v1, SHA-256 integrity metadata, full current `MediaItem` fields |
+| Episode JSON | Yes | Yes | Versioned schema v1, SHA-256 integrity metadata, full current `MediaItem` fields; the payload retains stable discriminator `otakulog-backup` for compatibility |
 | MAL anime XML | Yes | Yes | Plain XML and gzip import; export requires a MAL/Jikan ID |
 | MAL manga XML | Yes | Yes | Chapters plus retained volume metadata where present |
 | UTF-8 CSV | No | Yes | BOM, deterministic columns, quoted fields, Unicode-safe |
@@ -72,8 +72,9 @@ and repeat data.
 - `ImportPlanner` owns match, strategy, conflict, and merge rules.
 - `NativeBackupCodec`, `MalXmlImportProvider`, `MalXmlExportProvider`, and
   `CsvExportProvider` own their formats.
-- `FileTransferService` delegates to conditional Android/web platform
-  adapters. Unsupported platforms return a clear error.
+- `FileTransferService` delegates to conditional browser/native adapters. The
+  native MethodChannel is implemented by Android SAF and the Windows runner;
+  unsupported platforms return a clear error.
 - `LocalStorageRepository` remains the only persistence boundary.
 
 ## Safety and limits
@@ -88,6 +89,10 @@ and repeat data.
   with a warning.
 - Native v1 backups validate format, schema, checksum, item count, structure,
   required IDs/titles, and duplicate IDs before preview.
+- Import/restore and cloud-sync safety snapshots use that same native codec, so
+  retained downloads can be restored through the normal Episode preview flow.
+  Older retained local-schema snapshots are converted to native v1 when saved
+  by the user.
 - Imported file contents are not copied into history. Safety backups are local,
   unencrypted JSON and may contain private notes.
 - Export filenames are UTC timestamped and sanitized by the platform adapter.
@@ -125,8 +130,9 @@ explicit empty restore.
   not yet implemented.
 - Automatic safety backups and history use SharedPreferences and are not
   encrypted. The newest five backups and 25 history summaries are retained.
-- iOS and desktop runner projects are absent, so their file adapters are not
-  implemented.
+- iOS, macOS, and Linux runner projects/file adapters are not implemented.
+- Automated tests cannot drive the Windows OS file dialogs; perform an
+  interactive import/export/cancel/overwrite smoke test before release.
 - Live verification against MyAnimeList's official export documentation was
   blocked in the implementation environment. Compatibility is based on the
   established MAL export structure and repository fixtures; verify with a
@@ -153,4 +159,7 @@ SharedPreferences, or bypass preview and safety-backup orchestration.
 - `lib/screens/data_management_screen.dart`
 - `lib/screens/import_preview_screen.dart`
 - `lib/screens/transfer_history_screen.dart`
-- `android/app/src/main/kotlin/com/example/otaku_log/MainActivity.kt`
+- `android/app/src/main/kotlin/com/example/episode/MainActivity.kt`
+
+The Android and Windows file adapters share the current internal MethodChannel
+name `episode/file_transfer` with Dart.

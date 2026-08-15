@@ -1,6 +1,7 @@
-# OtakuLog Design System & Specification
+# Episode Design System & Specification
 
-Extracted from Stitch Project: **OtakuLog Media Tracker**
+Adapted from the original Stitch project, **OtakuLog Media Tracker** (legacy
+project name), for the current **Episode** product identity.
 
 ---
 

@@ -26,8 +26,9 @@ is not documented.
 - **Status:** Accepted (inferred)
 - **Context:** The app currently has three primary destinations and one detail
   screen.
-- **Decision:** Use `MaterialApp.home`, `BottomNavigationBar` with
-  `IndexedStack`, and `Navigator.push(MaterialPageRoute)` for detail.
+- **Decision:** Use `MaterialApp.home`, adaptive bottom/rail navigation with a
+  state-preserving `IndexedStack`, and `Navigator.push(MaterialPageRoute)` for
+  detail.
 - **Evidence:** `main.dart`, `main_navigation_screen.dart`.
 - **Consequences:** Navigation is direct and simple; named routing, deep links,
   URL state, and route guards are absent.
@@ -53,13 +54,15 @@ is not documented.
 - **Date:** Unknown
 - **Status:** Accepted (current state)
 - **Context:** A local media collection must survive restarts.
-- **Decision:** Store the entire `MediaItem` list as one JSON string under
-  `otaku_log_media_items`; seed sample data only when the key is absent. Keep a
-  valid empty list empty and surface invalid data without overwriting it.
+- **Decision:** Store the schema-v2 local-library envelope as one JSON string
+  under `episode_media_items`; migrate once from the legacy
+  `otaku_log_media_items` key when present. Keep a valid empty library empty,
+  start empty when neither key exists, and surface invalid data without
+  overwriting it.
 - **Evidence:** `local_storage_repository.dart`, `mock_data.dart`.
-- **Consequences:** Simple CRUD and tests; no active-store envelope schema or
-  query capability. Transfer replacement adds snapshot rollback and corruption
-  feedback at the repository boundary.
+- **Consequences:** Simple whole-document CRUD and tests with an explicit
+  active-store schema, but no query capability. Transfer replacement adds
+  snapshot rollback and corruption feedback at the repository boundary.
 - **Alternatives:** Hive packages are declared but no Hive implementation or
   migration decision exists.
 - **Affected files:** `lib/repositories/local_storage_repository.dart`,
@@ -149,7 +152,7 @@ is not documented.
   `MediaTransferRepository` for inspect/preview/safety-backup/apply/history.
   Native backups use a versioned schema with migrations and SHA-256 integrity.
   Whole-library changes use snapshot, full write, round-trip verification, and
-  rollback. Android/web file I/O stays behind conditional adapters.
+  rollback. Android/web/Windows file I/O stays behind conditional adapters.
 - **Rationale:** Providers make formats extensible while preview and a retained
   native snapshot keep all destructive behavior explicit and recoverable.
   Reusing the one-key SharedPreferences library avoids a risky parallel store.
@@ -165,3 +168,30 @@ is not documented.
   secure-token requirements are unavailable.
 - **Affected files:** transfer models/repository/services/screens, local
   repository, Android runner, `MediaItem`, tests, and backup/feature docs.
+
+## ADR-010 - Intent-based responsive layouts and native Windows support
+
+- **Date:** 2026-08-12
+- **Status:** Accepted
+- **Context:** The mobile-first UI built for Android and web became a narrow
+  phone composition on desktop, and no Windows runner or native file adapter
+  existed.
+- **Decision:** Centralize compact/medium/expanded/large breakpoints at
+  600/1024/1440 px, content-width policies, grid calculation, and pointer scroll
+  behavior in `lib/layout/responsive_layout.dart`. Keep the root `IndexedStack`
+  while switching between bottom navigation and compact/extended rails. Reuse
+  existing widgets in denser grids and two-pane detail compositions. Generate
+  the official Windows runner and implement the existing transfer MethodChannel
+  with native open/save dialogs.
+- **Rationale:** Live parent constraints make window resizing adaptive without
+  losing tab state or coupling domain code to platform/viewport checks. Shared
+  width policies keep forms and text readable on ultrawide displays while
+  allowing grids and dashboards to use useful space.
+- **Consequences:** Android retains compact navigation and stacked flows; web
+  and Windows gain intentional desktop layouts. The current Windows secure
+  storage plugin needs a local ATL-compatible UTF conversion header on Build
+  Tools installations without ATL. Native file-dialog interaction still needs
+  a manual release smoke test.
+- **Affected files:** responsive layout infrastructure, app shell and major
+  screens/widgets, Windows runner/file channel, responsive tests, and platform
+  documentation.

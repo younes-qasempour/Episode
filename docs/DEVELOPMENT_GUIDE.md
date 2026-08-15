@@ -7,11 +7,15 @@
 - Android Studio/SDK for Android work
 - Chrome for web work
 - Java 17 for the Android build
+- Windows 10/11 and Visual Studio 2022 Build Tools with the **Desktop
+  development with C++** workload for Windows work
+- Python 3 plus Pillow when regenerating checked-in Episode brand assets
 
 `pubspec.yaml` allows Dart `>=3.0.0 <4.0.0`, while the current lockfile reports
-Dart `>=3.12.0` and Flutter `>=3.44.0`. The 2026-08-01 validation machine uses
+Dart `>=3.12.0` and Flutter `>=3.44.0`. The 2026-08-12 validation machine uses
 Flutter 3.44.8 / Dart 3.12.2. Online and offline cached package resolution
-succeed; Android Gradle plugin artifact resolution is still unavailable.
+succeed; Android Gradle plugin artifact resolution and debug APK builds are
+verified on this machine.
 Treat Flutter 3.44 / Dart 3.12 as the verified development baseline, not a
 confirmed long-term product support policy.
 
@@ -22,11 +26,32 @@ flutter --version
 flutter pub get
 flutter run
 flutter run -d chrome
+flutter run -d windows
 ```
 
-There are no environment flavors, `.env` loaders, build-time variables, or
-API credentials. Jikan and TVMaze base URLs are public constants in
-`lib/services/api_service.dart`.
+There are no environment flavors or `.env` loaders. Jikan, Kitsu, and TVMaze
+discovery endpoints are public. Optional account and sync features use:
+
+```bash
+flutter run -d windows --dart-define=EPISODE_API_BASE_URL=http://localhost:8000
+```
+
+Without that define, local tracking and file transfer remain available and
+account/sync actions explain that the backend is not configured.
+
+## Regenerate Episode brand assets
+
+The approved masters are `tool/brand_sources/episode_mark_master.png` and
+`tool/brand_sources/episode_icon_master.png`. From the repository root run:
+
+```bash
+python tool/generate_brand_assets.py
+```
+
+The script derives the declared Flutter mark, Android legacy/round/adaptive
+launcher and splash assets, web favicon/PWA/loading assets, and Windows `.ico`
+directly from the high-resolution masters. Review all generated destinations
+as one change; do not hand-edit or upscale an individual output.
 
 ## Validation commands
 
@@ -43,6 +68,7 @@ flutter test
 # Common build checks when relevant.
 flutter build apk --debug
 flutter build web
+flutter build windows
 ```
 
 Run targeted tests first during development, for example:
@@ -53,8 +79,14 @@ flutter test test/search_tab_test.dart
 flutter test test/media_transfer_repository_test.dart
 ```
 
-No code-generation, coverage, Markdown-lint, CI, or project script command is
-configured.
+The Windows runner includes a small ATL compatibility header because
+`flutter_secure_storage_windows` 3.x otherwise requires the optional ATL
+Visual Studio component only for string conversion. Tokens still use Windows
+Credential Manager through the upstream plugin.
+
+No Dart code-generation, coverage gate, Markdown-lint, or CI command is
+configured. `tool/generate_brand_assets.py` is the one project-owned asset
+generation command.
 
 ## Current conventions
 
@@ -112,9 +144,8 @@ a service locator or DI package for a single dependency.
 
 - All remote traffic belongs in `ApiService`; screens call repositories.
 - Map provider responses at the service boundary.
-- The current service returns an empty list on all failures. This is a known
-  limitation, not a recommended new standard. A change to typed failures must
-  update repository/screen behavior and tests together.
+- The service and repository return typed `SearchResult` values. Preserve the
+  coordinated failure contract across service, repository, screen, and tests.
 - There is no logging framework. Do not add `print`/`debugPrint` as permanent
   diagnostics without a logging decision.
 - Add timeouts, retry, headers, or pagination only with explicit behavior and
@@ -140,7 +171,8 @@ a service locator or DI package for a single dependency.
 
 - Add tooltips/semantic labels for non-obvious icon-only controls.
 - Preserve Material tap targets and verify text scaling for new layouts.
-- Do not assume the current fixed two-column search grid is responsive.
+- Use `ResponsiveBuilder`, `ResponsiveLayoutInfo`, and
+  `PageContentConstraint`; do not add feature-local breakpoint numbers.
 - Keep expensive filtering/mapping outside deeply repeated builders.
 - Cancel timers/controllers and guard stale asynchronous results when adding
   search-like behavior.
@@ -160,8 +192,8 @@ a service locator or DI package for a single dependency.
 
 | Area | Dominant pattern | Inconsistency | Recommended future standard |
 | --- | --- | --- | --- |
-| Formatting | Standard Dart style is intended | 17 of 19 Dart files would be reformatted | Format only touched files now; agree on a repository-wide format-only change separately. |
+| Formatting | Standard Dart style is enforced for active source and tests | The verified `lib`/`test` formatting check is clean | Keep focused formatting checks in every change. |
 | Colors/spacing | Theme tokens plus `ColorScheme` | Screens contain many repeated literal colors and dimensions | Extend `AppTheme` deliberately as shared patterns stabilize. |
 | Typography | Named font families in widgets/theme | Fonts are not declared as assets | Confirm licensing/assets, then bundle fonts or remove unfulfilled family claims. |
-| Errors | UI has loading/empty/error branches | Real API client collapses errors into empty results | Introduce a single explicit result/error contract. |
+| Errors | Service/repository/UI share typed `SearchResult` failures | Partial provider failures remain hidden when another provider succeeds | Preserve the typed contract and define partial-failure UX before exposing it. |
 | Persistence packages | SharedPreferences is active | Hive/path provider are declared but unused | Confirm removal or plan a documented migration; do not use both casually. |

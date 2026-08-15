@@ -10,13 +10,15 @@ import, export, back up, and restore the local library using local files
 without requiring an account.
 
 The target user is **inferred from current implementation**: an individual
-media fan managing one local collection. Accounts, multi-user behavior, social
-features, and cloud synchronization are not implemented.
+media fan managing a collection locally, with optional authentication and
+multi-device cloud snapshot synchronization. Social features are not
+implemented.
 
 ## Primary flows
 
-1. **Open the library:** the app loads a JSON-encoded collection from local
-   preferences. A first run is seeded with eight sample items.
+1. **Open the library:** the app loads a schema-v2 JSON library envelope from
+   local preferences. A first run starts empty; legacy bare-array data is
+   migrated on load.
 2. **Filter and track:** the Home tab filters by title/type and increments
    episode or chapter progress.
 3. **Discover media:** the Explore tab searches Jikan anime/manga and TVMaze
@@ -37,7 +39,10 @@ features, and cloud synchronization are not implemented.
 ## Current capabilities
 
 - Material 3 light and dark themes
-- Three-tab bottom navigation: Home, Explore, Profile
+- Unified Episode identity in app chrome, auth/loading surfaces, Android
+  launcher/splash assets, web metadata/PWA/loading surfaces, and Windows icon
+- Adaptive three-destination navigation: bottom navigation in compact layouts,
+  a compact rail at medium widths, and an extended rail on desktop
 - Local JSON persistence through `shared_preferences`
 - Jikan anime and manga search
 - TVMaze series search
@@ -50,6 +55,10 @@ features, and cloud synchronization are not implemented.
 - Deterministic matching, merge/add/replace/restore strategies, rollback, and
   retained safety backups/history
 - Loading, empty, image-fallback, and selected feedback states
+- Responsive Home/library grids, Explore cards, two-pane media details,
+  constrained forms, and multi-column analytics
+- Optional authentication, secure token storage, device identity, and cloud
+  snapshot synchronization
 - Unit and widget test files around API mapping, repositories, search, and
   details
 
@@ -66,8 +75,12 @@ The code is organized by technical responsibility rather than feature:
   release signing still require attention.
 - **Web:** browser pick/download adapter exists and `flutter build web --no-pub`
   succeeds.
-- **iOS, macOS, Windows, Linux:** not present. Support is **Unknown** and must
-  not be claimed.
+- **Windows:** official Flutter runner, secure credential storage, responsive
+  desktop navigation, and native open/save file dialogs are implemented;
+  `flutter build windows --debug --no-pub` succeeds with the Microsoft C++
+  desktop toolchain.
+- **iOS, macOS, Linux:** runner projects are not present. Support is **Unknown**
+  and must not be claimed.
 
 ## Important dependencies
 
@@ -76,8 +89,8 @@ The code is organized by technical responsibility rather than feature:
 - `shared_preferences` — active library persistence
 - `hive`, `hive_flutter`, `path_provider` — declared but unused
 - `flutter_test` — test framework
-- `flutter_lints` — analyzer rules, currently unavailable in the local package
-  resolution environment
+- `flutter_lints` — analyzer rules, resolved by the current lockfile and used
+  by the passing analyzer configuration
 
 The transfer subsystem additionally uses `xml` for MAL parsing/generation,
 `archive` for gzip input, `crypto` for SHA-256 integrity metadata, and `web`
@@ -85,16 +98,18 @@ for browser file selection/download.
 
 ## Visible scope boundaries
 
-The repository does not implement authentication, user accounts, cloud sync,
-notifications, pagination, offline API caching, localization, or analytics.
-Profile statistics and identity are fixed presentation data. MyAnimeList
-account/OAuth import is not enabled; transfer is local-file based.
+The repository does not implement notifications, pagination, offline API
+caching, localization, social behavior, or MyAnimeList OAuth import. Account
+and cloud sync UI are functional when `EPISODE_API_BASE_URL` points to the
+companion backend. Profile identity/rank copy remains partly fixed, while
+analytics are calculated from the local library.
 
 ## Unknown requirements
 
 - Whether TV series are a permanent product category or a prototype extension
-- Whether sample data should remain in a real user's library after first run
-- Account, synchronization, notification, and cloud-backup requirements
+- Whether the now-unused static sample-data fixture should be removed or
+  repurposed for previews/tests
+- Notification and broader cloud-backup requirements
 - Production API rate-limit, attribution, privacy, and caching requirements
 - Supported device/OS matrix and accessibility targets
 - Whether theme preference should persist

@@ -1,11 +1,14 @@
 import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+
 import '../models/activity_log_entry.dart';
 import '../models/data_transfer.dart';
 import '../models/local_library_document.dart';
 import '../models/media_item.dart';
 import '../models/user_profile_data.dart';
+import '../services/native_backup_service.dart';
 import '../utils/clock.dart';
 
 class LocalStorageRepository {
@@ -30,11 +33,15 @@ class LocalStorageRepository {
   final Future<void> Function(List<MediaItem>)? transactionValidator;
   final Clock clock;
   final Function()? onLocalDataChanged;
+  final NativeBackupCodec backupCodec;
+  final String backupPlatform;
 
   const LocalStorageRepository({
     this.transactionValidator,
     this.clock = const SystemClock(),
     this.onLocalDataChanged,
+    this.backupCodec = const NativeBackupCodec(),
+    this.backupPlatform = 'local',
   });
 
   Future<SharedPreferences> _getPrefs() async {
@@ -388,21 +395,30 @@ class LocalStorageRepository {
     return loadActiveMediaItems();
   }
 
-  Future<AutomaticBackupRecord> createAutomaticBackup(String reason) async {
+  Future<AutomaticBackupRecord> createAutomaticBackup(
+    String reason, {
+    String? platform,
+  }) async {
+    if (reason.trim().isEmpty) {
+      throw ArgumentError.value(reason, 'reason', 'must not be empty');
+    }
     final now = clock.nowUtc();
     final items = await loadAllMediaItemsIncludingDeleted();
     final backupId = _uuid.v4();
-    final jsonContent = jsonEncode({
-      'schemaVersion': currentLocalLibrarySchemaVersion,
-      'migratedAt': now.toIso8601String(),
-      'mediaItems': items.map((i) => i.toMap()).toList(),
-    });
+    final artifact = backupCodec.createArtifact(
+      items,
+      platform: platform ?? backupPlatform,
+      now: now,
+    );
     final record = AutomaticBackupRecord(
       id: backupId,
-      fileName: 'safety-backup-$reason.json',
+      fileName: artifact.fileName.replaceFirst(
+        'episode-backup-',
+        'episode-safety-backup-',
+      ),
       createdAt: now,
       itemCount: items.length,
-      backupJson: jsonContent,
+      backupJson: utf8.decode(artifact.bytes),
     );
     await saveAutomaticBackup(record);
     return record;

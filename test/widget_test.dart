@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,5 +17,7 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Explore'), findsOneWidget);
     expect(find.text('Profile'), findsOneWidget);
+    expect(find.byKey(const Key('episode-brand')), findsWidgets);
+    expect(find.text('Episode'), findsWidgets);
   });
 }

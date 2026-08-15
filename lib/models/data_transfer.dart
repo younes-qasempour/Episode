@@ -183,7 +183,7 @@ class ImportedMediaEntry {
   factory ImportedMediaEntry.fromMediaItem(MediaItem item) {
     return ImportedMediaEntry(
       mediaType: item.type,
-      sourceProvider: 'otakulog',
+      sourceProvider: 'episode',
       sourceId: item.id,
       localId: item.id,
       externalIds: item.externalIds,
@@ -419,7 +419,7 @@ class AutomaticBackupRecord {
   factory AutomaticBackupRecord.fromMap(Map<String, dynamic> map) {
     return AutomaticBackupRecord(
       id: map['id']?.toString() ?? '',
-      fileName: map['fileName']?.toString() ?? 'otakulog-backup.json',
+      fileName: map['fileName']?.toString() ?? 'episode-backup.json',
       createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       backupJson: map['backupJson']?.toString() ?? '',

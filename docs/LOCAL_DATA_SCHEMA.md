@@ -1,18 +1,27 @@
-# OtakuLog Local Data Schema (Schema Version 2)
+# Episode Local Data Schema (Schema Version 2)
 
-This document describes the authoritative local storage schema for the OtakuLog Flutter mobile application.
+This document describes the authoritative local storage schema for the Episode
+Flutter application.
 
 ## Storage Keys
 
 | Key | Purpose | Storage Format | Scope |
 | --- | --- | --- | --- |
-| `otaku_log_media_items` | Active media library store | JSON Object (Schema v2 Envelope) | Local authoritative library |
-| `otaku_log_automatic_backups_v1` | Rolling safety backups (max 5) | JSON Array | Device-local safety history |
-| `otaku_log_transfer_history_v1` | Import/Export transfer log (max 25) | JSON Array | Device-local audit log |
+| `episode_media_items` | Active media library store | JSON Object (schema-v2 envelope) | Local authoritative library |
+| `episode_automatic_backups_v1` | Rolling safety backups (max 5) | JSON Array | Device-local safety history |
+| `episode_transfer_history_v1` | Import/export transfer log (max 25) | JSON Array | Device-local audit log |
+
+For upgrade compatibility, first access falls back from
+`otaku_log_media_items`, `otaku_log_automatic_backups_v1`, and
+`otaku_log_transfer_history_v1` respectively. Episode copies the legacy value
+to the matching active key and removes the old key only after a successful
+copy. These `otaku_log_*` names are migration identifiers, not active product
+keys.
 
 ## Active Store Envelope (Schema Version 2)
 
-The active media library stored under `otaku_log_media_items` is serialized as a versioned JSON envelope object:
+The active media library stored under `episode_media_items` is serialized as a
+versioned JSON envelope object:
 
 ```json
 {
@@ -104,5 +113,7 @@ The active media library stored under `otaku_log_media_items` is serialized as a
 1. **Deletion**: Deleting a record sets `deletedAt = clock.nowUtc()`, `updatedAt = clock.nowUtc()`, and `localRevision = localRevision + 1`.
 2. **UI Filtering**: Default UI loads filter out records where `deletedAt != null`.
 3. **Storage Persistence**: Tombstones are retained in local storage to support future snapshot synchronization.
-4. **Export Behavior**: Native OtakuLog JSON backups preserve tombstones for lossless restore. External exports (CSV, MyAnimeList XML) filter out tombstones.
+4. **Export Behavior**: Native Episode JSON backups preserve tombstones for
+   lossless restore. External exports (CSV, MyAnimeList XML) filter out
+   tombstones.
 5. **Purging**: `purgeDeletedMediaItemsBefore(cutoff)` explicitly purges tombstones older than the specified cutoff date.

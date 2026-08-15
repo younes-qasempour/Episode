@@ -2,13 +2,14 @@
 
 | Term | Accepted meaning |
 | --- | --- |
-| OtakuLog | The Flutter application and repository. |
+| Episode | The current Flutter application and product name. |
+| OtakuLog | The former product name. It remains only in historical records and stable compatibility identifiers such as legacy preference keys, backup format discriminators, and repository/deployment slugs. |
 | Media | The shared umbrella for anime, manga, TV series, and movies. |
 | `MediaItem` | The single shared model used by UI, API mapping, sample data, and local persistence. Do not use “media DTO” or “library item model” for a duplicate type unless a new boundary is explicitly decided. |
 | Library | The locally persisted list shown on Home. “Collection” is used in profile copy, but code ownership calls this the library/media items. |
 | Home | Bottom-nav tab that displays and filters the local Library. |
 | Explore | Bottom-nav label for the live remote-search screen (`SearchTab`). Use “Explore” for the user-facing destination and “search” for its behavior. |
-| Profile | Bottom-nav tab containing theme control and currently placeholder identity, statistics, and settings. |
+| Profile | Bottom-nav analytics and settings hub with customization, activity, account/sync, theme, and data-management actions; a few identity values and settings rows remain fixed/no-op. |
 | Anime | Media type string `anime`; progress unit is `Ep`. |
 | Manga | Media type string `manga`; progress unit is `Ch`. |
 | Series | Media type string `series`; currently means TVMaze TV series and uses `Ep`. Do not call it anime. |
@@ -26,9 +27,9 @@
 | On Hold | Paused tracking status. |
 | Jikan | Public API used for anime and manga discovery; records use MyAnimeList IDs. |
 | TVMaze | Public API used for TV series discovery. |
-| Seed/sample data | Eight static `MediaItem` values saved only when the local-library key is absent. Invalid data is surfaced and a valid empty list remains empty. |
-| Native backup | OtakuLog's versioned, integrity-checked JSON representation of the complete current media library. |
-| Safety backup | A native backup retained automatically immediately before an import or restore mutates the library. |
+| Seed/sample data | Eight static legacy `MediaItem` fixtures remain in source, but the active repository does not seed them; a new installation starts with an empty library. |
+| Native backup | Episode's versioned, integrity-checked JSON representation of the complete current media library. Its stable on-disk format discriminator remains `otakulog-backup` for compatibility. |
+| Safety backup | A restorable native backup retained automatically before an import, restore, or cloud-sync replacement mutates the library. |
 | Import preview | The immutable parsed entries plus proposed add/update/skip/conflict actions shown before any library mutation. |
 | Safe merge | Default policy that never lowers progress, overwrites local notes, or replaces local seasonal progress with flat provider progress. |
 | Full restore | Native-backup-only strategy that explicitly replaces the complete active library after retaining a safety backup. |

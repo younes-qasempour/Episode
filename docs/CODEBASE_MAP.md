@@ -5,13 +5,17 @@
 | Path | Purpose | Notes |
 | --- | --- | --- |
 | `lib/` | Application source | Organized by technical responsibility. |
-| `test/` | Unit and widget tests plus import fixtures | Fifteen Dart files, 79 declared tests; full suite passes. |
-| `android/` | Android runner/build configuration | Template identity/signing TODOs remain. |
-| `web/` | Web bootstrap | Only `index.html` is tracked. |
+| `test/` | Unit and widget tests plus import fixtures | Twenty-four Dart files, 163 declared tests; full suite passes. |
+| `android/` | Android runner plus Episode launcher/splash resources | Product label and branding are integrated; production application ID/signing remain. |
+| `web/` | Web bootstrap and Episode PWA branding | Favicon, Apple touch icon, regular/maskable PWA icons, manifest, and loading splash are generated/connected. |
+| `windows/` | Windows runner, Episode icon metadata, and native file dialog channel | Generated runner plus project-owned branding and transfer adapter. |
+| `assets/branding/` | Flutter runtime Episode mark | Declared in `pubspec.yaml`; generated from the approved master. |
+| `tool/brand_sources/` | Approved high-resolution Episode logo masters | Inputs for reproducible platform assets; do not derive new targets from small generated files. |
+| `tool/generate_brand_assets.py` | Deterministic brand-asset generator | Produces Flutter, Android, web, and Windows outputs; requires Python and Pillow. |
 | `docs/` | Agent and developer shared memory | Keep synchronized with implementation. |
 | `DESIGN.md` | Original visual specification | Intent, not a complete statement of implemented UI. |
 
-No `ios/`, `macos/`, `windows/`, `linux/`, `integration_test/`, `assets/`,
+No `ios/`, `macos/`, `linux/`, `integration_test/`,
 `l10n/`, `scripts/`, or CI configuration directory is present.
 
 ## `lib/` map
@@ -19,13 +23,14 @@ No `ios/`, `macos/`, `windows/`, `linux/`, `integration_test/`, `assets/`,
 | Directory/file | Purpose and contents | Do not place here | Depends on |
 | --- | --- | --- | --- |
 | `main.dart` | Process entry, root `MaterialApp`, theme-mode ownership | Feature business logic, API calls | `theme/`, main shell |
-| `data/` | Static seed data; currently `sampleMediaItems` | Runtime repositories or remote clients | `models/` |
+| `layout/` | Central responsive breakpoints, page constraints, grids, and pointer scroll behavior | Business logic or platform branching | Flutter Material |
+| `data/` | Legacy static sample fixture; currently unused by runtime loading | Runtime repositories or remote clients | `models/` |
 | `models/` | Shared data/domain shape, transfer contracts, and serialization | Widgets or provider-specific request execution | Dart core |
 | `repositories/` | UI-facing boundaries for local storage, search, and transfer orchestration | Widget layout, direct visual state | models, services/data |
 | `services/` | HTTP/provider mapping, import/export codecs/planning, and platform file adapters | Screen state or direct local persistence | packages, models |
 | `screens/` | Full screens/tabs, local UI state, orchestration callbacks | New persistence engines or duplicated API clients | models, repositories, widgets, theme |
 | `theme/` | Material themes, shared colors/radii, status colors | Feature state or data logic | Flutter Material |
-| `widgets/` | Reusable presentation components; currently `MediaCard` | Repository access or application navigation ownership | models, theme |
+| `widgets/` | Reusable presentation components, including `MediaCard` and canonical `EpisodeBrand` | Repository access or application navigation ownership | models, theme, declared Flutter assets |
 
 ## Notable files
 
@@ -36,6 +41,10 @@ No `ios/`, `macos/`, `windows/`, `linux/`, `integration_test/`, `assets/`,
 - `lib/services/mal_xml_service.dart` - MAL XML/XML.GZ import and XML export
 - `lib/services/import_planner.dart` - matching, strategies, and merge rules
 - `lib/screens/data_management_screen.dart` - transfer dashboard and result flow
+- `lib/widgets/episode_brand.dart` - canonical accessible Episode mark/wordmark
+  with a Material fallback if the runtime asset cannot load
+- `tool/generate_brand_assets.py` - reproducibly derives all checked-in runtime
+  logos, launcher/splash/PWA icons, and the Windows `.ico` from master artwork
 
 - `lib/main.dart` — application entry and theme state
 - `lib/screens/main_navigation_screen.dart` — composition root for library
@@ -66,8 +75,9 @@ No `ios/`, `macos/`, `windows/`, `linux/`, `integration_test/`, `assets/`,
 | Change media fields | `media_item.dart` | sample data, API mappers, persistence, all display widgets/tests |
 | Add/change a transfer format | `data_transfer.dart`, provider under `services/` | transfer repository registration, fixtures, preview/result tests, backup schema docs |
 | Change import matching/merge policy | `import_planner.dart` | data-transfer feature doc, planner/repository tests |
-| Change Android/web file I/O | `file_transfer_*.dart`, Android `MainActivity.kt` | data screen, platform builds/manual checks |
+| Change Android/web/Windows file I/O | `file_transfer_*.dart`, Android `MainActivity.kt`, Windows `file_transfer_channel.*` | data screen, platform builds/manual checks |
 | Change theme/tokens | `app_theme.dart` | `DESIGN.md`, screens with literal colors, design docs |
+| Change product logo/platform icons | `tool/brand_sources/`, then run `tool/generate_brand_assets.py` | `EpisodeBrand`, `pubspec.yaml`, Android/web/Windows platform metadata, branding tests/docs |
 | Add local storage | existing `LocalStorageRepository` | migration/backward compatibility decision; do not create a parallel store |
 | Add tests | closest file under `test/` | constructor injection seams in service/repository/screens |
 | Change Android release config | `android/app/build.gradle.kts` | main manifest, signing secrets outside Git |

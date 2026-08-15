@@ -13,8 +13,8 @@ agents. Read it before editing.
 - **Purpose:** Track anime, manga, and TV series in a local library, discover
   media through Jikan and TVMaze, and update progress, status, rating, and
   synopsis data.
-- **Verified platforms:** Android and web directories are present. Other
-  platform targets are not in this repository.
+- **Verified platforms:** Android, web, and Windows runners are present and
+  build successfully. iOS, macOS, and Linux targets are not in this repository.
 
 Important terms are defined in [docs/GLOSSARY.md](docs/GLOSSARY.md). In
 particular, **Library** is the locally stored collection, **Explore** is the

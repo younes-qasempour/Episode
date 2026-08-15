@@ -1,7 +1,11 @@
 # INTEGRATION_AUDIT.md
 
 ## Overview
-This document provides a comprehensive integration audit between `OtakuLog-mobile` (Flutter Frontend) and `otakulog-backend` (FastAPI Backend).
+This document provides a comprehensive integration audit between the Episode
+Flutter frontend and its FastAPI backend. `OtakuLog-mobile` and
+`otakulog-backend` are retained repository/deployment slugs from before the
+product rename; they are stable compatibility identifiers, not user-facing
+product names.
 
 ## Endpoint & Contract Inventory
 
@@ -19,7 +23,7 @@ This document provides a comprehensive integration audit between `OtakuLog-mobil
 | INT-10 | Sync Status | `SyncService._executeSyncProcess` | `/api/v1/sync/status` | GET | None | `SyncStatusResponse` | Yes | Connected |
 | INT-11 | Pull Snapshot | `SyncService._pullAndReplace` | `/api/v1/sync/pull` | GET | `knownRevision` | `SyncPullResponse` | Yes | Connected |
 | INT-12 | Push Snapshot | `SyncService._pushSnapshot` | `/api/v1/sync/push` | POST | `SyncPushRequest` | `SyncPushResponse` | Yes | Connected |
-| INT-13 | Health Check | N/A (System) | `/health` | GET | None | `{"status":"ok"}` | No | Backend Only |
+| INT-13 | Health Check | N/A (System) | `/health` | GET | None | `{"status":"ok","version":"1.0.0"}` | No | Backend Only |
 
 ## Confirmed Problems & Fixes
 
@@ -28,7 +32,7 @@ This document provides a comprehensive integration audit between `OtakuLog-mobil
 | PRB-01 | Token Refresh | `ApiClient._performSingleFlightRefresh` | `/api/v1/auth/refresh` | `clientDeviceId` was sent as `''` instead of a valid UUID v4, triggering 422 validation errors on FastAPI. | Critical | Injected `DeviceIdentityService` into `ApiClient` to pass the valid UUID. | Fixed |
 | PRB-02 | CORS Preflight | `ApiClient` | `app/main.py` | `allow_headers` in FastAPI `CORSMiddleware` lacked `"Accept"` and `"x-request-id"`, breaking web browser CORS preflight. | High | Added `"Accept"` and `"x-request-id"` to `allow_headers` in `app/main.py`. | Fixed |
 | PRB-03 | Android Native Network | `AndroidManifest.xml` | N/A | Missing `<uses-permission android:name="android.permission.INTERNET"/>` and cleartext HTTP setting. | High | Added `INTERNET` permission to main manifest and `android:usesCleartextTraffic="true"` to debug manifest. | Fixed |
-| PRB-04 | Environment Config | `AppConfig` | `.env.example` | Missing local `.env` configuration for backend integration testing. | Medium | Created `.env` file in `otakulog-backend` based on `.env.example`. | Fixed |
+| PRB-04 | Environment Config | `AppConfig` | `.env.example` | Missing local `.env` configuration for backend integration testing. | Medium | Created local backend environment configuration from `.env.example` in the legacy-slug `otakulog-backend` repository. | Fixed |
 
 ## Android Native Build Audit (OTAKU-001)
 - **Debug APK Build**: **SUCCESS** (`build/app/outputs/flutter-apk/app-debug.apk`).

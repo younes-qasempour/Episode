@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../layout/responsive_layout.dart';
 import '../models/data_transfer.dart';
 import '../repositories/media_transfer_repository.dart';
 
@@ -41,68 +42,72 @@ class _TransferHistoryScreenState extends State<TransferHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Transfer history')),
-      body: FutureBuilder<_HistoryData>(
-        future: _loadFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return _EmptyState(
-              icon: Icons.error_outline_rounded,
-              title: 'History could not be loaded',
-              message: 'Try opening this screen again.',
-              onRetry: () {
-                setState(() => _loadFuture = _load());
-              },
-            );
-          }
-          final data = snapshot.requireData;
-          if (data.history.isEmpty && data.backups.isEmpty) {
-            return const _EmptyState(
-              icon: Icons.history_rounded,
-              title: 'No transfer history yet',
-              message: 'Completed imports, restores, backups, and exports '
-                  'will appear here.',
-            );
-          }
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-            children: [
-              if (data.backups.isNotEmpty) ...[
-                const _SectionTitle(
-                  title: 'Automatic safety backups',
-                  subtitle: 'The five newest snapshots are retained locally.',
-                ),
-                ...data.backups.map(
-                  (backup) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.shield_outlined),
-                    title: Text('${backup.itemCount} media items'),
-                    subtitle: Text(_dateTime(backup.createdAt)),
-                    trailing: IconButton(
-                      tooltip: 'Save safety backup',
-                      onPressed: () => widget.onSaveBackup(backup.id),
-                      icon: const Icon(Icons.download_rounded),
+      body: PageContentConstraint(
+        contentWidth: ContentWidth.focused,
+        padding: EdgeInsets.zero,
+        child: FutureBuilder<_HistoryData>(
+          future: _loadFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return _EmptyState(
+                icon: Icons.error_outline_rounded,
+                title: 'History could not be loaded',
+                message: 'Try opening this screen again.',
+                onRetry: () {
+                  setState(() => _loadFuture = _load());
+                },
+              );
+            }
+            final data = snapshot.requireData;
+            if (data.history.isEmpty && data.backups.isEmpty) {
+              return const _EmptyState(
+                icon: Icons.history_rounded,
+                title: 'No transfer history yet',
+                message: 'Completed imports, restores, backups, and exports '
+                    'will appear here.',
+              );
+            }
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              children: [
+                if (data.backups.isNotEmpty) ...[
+                  const _SectionTitle(
+                    title: 'Automatic safety backups',
+                    subtitle: 'The five newest snapshots are retained locally.',
+                  ),
+                  ...data.backups.map(
+                    (backup) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.shield_outlined),
+                      title: Text('${backup.itemCount} media items'),
+                      subtitle: Text(_dateTime(backup.createdAt)),
+                      trailing: IconButton(
+                        tooltip: 'Save safety backup',
+                        onPressed: () => widget.onSaveBackup(backup.id),
+                        icon: const Icon(Icons.download_rounded),
+                      ),
                     ),
                   ),
+                  const Divider(height: 32),
+                ],
+                const _SectionTitle(
+                  title: 'Operations',
+                  subtitle: 'Only summaries are stored; imported file contents '
+                      'and private notes are not copied into history.',
                 ),
-                const Divider(height: 32),
+                ...data.history.map(
+                  (entry) => _HistoryTile(
+                    entry: entry,
+                    onTap: () => _showDetails(context, entry),
+                  ),
+                ),
               ],
-              const _SectionTitle(
-                title: 'Operations',
-                subtitle: 'Only summaries are stored; imported file contents '
-                    'and private notes are not copied into history.',
-              ),
-              ...data.history.map(
-                (entry) => _HistoryTile(
-                  entry: entry,
-                  onTap: () => _showDetails(context, entry),
-                ),
-              ),
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

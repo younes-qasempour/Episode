@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'layout/responsive_layout.dart';
 import 'theme/app_theme.dart';
 import 'screens/main_navigation_screen.dart';
 
@@ -30,6 +31,7 @@ class _EpisodeAppState extends State<EpisodeApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: _themeMode,
+      scrollBehavior: const AppScrollBehavior(),
       home: MainNavigationScreen(
         currentThemeMode: _themeMode,
         onThemeModeChanged: _handleThemeModeChanged,

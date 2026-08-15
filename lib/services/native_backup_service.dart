@@ -7,6 +7,8 @@ import '../models/data_transfer.dart';
 import '../models/media_item.dart';
 
 class NativeBackupCodec {
+  // Stable legacy discriminator: changing it would make existing backups
+  // unreadable. New user-visible filenames use the Episode brand.
   static const format = 'otakulog-backup';
   static const currentSchemaVersion = 1;
   static const defaultApplicationVersion = '1.0.0+1';
@@ -47,7 +49,7 @@ class NativeBackupCodec {
       utf8.encode(const JsonEncoder.withIndent('  ').convert(document)),
     );
     return ExportArtifact(
-      fileName: 'otakulog-backup-${fileTimestamp(exportedAt)}.json',
+      fileName: 'episode-backup-${fileTimestamp(exportedAt)}.json',
       mimeType: 'application/json',
       bytes: bytes,
       exportedCount: items.length,

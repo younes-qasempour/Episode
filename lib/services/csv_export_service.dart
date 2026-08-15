@@ -81,7 +81,7 @@ class CsvExportProvider implements ExportProvider {
     }
     final now = DateTime.now().toUtc();
     return ExportArtifact(
-      fileName: 'otakulog-${mediaType?.name ?? 'library'}-'
+      fileName: 'episode-${mediaType?.name ?? 'library'}-'
           '${fileTimestamp(now)}.csv',
       mimeType: 'text/csv;charset=utf-8',
       bytes: Uint8List.fromList(utf8.encode(buffer.toString())),

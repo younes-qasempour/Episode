@@ -1,7 +1,8 @@
-# OtakuLog Documentation
+# Episode Documentation
 
-This directory is OtakuLog's persistent project memory. Claims are based on the
-repository as verified on **2026-08-01**; uncertainty is labeled explicitly.
+This directory is Episode's persistent project memory. Claims are based on the
+repository as verified through **2026-08-12**; uncertainty is labeled
+explicitly.
 
 ## Start here
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../layout/responsive_layout.dart';
 import '../models/data_transfer.dart';
 import '../models/media_item.dart';
 import '../repositories/local_storage_repository.dart';
@@ -135,7 +136,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     await _export(
       () => _transfers.createNativeBackup(_items),
       successLabel: 'Backup saved',
-      providerId: 'otakulog-native',
+      providerId: 'episode-native',
       operationType: TransferOperationType.backup,
     );
   }
@@ -315,157 +316,151 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
         appBar: AppBar(title: const Text('Data, Backup & Transfer')),
         body: Stack(
           children: [
-            Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.08),
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.cardRadius),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.shield_outlined,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${_items.length} media items stored locally',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
+            PageContentConstraint(
+              contentWidth: ContentWidth.focused,
+              padding: EdgeInsets.zero,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.shield_outlined,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${_items.length} media items stored locally',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
                                 ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  'Files stay on this device. Every import and '
-                                  'restore creates a verified safety backup first.',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    const _SectionHeading(
-                      title: 'Import & restore',
-                      subtitle: 'Inspect changes before anything is written.',
-                    ),
-                    _ActionGroup(
-                      children: [
-                        _ActionTile(
-                          key: const Key('import-mal-action'),
-                          icon: Icons.playlist_add_rounded,
-                          title: 'Import from MyAnimeList',
-                          subtitle:
-                              'Anime or manga XML, including gzip exports',
-                          onTap: () => _pickAndPreview(
-                            restoreFlow: false,
-                            malOnly: true,
-                          ),
-                        ),
-                        _ActionTile(
-                          key: const Key('import-file-action'),
-                          icon: Icons.file_open_outlined,
-                          title: 'Import compatible file',
-                          subtitle: 'Episode JSON or MyAnimeList XML',
-                          onTap: () => _pickAndPreview(restoreFlow: false),
-                        ),
-                        _ActionTile(
-                          key: const Key('restore-backup-action'),
-                          icon: Icons.restore_rounded,
-                          title: 'Restore an Episode backup',
-                          subtitle: 'Validate, preview, snapshot, then replace',
-                          onTap: () => _pickAndPreview(restoreFlow: true),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    const _SectionHeading(
-                      title: 'Export',
-                      subtitle: 'Save a complete backup or a portable list.',
-                    ),
-                    _ActionGroup(
-                      children: [
-                        _ActionTile(
-                          key: const Key('create-backup-action'),
-                          icon: Icons.backup_outlined,
-                          title: 'Create full backup',
-                          subtitle:
-                              'Versioned JSON with SHA-256 integrity check',
-                          onTap: _createBackup,
-                        ),
-                        _ActionTile(
-                          key: const Key('export-csv-action'),
-                          icon: Icons.table_view_outlined,
-                          title: 'Export readable CSV',
-                          subtitle: 'All media and metadata in UTF-8',
-                          onTap: _exportCsv,
-                        ),
-                        _ActionTile(
-                          icon: Icons.animation_outlined,
-                          title: 'Export MAL anime XML',
-                          subtitle: 'Entries with a known MyAnimeList ID',
-                          onTap: () => _exportMal(MediaType.anime),
-                        ),
-                        _ActionTile(
-                          icon: Icons.menu_book_outlined,
-                          title: 'Export MAL manga XML',
-                          subtitle: 'Entries with a known MyAnimeList ID',
-                          onTap: () => _exportMal(MediaType.manga),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    const _SectionHeading(
-                      title: 'Recovery & audit',
-                      subtitle: 'Review results and retained local snapshots.',
-                    ),
-                    _ActionGroup(
-                      children: [
-                        _ActionTile(
-                          key: const Key('transfer-history-action'),
-                          icon: Icons.history_rounded,
-                          title: 'View transfer history',
-                          subtitle: 'Latest reports and five safety backups',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => TransferHistoryScreen(
-                                repository: _transfers,
-                                onSaveBackup: _saveSafetyBackup,
                               ),
-                            ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Files stay on this device. Every import and '
+                                'restore creates a verified safety backup first.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'MyAnimeList account connection is not enabled. It '
-                      'requires a registered OAuth client, redirect URI, and '
-                      'secure token storage; local file import remains available.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 24),
+                  const _SectionHeading(
+                    title: 'Import & restore',
+                    subtitle: 'Inspect changes before anything is written.',
+                  ),
+                  _ActionGroup(
+                    children: [
+                      _ActionTile(
+                        key: const Key('import-mal-action'),
+                        icon: Icons.playlist_add_rounded,
+                        title: 'Import from MyAnimeList',
+                        subtitle: 'Anime or manga XML, including gzip exports',
+                        onTap: () => _pickAndPreview(
+                          restoreFlow: false,
+                          malOnly: true,
+                        ),
                       ),
+                      _ActionTile(
+                        key: const Key('import-file-action'),
+                        icon: Icons.file_open_outlined,
+                        title: 'Import compatible file',
+                        subtitle: 'Episode JSON or MyAnimeList XML',
+                        onTap: () => _pickAndPreview(restoreFlow: false),
+                      ),
+                      _ActionTile(
+                        key: const Key('restore-backup-action'),
+                        icon: Icons.restore_rounded,
+                        title: 'Restore an Episode backup',
+                        subtitle: 'Validate, preview, snapshot, then replace',
+                        onTap: () => _pickAndPreview(restoreFlow: true),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const _SectionHeading(
+                    title: 'Export',
+                    subtitle: 'Save a complete backup or a portable list.',
+                  ),
+                  _ActionGroup(
+                    children: [
+                      _ActionTile(
+                        key: const Key('create-backup-action'),
+                        icon: Icons.backup_outlined,
+                        title: 'Create full backup',
+                        subtitle: 'Versioned JSON with SHA-256 integrity check',
+                        onTap: _createBackup,
+                      ),
+                      _ActionTile(
+                        key: const Key('export-csv-action'),
+                        icon: Icons.table_view_outlined,
+                        title: 'Export readable CSV',
+                        subtitle: 'All media and metadata in UTF-8',
+                        onTap: _exportCsv,
+                      ),
+                      _ActionTile(
+                        icon: Icons.animation_outlined,
+                        title: 'Export MAL anime XML',
+                        subtitle: 'Entries with a known MyAnimeList ID',
+                        onTap: () => _exportMal(MediaType.anime),
+                      ),
+                      _ActionTile(
+                        icon: Icons.menu_book_outlined,
+                        title: 'Export MAL manga XML',
+                        subtitle: 'Entries with a known MyAnimeList ID',
+                        onTap: () => _exportMal(MediaType.manga),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const _SectionHeading(
+                    title: 'Recovery & audit',
+                    subtitle: 'Review results and retained local snapshots.',
+                  ),
+                  _ActionGroup(
+                    children: [
+                      _ActionTile(
+                        key: const Key('transfer-history-action'),
+                        icon: Icons.history_rounded,
+                        title: 'View transfer history',
+                        subtitle: 'Latest reports and five safety backups',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => TransferHistoryScreen(
+                              repository: _transfers,
+                              onSaveBackup: _saveSafetyBackup,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'MyAnimeList account connection is not enabled. It '
+                    'requires a registered OAuth client, redirect URI, and '
+                    'secure token storage; local file import remains available.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             if (_busy)

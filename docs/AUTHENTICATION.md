@@ -1,15 +1,22 @@
-# OtakuLog Authentication & Security Architecture
+# Episode Authentication & Security Architecture
 
-This document describes Flutter client authentication, token lifecycle management, and security protocols in OtakuLog.
+This document describes Flutter client authentication, token lifecycle
+management, and security protocols in Episode.
 
 ## Overview
 
-Accounts in OtakuLog are **optional** and **additive**. The app operates fully offline without an account. Registering or logging in enables multi-device cloud snapshot backup and synchronization.
+Accounts in Episode are **optional** and **additive**. The app operates fully
+offline without an account. Registering or logging in enables multi-device
+cloud snapshot backup and synchronization.
 
 ## Token Lifecycle & Storage
 
 1. **Storage**: Access and refresh tokens are stored securely via `AuthTokenStorage` (`SecureAuthTokenStorage` backed by `flutter_secure_storage`).
-2. **Exclusions**: Tokens are NEVER written to `otaku_log_media_items`, native backup `.otakulog` files, sync snapshot payloads, or application logs.
+2. **Exclusions**: Tokens are NEVER written to `episode_media_items`, Episode
+   native backup JSON files, sync snapshot payloads, or application logs.
+   `otaku_log_access_token_v1`, `otaku_log_refresh_token_v1`, and
+   `otaku_log_token_meta_v1` remain stable legacy-named secure-storage keys so
+   existing sessions are not invalidated by the product rename.
 3. **Rotation**: On HTTP `401 Unauthorized` responses, `ApiClient` executes a single-flight refresh operation via `POST /api/v1/auth/refresh`. When successful, new tokens are persisted atomically, and the original request is retried once.
 4. **Session Expiry**: Unrecoverable refresh failures clear local tokens and transition the app to `sessionExpired` state without deleting local media library data.
 

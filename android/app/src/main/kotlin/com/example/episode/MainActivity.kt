@@ -11,7 +11,7 @@ import java.io.ByteArrayOutputStream
 import kotlin.concurrent.thread
 
 class MainActivity : FlutterActivity() {
-    private val channelName = "otakulog/file_transfer"
+    private val channelName = "episode/file_transfer"
     private val pickRequestCode = 7411
     private val saveRequestCode = 7412
     private var pendingResult: MethodChannel.Result? = null
@@ -58,7 +58,7 @@ class MainActivity : FlutterActivity() {
                     pendingResult = result
                     pendingSaveBytes = bytes
                     val safeName = safeFileName(
-                        call.argument<String>("name") ?: "otakulog-export",
+                        call.argument<String>("name") ?: "episode-export",
                     )
                     val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                         addCategory(Intent.CATEGORY_OPENABLE)
@@ -93,7 +93,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun readSelectedFile(uri: Uri, result: MethodChannel.Result) {
-        thread(name = "otakulog-file-import") {
+        thread(name = "episode-file-import") {
             try {
                 val metadata = queryMetadata(uri)
                 val declaredSize = metadata.second
@@ -135,7 +135,7 @@ class MainActivity : FlutterActivity() {
 
     private fun writeSelectedFile(uri: Uri, result: MethodChannel.Result) {
         val bytes = pendingSaveBytes
-        thread(name = "otakulog-file-export") {
+        thread(name = "episode-file-export") {
             try {
                 requireNotNull(bytes) { "No export bytes are available." }
                 contentResolver.openOutputStream(uri, "wt").use { output ->

@@ -464,7 +464,7 @@ class MalXmlExportProvider implements ExportProvider {
     }
     final now = DateTime.now().toUtc();
     return ExportArtifact(
-      fileName: 'otakulog-mal-${selectedType.name}-${fileTimestamp(now)}.xml',
+      fileName: 'episode-mal-${selectedType.name}-${fileTimestamp(now)}.xml',
       mimeType: 'application/xml',
       bytes: Uint8List.fromList(utf8.encode(xml)),
       exportedCount: representable.length,

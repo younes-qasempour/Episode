@@ -76,23 +76,28 @@ class _ShimmerSkeletonState extends State<ShimmerSkeleton>
 /// Grid of shimmer skeleton cards for search loading states.
 class ShimmerSkeletonGrid extends StatelessWidget {
   final int itemCount;
+  final SliverGridDelegate? gridDelegate;
+  final EdgeInsetsGeometry padding;
 
   const ShimmerSkeletonGrid({
     super.key,
     this.itemCount = 6,
+    this.gridDelegate,
+    this.padding = const EdgeInsets.all(16),
   });
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: padding,
       itemCount: itemCount,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.72,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-      ),
+      gridDelegate: gridDelegate ??
+          const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.72,
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
+          ),
       itemBuilder: (context, index) {
         return Container(
           decoration: BoxDecoration(

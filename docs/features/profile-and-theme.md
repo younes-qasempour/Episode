@@ -30,7 +30,8 @@ account, sync, progress, and data-management callbacks; pushed screens use
 - `ProfileStatsDashboard` — milestones, donut chart, favorites, quick progress,
   activity heatmap, share card, and profile customization
 - `DonutChart` and `StreakHeatmap` — reusable analytics visualizations
-- `AppTheme` — brand tokens and light/dark `ThemeData`
+- `AppTheme` — brand tokens and light/dark `ThemeData`; adaptive navigation
+  rails use the Episode indigo accent for their selected destination
 
 ## State and logic
 

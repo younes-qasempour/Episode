@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_config.dart';
 import '../controllers/auth_controller.dart';
+import '../layout/responsive_layout.dart';
 import '../models/activity_log_entry.dart';
 import '../models/media_item.dart';
 import '../models/user_profile_data.dart';
@@ -12,6 +13,7 @@ import '../services/connectivity_service.dart';
 import '../services/device_identity_service.dart';
 import '../services/sync_metadata_storage.dart';
 import '../services/sync_service.dart';
+import '../widgets/episode_brand.dart';
 import 'data_management_screen.dart';
 import 'device_management_screen.dart';
 import 'home_tab.dart';
@@ -318,7 +320,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              EpisodeBrand(markSize: 72),
+              SizedBox(height: 24),
+              SizedBox.square(
+                dimension: 24,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     if (_loadError != null) {
       return Scaffold(
@@ -389,35 +405,100 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
     ];
 
-    return Scaffold(
-      body: SafeArea(
-        child: IndexedStack(index: _currentIndex, children: pages),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view_rounded),
-            activeIcon: Icon(Icons.grid_view_rounded),
-            label: 'Home',
+    return ResponsiveBuilder(
+      builder: (context, layout) {
+        return Scaffold(
+          body: SafeArea(
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  width: layout.usesNavigationRail
+                      ? (layout.usesExtendedNavigationRail ? 220 : 80)
+                      : 0,
+                  child: layout.usesNavigationRail
+                      ? ClipRect(
+                          child: NavigationRail(
+                            key: const Key('adaptive-navigation-rail'),
+                            selectedIndex: _currentIndex,
+                            extended: layout.usesExtendedNavigationRail,
+                            minWidth: 80,
+                            minExtendedWidth: 220,
+                            groupAlignment: -0.72,
+                            leading: Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: EpisodeBrand(
+                                markSize: 34,
+                                showName: layout.usesExtendedNavigationRail,
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                              ),
+                            ),
+                            onDestinationSelected: (index) {
+                              setState(() => _currentIndex = index);
+                            },
+                            destinations: const [
+                              NavigationRailDestination(
+                                icon: Icon(Icons.grid_view_outlined),
+                                selectedIcon: Icon(Icons.grid_view_rounded),
+                                label: Text('Home'),
+                              ),
+                              NavigationRailDestination(
+                                icon: Icon(Icons.explore_outlined),
+                                selectedIcon: Icon(Icons.explore_rounded),
+                                label: Text('Explore'),
+                              ),
+                              NavigationRailDestination(
+                                icon: Icon(Icons.person_outline_rounded),
+                                selectedIcon: Icon(Icons.person_rounded),
+                                label: Text('Profile'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                if (layout.usesNavigationRail)
+                  const VerticalDivider(width: 1, thickness: 1),
+                Expanded(
+                  child: IndexedStack(index: _currentIndex, children: pages),
+                ),
+              ],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.explore_outlined),
-            activeIcon: Icon(Icons.explore_rounded),
-            label: 'Explore',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded),
-            activeIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
-      ),
+          bottomNavigationBar: layout.isCompact
+              ? BottomNavigationBar(
+                  key: const Key('compact-bottom-navigation'),
+                  currentIndex: _currentIndex,
+                  onTap: (index) => setState(() => _currentIndex = index),
+                  items: const [
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.grid_view_outlined),
+                      activeIcon: Icon(Icons.grid_view_rounded),
+                      label: 'Home',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.explore_outlined),
+                      activeIcon: Icon(Icons.explore_rounded),
+                      label: 'Explore',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.person_outline_rounded),
+                      activeIcon: Icon(Icons.person_rounded),
+                      label: 'Profile',
+                    ),
+                  ],
+                )
+              : null,
+        );
+      },
     );
   }
 }
