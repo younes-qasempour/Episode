@@ -3,6 +3,14 @@
 This records work performed by coding agents. It is not a product release
 changelog.
 
+## 2026-08-17 — Android Gradle toolchain & cross-drive build directory fix
+
+- **Agent/tool:** Antigravity
+- **Task:** Fix Gradle server and compilation errors (`Unsupported class file major version 70` and `this and base files have different roots`).
+- **Summary:** Configured `org.gradle.java.home` in `android/gradle.properties` and IDE settings in `.vscode/settings.json` to use Android Studio's bundled OpenJDK 21 instead of incompatible JDK 26 (major version 70). Fixed Gradle Kotlin plugin cross-drive relative path resolution on Windows (`IllegalArgumentException: this and base files have different roots`) in `android/build.gradle.kts` by checking drive roots before relocating subproject build directories.
+- **Files changed:** `android/gradle.properties`, `.vscode/settings.json`, `android/build.gradle.kts`, `docs/CHANGELOG_AGENT.md`.
+- **Validation:** `.\gradlew.bat tasks` and `.\gradlew.bat assembleDebug` executed cleanly with 264 tasks passing (exit code 0).
+
 ## 2026-08-12 - Indigo navigation rail selection
 
 - **Agent/tool:** Codex
